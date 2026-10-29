@@ -1,9 +1,9 @@
 ﻿# PersonalPlanner
-## Website quản lý thời khóa biểu và kế hoạch cá nhân tích hợp nhắc lịch tự động
+## Website quản lý thời khóa biểu và kế hoạch cá nhân tích hợp sắp xếp lịch trình tự động
 
 ### 1. Thông tin dự án
 Đề tài: Thiết kế và xây dựng website quản lý thời khóa biểu
-và kế hoạch cá nhân tích hợp nhắc lịch tự động.
+và kế hoạch cá nhân tích hợp sắp xếp lịch trình tự động.
 
 ### 2. Thành viên nhóm
 - Dương Văn Thanh - td863166@gmail.com
