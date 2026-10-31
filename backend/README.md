@@ -58,6 +58,16 @@ Token access hiện không có refresh-token endpoint. Gửi email nhắc lịch
 
 Các migration nằm trong `src/db/migrations/` và được ghi nhận tại bảng `schema_migrations`. Chạy `npm.cmd --prefix backend run db:migrate` sau khi tạo database và cấu hình `.env`.
 
+### Dữ liệu demo
+
+Sau khi migration thành công, nạp dữ liệu mẫu bằng MySQL client:
+
+```powershell
+Get-Content -Raw backend/database/seed.sql | mysql --default-character-set=utf8mb4 -u your_mysql_user -p personalplanner
+```
+
+Tài khoản demo: `demo@personalplanner.local`, mật khẩu `12345678`. Seed có thể chạy lại mà không thêm trùng các bản ghi mẫu.
+
 ## Kiểm thử
 
 ```powershell
