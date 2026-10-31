@@ -220,4 +220,10 @@ Tạo database theo hướng dẫn tại [backend/README.md](../backend/README.m
 npm.cmd --prefix backend run db:migrate
 ```
 
-`backend/database/schema.sql` hiện chưa đồng bộ với migration, chứa lệnh xóa toàn bộ bảng và dữ liệu tương ứng. `backend/database/seed.sql` cũng dùng các cột cũ (`preferred_windows`, `is_read`), nên không chạy seed này trên schema migration hiện tại trước khi đồng bộ script.
+`backend/database/schema.sql` là script khởi tạo cũ, chưa đồng bộ với migration và chứa lệnh xóa bảng; không dùng script này để cập nhật database đang có dữ liệu. `backend/database/seed.sql` dùng các cột theo migration hiện tại, tạo tài khoản demo `demo@personalplanner.local` (mật khẩu `12345678`) cùng lớp học, công việc, lịch và thông báo mẫu. Có thể chạy lại seed mà không thêm trùng dữ liệu mẫu.
+
+Sau khi chạy migration và cấu hình MySQL client, nạp dữ liệu demo bằng:
+
+```powershell
+Get-Content -Raw backend/database/seed.sql | mysql --default-character-set=utf8mb4 -u your_mysql_user -p personalplanner
+```
