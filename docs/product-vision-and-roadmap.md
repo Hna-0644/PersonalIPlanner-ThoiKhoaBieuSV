@@ -31,7 +31,7 @@ Frontend hiện đã có:
 - [`frontend/js/api.js`](../frontend/js/api.js) có các hàm dự kiến cho REST API nhưng đang bật `USE_MOCK`.
 - Lịch học có cảnh báo trùng; trang công việc hỗ trợ dạng danh sách/kanban, lọc và trạng thái; trang hồ sơ có cấu hình giờ học ưu tiên.
 
-README là [tài liệu định hướng](../README.md); backend và schema MySQL chưa được triển khai tại thời điểm lập kế hoạch. Các thành phần đó trong roadmap là mục tiêu, không phải chức năng đã chạy.
+README là [tài liệu định hướng](../README.md). Tại thời điểm viết roadmap ban đầu, backend chưa có code; hiện đã có backend MVP khởi đầu với API, migration MySQL và test. Backend vẫn cần database được cấu hình để chạy, kiểm thử tích hợp với MySQL và kết nối frontend; chưa được triển khai production.
 
 ## 4. Phạm vi MVP
 
@@ -87,23 +87,26 @@ README là [tài liệu định hướng](../README.md); backend và schema MySQ
 
 **Đầu ra:** frontend MVP chạy được bằng mock, thao tác nhất quán và có thể trình diễn không cần backend.
 
-### Giai đoạn 2 — Thiết kế hợp đồng API và dữ liệu
+### Giai đoạn 2 — Hoàn thiện hợp đồng API và dữ liệu
 
-- Chốt ERD, kiểu dữ liệu, trạng thái, ràng buộc, chỉ mục và chiến lược migration MySQL.
-- Định nghĩa API cho đăng ký/đăng nhập, hồ sơ, lớp học, công việc, lịch đề xuất/áp dụng và thông báo.
+**Trạng thái:** đã có hợp đồng API dùng chung và migration/schema khởi tạo; cần xác minh trên MySQL thật trước khi xem là ổn định.
+
+- Rà soát ERD, kiểu dữ liệu, trạng thái, ràng buộc, chỉ mục và chiến lược migration MySQL trên phiên bản database được hỗ trợ.
+- Giữ API cho đăng ký/đăng nhập, hồ sơ, lớp học, công việc, lịch đề xuất/áp dụng, lịch đã áp dụng và thông báo đồng bộ với shared contract.
 - Thống nhất định dạng ngày giờ/múi giờ, phân trang/lọc, mã lỗi, validation và quyền sở hữu dữ liệu.
 - Chỉ chuyển `USE_MOCK` sau khi API, cấu hình môi trường và kiểm thử tích hợp sẵn sàng.
 
-**Đầu ra:** schema và hợp đồng API có thể triển khai/kiểm thử độc lập với UI.
+**Đầu ra:** schema và hợp đồng API đã được xác minh bằng kiểm thử tích hợp.
 
-### Giai đoạn 3 — Xây dựng backend và tích hợp
+### Giai đoạn 3 — Hoàn thiện backend và tích hợp
 
-- Tổ chức backend Express theo config, routes, controllers, middleware, services và models/repositories như README đề xuất.
-- Xây API và ràng buộc dữ liệu theo user; xác thực token ở server và kiểm tra quyền sở hữu trên từng tài nguyên.
+- **Đã có bản đầu:** Express app, JWT auth, validation, routes cho auth/profile/classes/tasks/schedule/notifications, services SQL, schema/migration MySQL và test không cần DB.
+- Hoàn thiện ranh giới repository/controllers nếu quy mô nghiệp vụ cần tách thêm; hiện các route gọi service và service truy vấn MySQL.
+- Xác minh quyền sở hữu, transaction, xử lý xung đột và migration với MySQL thật.
 - Thay mock bằng API thông qua `ApiService`; thể hiện trạng thái tải, lỗi mạng, phiên hết hạn và lỗi validation.
-- Viết kiểm thử unit cho nghiệp vụ, integration/API với Supertest và luồng frontend-backend.
+- Viết thêm integration test với MySQL và kiểm thử luồng frontend-backend.
 
-**Đầu ra:** dữ liệu được lưu trên MySQL và các luồng MVP hoạt động qua API.
+**Đầu ra:** dữ liệu MySQL và các luồng MVP frontend-backend được xác minh đầu-cuối.
 
 ### Giai đoạn 4 — Lập lịch và nhắc việc đáng tin cậy
 
@@ -132,4 +135,4 @@ README là [tài liệu định hướng](../README.md); backend và schema MySQ
 
 ## 8. Sơ đồ
 
-Xem [diagrams.md](./diagrams.md) để xem user flow, kiến trúc theo giai đoạn và ERD khái niệm.
+Xem [diagrams.md](./diagrams.md) để xem user flow, UML, kiến trúc theo giai đoạn và ERD khái niệm. Các field, enum, ngày giờ và API contract dùng chung được quản lý tại [shared-contract.md](./shared-contract.md).

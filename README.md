@@ -1,148 +1,135 @@
-﻿# PersonalPlanner
-## Website quản lý thời khóa biểu và kế hoạch cá nhân tích hợp sắp xếp lịch trình tự động
+# PersonalPlanner
 
-### 1. Thông tin dự án
-Đề tài: Thiết kế và xây dựng website quản lý thời khóa biểu
-và kế hoạch cá nhân tích hợp sắp xếp lịch trình tự động.
+> **Trợ lý lập kế hoạch học tập dành cho sinh viên** — kết hợp thời khóa biểu, công việc và thời gian tự học trong một nơi.
 
-### 2. Thành viên nhóm
-- Dương Văn Thanh - td863166@gmail.com
-- Dương Minh Tân - tanduonga9@gmail.com
+PersonalPlanner hướng đến việc giúp sinh viên biết **cần làm gì tiếp theo**, nhận diện deadline quan trọng và tìm khoảng thời gian phù hợp để hoàn thành công việc. Lịch được đề xuất để người dùng xem trước và xác nhận trước khi áp dụng.
 
-3. Chức năng dự kiến
-3.1. Quản lý tài khoản người dùng
-Đăng ký tài khoản.
-Đăng nhập và đăng xuất.
-Xác thực người dùng bằng JWT.
-Quản lý và cập nhật thông tin cá nhân.
-Bảo vệ dữ liệu riêng tư của từng người dùng.
-3.2. Quản lý thời khóa biểu
-Thêm, xem, chỉnh sửa và xóa lịch học.
-Hiển thị lịch theo ngày, tuần và tháng.
-Quản lý thời gian, địa điểm và thông tin buổi học.
-Phát hiện và cảnh báo các lịch trình bị trùng.
-3.3. Quản lý kế hoạch và công việc cá nhân
-Tạo và chỉnh sửa công việc.
-Thiết lập thời hạn hoàn thành.
-Phân loại công việc theo mức độ ưu tiên.
-Theo dõi trạng thái: chưa thực hiện, đang thực hiện và đã hoàn thành.
-Ghi nhận tiến độ và lịch sử hoàn thành công việc.
-3.4. Tự động sắp xếp lịch trình
-Xác định các khoảng thời gian trống trong lịch cá nhân.
-Tránh trùng lặp với thời khóa biểu và các công việc đã được lên lịch.
-Ưu tiên công việc dựa trên thời hạn và mức độ quan trọng.
-Phân bổ thời gian theo thời lượng dự kiến của từng công việc.
-Đề xuất lịch trình phù hợp với các ràng buộc của người dùng.
-3.5. Nhắc lịch tự động
-Kiểm tra các công việc sắp đến hạn theo lịch định kỳ.
-Gửi email nhắc nhở về các lịch trình quan trọng.
-Thông báo về công việc quá hạn hoặc sắp đến thời điểm thực hiện.
-3.6. Thống kê và tổng quan
-Hiển thị các công việc sắp tới.
-Thống kê số lượng công việc đã hoàn thành và chưa hoàn thành.
-Theo dõi tiến độ thực hiện kế hoạch.
-Cung cấp thông tin tổng quan về lịch trình cá nhân.
-4. Công nghệ sử dụng
-4.1. Frontend – Giao diện người dùng
-HTML5: Xây dựng cấu trúc các trang web.
-CSS3: Thiết kế giao diện và bố cục website.
-JavaScript: Xử lý logic phía client và tương tác với người dùng.
-Bootstrap 5: Xây dựng giao diện responsive, tương thích với máy tính, máy tính bảng và điện thoại.
-FullCalendar: Hiển thị và tương tác với lịch trình theo ngày, tuần và tháng.
-4.2. Backend – Máy chủ và API
-Node.js: Môi trường thực thi JavaScript phía máy chủ.
-Express.js: Xây dựng RESTful API và xử lý các nghiệp vụ của hệ thống.
-jsonwebtoken: Tạo và xác minh JSON Web Token phục vụ xác thực người dùng.
-bcrypt: Băm mật khẩu trước khi lưu vào cơ sở dữ liệu.
-Middleware: Xác thực token, kiểm tra quyền truy cập và bảo vệ các API cần đăng nhập.
-4.3. Cơ sở dữ liệu
-MySQL: Hệ quản trị cơ sở dữ liệu quan hệ, lưu trữ thông tin người dùng, thời khóa biểu, công việc, lịch trình và các dữ liệu liên quan.
-MySQL Workbench: Hỗ trợ thiết kế, quản lý và truy vấn cơ sở dữ liệu.
-4.4. Xác thực và bảo mật
-JWT Access Token: Xác thực các yêu cầu đến API, có thời hạn sử dụng ngắn.
-Refresh Token: Hỗ trợ cấp mới access token khi hết hạn và được quản lý theo cơ chế có thể thu hồi.
-bcrypt: Băm mật khẩu trước khi lưu trữ.
-Environment Variables: Quản lý khóa bí mật JWT, thông tin kết nối database và cấu hình nhạy cảm.
-HTTPS: Bảo vệ dữ liệu truyền tải giữa client và server khi triển khai thực tế.
-Các API cần đăng nhập phải xác minh token và kiểm tra quyền truy cập dữ liệu của người dùng. Refresh token cần được quản lý an toàn; không lưu mật khẩu hoặc dữ liệu bí mật trong payload JWT.
+## Mục lục
 
-4.5. Nhắc lịch và gửi thông báo
-node-cron: Thực hiện các tác vụ định kỳ để kiểm tra lịch trình và công việc sắp đến hạn.
-Nodemailer: Gửi email nhắc nhở và thông báo cho người dùng.
-4.6. Kiểm thử
-Jest: Kiểm thử các hàm xử lý nghiệp vụ và các thành phần JavaScript.
-Supertest: Kiểm thử RESTful API, bao gồm xác thực, quản lý công việc và quản lý thời khóa biểu.
-Postman: Gửi yêu cầu HTTP để kiểm tra API trong quá trình phát triển.
-4.7. Quản lý mã nguồn và làm việc nhóm
-Git: Theo dõi lịch sử thay đổi và quản lý các phiên bản mã nguồn.
-GitHub: Lưu trữ repository, quản lý nhánh phát triển, theo dõi lỗi và phối hợp làm việc nhóm.
-4.8. Môi trường phát triển và triển khai
-Visual Studio Code: Trình soạn thảo mã nguồn.
-Node.js và npm: Chạy backend và quản lý thư viện phụ thuộc.
-Render hoặc VPS: Triển khai ứng dụng để truy cập qua Internet.
-File .env: Lưu cấu hình môi trường; không đưa thông tin bí mật lên GitHub.
-4.9. Thuật toán sắp xếp lịch trình
-Thuật toán được xây dựng bằng JavaScript và Node.js, dựa trên các tiêu chí:
+- [Tình trạng dự án](#tình-trạng-dự-án)
+- [Chức năng](#chức-năng)
+- [Công nghệ](#công-nghệ)
+- [Bắt đầu](#bắt-đầu)
+- [Cấu trúc dự án](#cấu-trúc-dự-án)
+- [Tài liệu](#tài-liệu)
+- [Lộ trình](#lộ-trình)
+- [Nhóm phát triển](#nhóm-phát-triển)
 
-Tìm khoảng thời gian trống phù hợp.
-Đảm bảo không xung đột với các sự kiện đã được lên lịch.
-Ưu tiên công việc gần hạn và có mức độ quan trọng cao.
-Phân bổ thời lượng thực hiện hợp lý.
-Đề xuất lịch trình đáp ứng các ràng buộc thời gian của người dùng.
-Trong phiên bản đầu tiên, hệ thống ưu tiên xây dựng thuật toán sắp xếp theo các quy tắc xác định trước. Các thuật toán tối ưu hóa nâng cao có thể được bổ sung trong những giai đoạn tiếp theo.
+## Tình trạng dự án
 
-5. Cấu trúc thư mục dự án
+**Giai đoạn hiện tại: prototype frontend và backend MVP ban đầu.**
 
-text
+Giao diện có các trang tổng quan, thời khóa biểu, công việc, tự động sắp xếp, thống kê, hồ sơ và đăng nhập/đăng ký. Dữ liệu frontend vẫn mặc định dùng `localStorage`; `ApiService` đang bật chế độ mock. Backend đã có API MVP và migration MySQL; cần cài đặt, cấu hình database và chủ động chuyển frontend sang API trước khi dùng chung dữ liệu.
+
+> Đăng nhập/dữ liệu trong frontend mock chỉ phục vụ trình diễn. Backend có JWT và truy vấn MySQL, nhưng chưa được triển khai lên môi trường production; email nhắc lịch và refresh token chưa có.
+
+## Chức năng
+
+### Đã có trong prototype
+
+- Trang tổng quan các kế hoạch và công việc.
+- Quản lý thời khóa biểu và cảnh báo các lớp học trùng giờ.
+- Quản lý công việc với mức ưu tiên, deadline, tiến độ, bộ lọc và chế độ danh sách/kanban.
+- Tạo và xem trước lịch học/làm việc đề xuất theo khung giờ ưu tiên.
+- Thống kê công việc, hồ sơ cá nhân và thiết lập giờ học.
+- Lưu dữ liệu demo cục bộ trên trình duyệt.
+
+### Định hướng phát triển
+
+- Hoàn thiện trải nghiệm frontend và các trạng thái lỗi/rỗng/đang tải.
+- Kết nối frontend với REST API đã xây dựng, xác thực người dùng và lưu trữ dữ liệu trên MySQL.
+- Bổ sung nhắc lịch đáng tin cậy và cải tiến thuật toán lập lịch.
+
+## Công nghệ
+
+| Thành phần | Công nghệ |
+|---|---|
+| Giao diện | HTML, CSS, JavaScript |
+| UI và lịch | Bootstrap 5, FullCalendar |
+| Biểu đồ và thông báo | Chart.js, SweetAlert2 |
+| Lưu trữ prototype | Browser `localStorage` |
+| Backend | Node.js, Express.js |
+| Cơ sở dữ liệu | MySQL 8.0.16+ (có migration khởi tạo) |
+
+Các thư viện giao diện hiện được tải từ CDN, vì vậy cần kết nối Internet khi mở ứng dụng.
+
+## Bắt đầu
+
+### Yêu cầu
+
+- Trình duyệt web hiện đại.
+- Kết nối Internet để tải các thư viện giao diện từ CDN.
+- Visual Studio Code và tiện ích Live Server (khuyến nghị) để chạy giao diện cục bộ.
+
+### Chạy giao diện
+
+1. Mở repository bằng Visual Studio Code.
+2. Dùng Live Server để mở `frontend/index.html`.
+3. Điều hướng qua menu để xem các trang lịch, công việc, lập lịch tự động, thống kê và hồ sơ.
+
+Ứng dụng hiện dùng dữ liệu demo trong `localStorage`. Xóa dữ liệu trang web trong trình duyệt sẽ xóa dữ liệu demo đã lưu.
+
+### Chạy backend
+
+Backend dùng Node.js và MySQL. Xem [hướng dẫn cài đặt backend](backend/README.md) để tạo database, cấu hình `.env`, chạy migration và khởi động API.
+
+## Cấu trúc dự án
+
+```text
 PersonalPlanner/
 ├── frontend/
 │   ├── index.html
 │   ├── pages/
+│   │   ├── auto-schedule.html
+│   │   ├── login.html
+│   │   ├── profile.html
+│   │   ├── statistics.html
+│   │   ├── tasks.html
+│   │   └── timetable.html
 │   ├── css/
+│   │   └── style.css
 │   ├── js/
+│   │   ├── api.js
+│   │   ├── main.js
+│   │   └── store.js
 │   └── assets/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   ├── controllers/
+│   │   ├── db/migrations/
 │   │   ├── middleware/
-│   │   ├── models/
 │   │   ├── routes/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   └── app.js
-│   ├── tests/
-│   ├── .env.example
-│   └── package.json
+│   │   ├── schemas/
+│   │   └── services/
+│   ├── test/
+│   └── README.md
 ├── docs/
-│   ├── requirements.md
-│   ├── database-design.md
-│   └── api-documentation.md
-├── tests/
+│   ├── diagrams.md
+│   ├── product-vision-and-roadmap.md
+│   └── shared-contract.md
+├── tests/                   # Khu vực dự kiến cho kiểm thử
 ├── .gitignore
 └── README.md
-Mô tả các thư mục chính:
+```
 
-frontend/: Chứa giao diện website, CSS, JavaScript và tài nguyên.
-backend/src/config/: Chứa cấu hình database và các dịch vụ.
-backend/src/controllers/: Tiếp nhận yêu cầu và điều phối xử lý nghiệp vụ.
-backend/src/middleware/: Chứa middleware xác thực JWT, phân quyền và xử lý lỗi.
-backend/src/models/: Xử lý truy vấn và dữ liệu.
-backend/src/routes/: Khai báo các RESTful API.
-backend/src/services/: Chứa logic nghiệp vụ, bao gồm thuật toán sắp xếp lịch.
-backend/tests/: Kiểm thử các thành phần backend.
-docs/: Lưu tài liệu phân tích, thiết kế và hướng dẫn API.
-tests/: Lưu các kịch bản kiểm thử tổng thể.
-6. Yêu cầu môi trường
-Để phát triển dự án, cần chuẩn bị:
+## Tài liệu
 
-Node.js phiên bản LTS.
-npm đi kèm Node.js.
-MySQL Server.
-MySQL Workbench.
-Visual Studio Code hoặc trình soạn thảo tương đương.
-Git.
-Postman để kiểm thử API.
+- [Ý tưởng sản phẩm và kế hoạch phát triển](docs/product-vision-and-roadmap.md) — tầm nhìn, MVP, tiêu chí nghiệm thu và roadmap.
+- [Sơ đồ hệ thống và UML](docs/diagrams.md) — use case, class/sequence diagram, luồng người dùng, kiến trúc và ERD.
+- [Hợp đồng dùng chung cho AI](docs/shared-contract.md) — field, enum, ngày giờ, API và quy tắc nghiệp vụ chuẩn để phối hợp giữa các tầng.
+- [Hướng dẫn backend](backend/README.md) — cài đặt, cấu hình database, chạy API và test.
 
-### 10. Trạng thái
-Dự án đang trong giai đoạn khởi tạo.
+## Lộ trình
+
+1. **Hoàn thiện frontend MVP:** thống nhất luồng sử dụng, validation, trạng thái giao diện và kiểm thử nghiệp vụ.
+2. **Thiết kế dữ liệu và API:** chốt schema MySQL, hợp đồng REST và quy tắc ngày giờ.
+3. **Xây dựng backend và tích hợp:** thay mock bằng API; xác thực và giới hạn dữ liệu theo người dùng.
+4. **Cải tiến lập lịch và nhắc việc:** xử lý các ràng buộc, thông báo và tác vụ định kỳ.
+5. **Kiểm thử và triển khai:** tăng cường bảo mật, khả năng truy cập, hiệu năng và hướng dẫn vận hành.
+
+Xem [roadmap chi tiết](docs/product-vision-and-roadmap.md) để biết phạm vi và tiêu chí nghiệm thu từng giai đoạn.
+
+## Nhóm phát triển
+
+- **Dương Văn Thanh**
+- **Dương Minh Tân**

@@ -2,6 +2,176 @@
 
 Các sơ đồ dưới đây phân biệt **frontend prototype hiện có** với **kiến trúc mục tiêu**. ERD là mô hình khái niệm, cần chốt trường và ràng buộc trước khi tạo migration.
 
+> Quy ước field, enum, ngày giờ, API và quy tắc nghiệp vụ dùng chung được quản lý tập trung tại [shared-contract.md](./shared-contract.md). Khi sơ đồ và code không khớp, xem mục trạng thái triển khai trong hợp đồng trước khi thay đổi.
+
+## 0. UML Use Case
+
+Sơ đồ thể hiện phạm vi sản phẩm mục tiêu; đăng nhập thật, email và backend chưa có trong prototype.
+
+```plantuml
+@startuml
+left to right direction
+actor "Sinh viên" as Student
+actor "Dịch vụ email\n(sau MVP)" as Email
+
+rectangle "PersonalPlanner" {
+  usecase "Đăng ký / đăng nhập" as UC_Auth
+  usecase "Xem dashboard" as UC_Dashboard
+  usecase "Quản lý hồ sơ\nvà giờ rảnh" as UC_Profile
+  usecase "Quản lý thời khóa biểu" as UC_Class
+  usecase "Kiểm tra trùng lịch" as UC_Conflict
+  usecase "Quản lý công việc" as UC_Task
+  usecase "Tạo đề xuất\nlịch học/làm việc" as UC_Generate
+  usecase "Xem và chọn\nphương án" as UC_Review
+  usecase "Áp dụng phương án" as UC_Apply
+  usecase "Xem thống kê\nvà tiến độ" as UC_Stats
+  usecase "Xem thông báo" as UC_Notifications
+  usecase "Gửi nhắc lịch" as UC_Reminder
+}
+
+Student --> UC_Auth
+Student --> UC_Dashboard
+Student --> UC_Profile
+Student --> UC_Class
+Student --> UC_Task
+Student --> UC_Generate
+Student --> UC_Review
+Student --> UC_Apply
+Student --> UC_Stats
+Student --> UC_Notifications
+Email --> UC_Reminder
+
+UC_Class ..> UC_Conflict : <<include>>
+UC_Generate ..> UC_Profile : <<include>>
+UC_Generate ..> UC_Class : <<include>>
+UC_Generate ..> UC_Task : <<include>>
+UC_Review ..> UC_Generate : <<extend>>
+UC_Apply ..> UC_Review : <<include>>
+UC_Reminder ..> UC_Notifications : <<include>>
+@enduml
+```
+
+## 0.1 UML Class Diagram — mô hình miền nghiệp vụ
+
+Các lớp dưới đây mô tả mô hình mục tiêu và quan hệ dữ liệu, không khẳng định backend đã được tạo. Field chuẩn và kiểu dữ liệu được định nghĩa tại [shared-contract.md](./shared-contract.md).
+
+```plantuml
+@startuml
+hide methods
+skinparam classAttributeIconSize 0
+
+class User {
+  +id: Id
+  +fullName: string
+  +email: string
+  +studentId: string
+  +major: string
+  +university: string
+}
+
+class StudyPreference {
+  +userId: Id
+  +preferredHours: PreferredHours
+  +breakMinutes: integer
+  +timezone: string
+  +emailReminder: boolean
+  +browserReminder: boolean
+}
+
+class ClassEntry {
+  +id: Id
+  +title: string
+  +code: string
+  +room: string
+  +lecturer: string
+  +dayOfWeek: integer
+  +startTime: LocalTime
+  +endTime: LocalTime
+  +semesterStart: LocalDate
+  +semesterEnd: LocalDate
+}
+
+class Task {
+  +id: Id
+  +title: string
+  +subject: string
+  +priority: Priority
+  +status: TaskStatus
+  +progress: integer
+  +estimatedHours: number
+  +deadline: Instant
+}
+
+class ScheduledEvent {
+  +id: Id
+  +taskId: Id
+  +start: Instant
+  +end: Instant
+  +source: ScheduleSource
+}
+
+class Notification {
+  +id: Id
+  +type: NotificationType
+  +title: string
+  +message: string
+  +read: boolean
+  +createdAt: Instant
+}
+
+User "1" *-- "1" StudyPreference : cấu hình
+User "1" *-- "0..*" ClassEntry : sở hữu
+User "1" *-- "0..*" Task : sở hữu
+User "1" *-- "0..*" ScheduledEvent : sở hữu
+User "1" *-- "0..*" Notification : nhận
+Task "1" <-- "0..*" ScheduledEvent : được xếp vào
+@enduml
+```
+
+## 0.2 UML Sequence Diagram — đề xuất và áp dụng lịch
+
+Đề xuất chỉ đọc dữ liệu để tính toán; chỉ thao tác áp dụng mới ghi lịch và cập nhật trạng thái liên quan.
+
+```plantuml
+@startuml
+actor "Sinh viên" as Student
+boundary "Giao diện" as UI
+control "ApiService" as API
+control "ScheduleService" as Scheduler
+database "CSDL / AppStore" as Store
+
+Student -> UI: Chọn công việc, số ngày,\nthời gian nghỉ
+UI -> API: generateAutoSchedule(params)
+API -> Scheduler: generate(taskIds, days, breakMinutes)
+Scheduler -> Store: Đọc task, lớp học,\ngiờ rảnh, lịch đã áp dụng
+Store --> Scheduler: Dữ liệu lịch và công việc
+Scheduler --> API: plan + unscheduled + reasons
+API --> UI: Kết quả đề xuất
+UI --> Student: Hiển thị để xem/chọn
+
+alt Người dùng hủy
+  Student -> UI: Hủy đề xuất
+  UI --> Student: Không thay đổi lịch đã lưu
+else Người dùng xác nhận
+  Student -> UI: Xác nhận phương án đã chọn
+  UI -> API: applyAutoSchedule(plan)
+  API -> Scheduler: Validate và áp dụng
+  Scheduler -> Store: Kiểm tra xung đột lần cuối
+  alt Phương án còn hợp lệ
+    Scheduler -> Store: Lưu ScheduledEvent\nvà cập nhật Task
+    Store --> Scheduler: Kết quả lưu
+    Scheduler --> API: Kết quả thành công
+    API --> UI: Lịch đã cập nhật
+    UI --> Student: Thông báo thành công
+  else Có xung đột hoặc dữ liệu đã đổi
+    Scheduler --> API: Conflict / validation error
+    API --> UI: Lỗi có mã và thông tin chi tiết
+    UI --> Student: Báo lỗi, yêu cầu tạo lại đề xuất
+  end
+end
+@enduml
+```
+
 ## 1. Luồng người dùng chính
 
 ```mermaid
@@ -97,7 +267,8 @@ flowchart LR
 ### Trạng thái kiến trúc
 
 - **Đang có ở frontend:** các trang tĩnh, `AppStore`, localStorage và `ApiService` với mock bật.
-- **Chưa được xác nhận là đã triển khai:** Express API chạy thật, middleware JWT, MySQL, worker/cron và email. Đây là các thành phần mục tiêu theo README.
+- **Đã có code backend ban đầu:** Express routes/services, middleware JWT, schema và migration MySQL. Cần cấu hình MySQL để chạy đầy đủ; chưa có bằng chứng triển khai production.
+- **Chưa triển khai:** worker/cron, gửi email và refresh-token/session revocation.
 - **Nguyên tắc chuyển đổi:** giữ `ApiService` làm ranh giới dữ liệu; thống nhất response/error contract trước khi chuyển khỏi mock.
 - Khi tích hợp, server phải kiểm tra quyền sở hữu từng bản ghi; token và secrets không được xem là an toàn chỉ vì được lưu phía client.
 
