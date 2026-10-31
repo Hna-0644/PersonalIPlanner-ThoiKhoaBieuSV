@@ -206,9 +206,6 @@ function initStorage() {
   if (!localStorage.getItem(STORAGE_KEYS.SCHEDULED_EVENTS)) {
     localStorage.setItem(STORAGE_KEYS.SCHEDULED_EVENTS, JSON.stringify([]));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)) {
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, 'mock_jwt_token_session_active_123456');
-  }
 }
 
 // Chạy khởi tạo ngay
@@ -670,4 +667,3 @@ function minutesToTimeString(minutes) {
 
 // Export cho browser global
 window.AppStore = AppStore;
-

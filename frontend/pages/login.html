@@ -229,7 +229,7 @@
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
 
-    const res = await ApiService.login(email, password);
+    const res = await ApiService.login(email, password, document.getElementById('rememberMe').checked);
     if (res.success) {
       Swal.fire({
         title: 'Đăng nhập thành công!',
@@ -238,7 +238,11 @@
         timer: 1500,
         showConfirmButton: false
       }).then(() => {
-        window.location.href = '../index.html';
+        const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+        const safeReturnUrl = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
+          ? returnUrl
+          : '../index.html';
+        window.location.href = safeReturnUrl;
       });
     }
   });
