@@ -290,6 +290,39 @@ body {
   flex: 1;
 }
 
+.ui-state {
+  min-height: 150px;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  text-align: center;
+}
+
+.ui-state-loading {
+  flex-direction: row;
+  min-height: 100px;
+}
+
+.ui-state-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 1.4rem;
+}
+
+.ui-state-danger .ui-state-icon {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
 .page-header {
   display: flex;
   align-items: center;

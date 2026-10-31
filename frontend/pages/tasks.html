@@ -335,6 +335,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../js/store.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/ui-states.js"></script>
 <script src="../js/main.js"></script>
 
 <script>
@@ -342,7 +343,11 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     populateSubjectFilter();
-    renderTasks();
+    UIStates.loading(document.getElementById('cards-todo'));
+    UIStates.loading(document.getElementById('cards-inprogress'));
+    UIStates.loading(document.getElementById('cards-done'));
+    UIStates.loading(document.getElementById('taskTableBody'));
+    requestAnimationFrame(renderTasks);
 
     // Event listeners for filters
     document.getElementById('filterKeywordInput').addEventListener('input', renderTasks);
@@ -425,6 +430,12 @@
     cols.inprogress.innerHTML = '';
     cols.done.innerHTML = '';
 
+    if (tasks.length === 0) {
+      UIStates.empty(cols.todo, 'Chưa có công việc', 'Hãy tạo công việc mới hoặc thử lại bộ lọc.');
+      UIStates.empty(cols.inprogress, 'Chưa có công việc', 'Các công việc đang thực hiện sẽ hiển thị tại đây.');
+      UIStates.empty(cols.done, 'Chưa có công việc', 'Các công việc hoàn thành sẽ hiển thị tại đây.');
+    }
+
     const counts = { todo: 0, inprogress: 0, done: 0 };
 
     tasks.forEach(t => {
@@ -495,7 +506,7 @@
   function renderListView(tasks) {
     const tbody = document.getElementById('taskTableBody');
     if (tasks.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">Không tìm thấy công việc nào phù hợp</td></tr>`;
+      UIStates.empty(tbody, 'Không tìm thấy công việc', 'Thử thay đổi từ khóa hoặc bộ lọc để xem thêm kết quả.');
       return;
     }
 
@@ -711,4 +722,3 @@
 </script>
 </body>
 </html>
-

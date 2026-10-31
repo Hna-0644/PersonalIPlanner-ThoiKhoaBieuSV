@@ -5,13 +5,12 @@
  */
 
 const API_CONFIG = {
-  USE_MOCK: true, // Khi backend sẵn sàng, đổi thành false
+  USE_MOCK: true,
   BASE_URL: 'http://localhost:5000/api',
   TIMEOUT: 8000
 };
 
 const ApiService = {
-  // Quản lý JWT Token
   getToken() {
     return localStorage.getItem('pp_jwt_token') || '';
   },
@@ -25,7 +24,6 @@ const ApiService = {
     return !!this.getToken();
   },
 
-  // Helper request
   async request(endpoint, options = {}) {
     const url = `${API_CONFIG.BASE_URL}${endpoint}`;
     const headers = {
@@ -37,22 +35,29 @@ const ApiService = {
     try {
       const response = await fetch(url, { ...options, headers });
       if (response.status === 401) {
-        // Hết hạn token
         this.removeToken();
         window.location.href = '/pages/login.html';
         return null;
       }
-      return await response.json();
+
+      const payload = await response.json();
+      if (!response.ok) {
+        const error = new Error((payload && payload.message) || 'Yêu cầu không thành công.');
+        error.status = response.status;
+        throw error;
+      }
+      return payload;
     } catch (error) {
       console.error('Fetch error:', error);
+      if (window.UIStates) {
+        UIStates.showApiError(error, 'Không thể hoàn tất yêu cầu đến máy chủ.');
+      }
       throw error;
     }
   },
 
-  // === AUTH API ===
   async login(email, password) {
     if (API_CONFIG.USE_MOCK) {
-      // Giả lập đăng nhập thành công
       const mockToken = 'mock_jwt_token_' + btoa(email) + '_' + Date.now();
       this.setToken(mockToken);
       return {
@@ -91,7 +96,6 @@ const ApiService = {
     return { success: true };
   },
 
-  // === USER PROFILE ===
   async getProfile() {
     if (API_CONFIG.USE_MOCK) return AppStore.getUser();
     return this.request('/user/profile');
@@ -105,7 +109,6 @@ const ApiService = {
     });
   },
 
-  // === TIMETABLE / CLASSES API ===
   async getClasses() {
     if (API_CONFIG.USE_MOCK) return AppStore.getClasses();
     return this.request('/classes');
@@ -134,7 +137,6 @@ const ApiService = {
     });
   },
 
-  // === TASKS API ===
   async getTasks() {
     if (API_CONFIG.USE_MOCK) return AppStore.getTasks();
     return this.request('/tasks');
@@ -163,7 +165,6 @@ const ApiService = {
     });
   },
 
-  // === AUTO SCHEDULER API ===
   async generateAutoSchedule(params) {
     if (API_CONFIG.USE_MOCK) return AppStore.generateAutoSchedule(params);
     return this.request('/schedule/auto-generate', {
@@ -180,7 +181,6 @@ const ApiService = {
     });
   },
 
-  // === AI VISION SCANNER API ===
   async scanScheduleFromImage(imageFileOrBase64) {
     if (API_CONFIG.USE_MOCK) {
       return AppStore.simulateAIScanSchedule(imageFileOrBase64);
@@ -204,4 +204,3 @@ const ApiService = {
 
 window.ApiService = ApiService;
 window.API_CONFIG = API_CONFIG;
-

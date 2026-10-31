@@ -177,7 +177,9 @@
 
       <!-- Calendar Container Card -->
       <div class="card-custom p-3">
+        <div id="calendarLoadingState"></div>
         <div id="calendar" style="min-height: 680px;"></div>
+        <div id="calendarEmptyState" class="d-none"></div>
       </div>
     </div>
   </main>
@@ -437,6 +439,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../js/store.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/ui-states.js"></script>
 <script src="../js/main.js"></script>
 
 <script>
@@ -444,7 +447,9 @@
   let activeSelectedClassId = null;
 
   document.addEventListener('DOMContentLoaded', () => {
+    UIStates.loading(document.getElementById('calendarLoadingState'), 'Đang tải thời khóa biểu...');
     initCalendar();
+    document.getElementById('calendarLoadingState').classList.add('d-none');
     checkBannerConflict();
 
     // Lắng nghe thay đổi giờ trong modal để kiểm tra trùng trực tiếp
@@ -535,6 +540,14 @@
         }
       });
     });
+
+    const emptyState = document.getElementById('calendarEmptyState');
+    if (events.length === 0) {
+      emptyState.classList.remove('d-none');
+      UIStates.empty(emptyState, 'Chưa có lịch học', 'Hãy thêm môn học hoặc quét thời khóa biểu bằng AI để bắt đầu.');
+    } else {
+      emptyState.classList.add('d-none');
+    }
 
     successCallback(events);
   }
@@ -932,6 +945,12 @@
     const tbody = document.getElementById('recognizedTableBody');
     const resultSection = document.getElementById('aiResultSection');
     const footerActions = document.getElementById('aiFooterActions');
+    if (classes.length === 0) {
+      UIStates.empty(tbody, 'Chưa nhận diện được môn học', 'Hãy thử ảnh rõ hơn hoặc chọn ảnh thời khóa biểu khác.');
+      resultSection.classList.remove('d-none');
+      footerActions.style.setProperty('display', 'none', 'important');
+      return;
+    }
     const countBadge = document.getElementById('recognizedCount');
 
     resultSection.classList.remove('d-none');
@@ -1104,4 +1123,3 @@
 </script>
 </body>
 </html>
-

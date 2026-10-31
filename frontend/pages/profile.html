@@ -123,7 +123,8 @@
     </header>
 
     <div class="content-body">
-      <div class="row g-4">
+      <div id="profileLoadingState" class="d-none"></div>
+      <div id="profileContent" class="row g-4">
         <!-- Left: Profile Summary Card -->
         <div class="col-12 col-lg-4">
           <div class="card-custom text-center mb-4">
@@ -300,16 +301,30 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../js/store.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/ui-states.js"></script>
 <script src="../js/main.js"></script>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    loadProfileData();
+    const loadingState = document.getElementById('profileLoadingState');
+    UIStates.loading(loadingState, 'Đang tải hồ sơ...');
+    loadingState.classList.remove('d-none');
+    document.getElementById('profileContent').classList.add('d-none');
+    requestAnimationFrame(() => {
+      loadingState.classList.add('d-none');
+      document.getElementById('profileContent').classList.remove('d-none');
+      loadProfileData();
+    });
   });
 
   function loadProfileData() {
     const user = AppStore.getUser();
-    if (!user) return;
+    const content = document.getElementById('profileContent');
+    if (!user) {
+      content.innerHTML = '';
+      UIStates.empty(content, 'Chưa có thông tin cá nhân', 'Vui lòng đăng nhập lại để tải hồ sơ của bạn.');
+      return;
+    }
 
     // Fill left card
     document.getElementById('displayStudentId').textContent = user.studentId || 'Chưa cập nhật';
@@ -423,4 +438,3 @@
 </script>
 </body>
 </html>
-
