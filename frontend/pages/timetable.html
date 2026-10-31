@@ -103,6 +103,11 @@
       </div>
 
       <div class="header-actions">
+        <button class="btn btn-warning btn-sm fw-bold d-flex align-items-center gap-2 text-dark shadow-sm" onclick="openAIScanModal()" title="Chụp hoặc tải ảnh thời khóa biểu để AI tự động trích xuất">
+          <i class="bi bi-camera-fill text-danger fs-6"></i>
+          <span>Quét TKB bằng AI 📸</span>
+        </button>
+
         <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onclick="scanAllConflicts()">
           <i class="bi bi-shield-exclamation"></i>
           <span class="d-none d-sm-inline">Kiểm tra trùng lịch</span>
@@ -287,6 +292,140 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-danger btn-sm" id="btnDetailDelete">Xóa</button>
         <button type="button" class="btn btn-primary btn-sm" id="btnDetailEdit">Chỉnh sửa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Quét Thời Khóa Biểu Bằng AI Vision -->
+<div class="modal fade" id="aiScanModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <div class="d-flex align-items-center gap-2">
+          <div class="brand-icon" style="width: 36px; height: 36px; font-size: 1.1rem;">
+            <i class="bi bi-camera-fill text-warning"></i>
+          </div>
+          <div>
+            <h5 class="modal-title fw-bold mb-0">Quét & Nhận diện Thời khóa biểu bằng AI</h5>
+            <span class="text-muted small">Tự động nhận diện môn học, phòng, giảng viên và khung giờ từ ảnh chụp</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <!-- Step 1: Chọn hoặc tải ảnh -->
+        <div id="aiUploadSection">
+          <div class="row g-4">
+            <div class="col-12 col-lg-6">
+              <div class="ai-dropzone mb-3" id="aiDropzone" onclick="document.getElementById('aiFileInput').click()">
+                <input type="file" id="aiFileInput" accept="image/*" class="d-none" onchange="handleFileSelected(event)">
+                <i class="bi bi-cloud-arrow-up-fill text-primary" style="font-size: 2.8rem;"></i>
+                <h6 class="fw-bold mt-2">Kéo thả ảnh thời khóa biểu vào đây</h6>
+                <p class="text-muted small mb-2">Hỗ trợ định dạng JPG, PNG, WEBP hoặc bấm Ctrl+V để dán ảnh chụp màn hình</p>
+                <button type="button" class="btn btn-outline-primary btn-sm mt-1" onclick="event.stopPropagation(); document.getElementById('aiFileInput').click()">
+                  <i class="bi bi-folder2-open me-1"></i> Chọn ảnh từ máy tính
+                </button>
+              </div>
+
+              <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light btn-sm border text-primary fw-semibold" onclick="pasteImageFromClipboard()">
+                  <i class="bi bi-clipboard-check me-1"></i> Dán từ Clipboard (Ctrl+V)
+                </button>
+                <button type="button" class="btn btn-warning btn-sm text-dark fw-semibold" onclick="loadSampleTimetableImage()">
+                  <i class="bi bi-magic me-1"></i> Thử ngay bằng ảnh mẫu TKB
+                </button>
+              </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <!-- Preview Box with Scanner Laser -->
+              <div class="scanner-preview-box mb-3" id="aiPreviewBox">
+                <div class="text-center p-4 text-white-50" id="aiPreviewPlaceholder">
+                  <i class="bi bi-image fs-1 mb-2"></i>
+                  <div>Chưa có ảnh được chọn</div>
+                </div>
+                <img id="aiPreviewImg" src="" alt="Preview" class="d-none">
+                <div class="scanner-laser d-none" id="scannerLaser"></div>
+              </div>
+
+              <!-- Options -->
+              <div class="card p-3 bg-light border-0 mb-3">
+                <div class="row g-2 align-items-center">
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label small fw-semibold mb-1">Hệ thống tiết học:</label>
+                    <select class="form-select form-select-sm" id="periodFormatSelect">
+                      <option value="standard" selected>Quy chuẩn ĐHQG (Tiết 1: 07:00, 50p)</option>
+                      <option value="direct">Trực tiếp theo giờ ghi trên ảnh</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label small fw-semibold mb-1">Màu mặc định cho môn:</label>
+                    <input type="color" class="form-control form-control-sm form-control-color w-100" id="aiClassDefaultColor" value="#4f46e5">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Big Scan Button -->
+              <button type="button" class="btn btn-primary w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow" id="btnRunAIScan" onclick="startAIScanProcess()" disabled>
+                <i class="bi bi-stars fs-5 text-warning"></i>
+                <span id="btnScanText">Bắt đầu phân tích bằng AI Vision</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Bảng kết quả nhận diện (Hiển thị sau khi AI quét xong) -->
+        <div id="aiResultSection" class="d-none mt-4 border-top pt-4">
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div>
+              <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span>Kết quả AI trích xuất (<span id="recognizedCount">0</span> môn học)</span>
+              </h5>
+              <p class="text-muted small mb-0">Bạn có thể sửa trực tiếp thông tin từng môn trước khi lưu vào Thời khóa biểu.</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleSelectAllRecognized(true)">Chọn hết</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleSelectAllRecognized(false)">Bỏ chọn</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0 bg-white">
+              <thead class="table-light small">
+                <tr>
+                  <th style="width: 40px;" class="text-center">#</th>
+                  <th>Tên môn học</th>
+                  <th style="width: 100px;">Mã môn</th>
+                  <th style="width: 110px;">Thứ</th>
+                  <th style="width: 95px;">Bắt đầu</th>
+                  <th style="width: 95px;">Kết thúc</th>
+                  <th style="width: 110px;">Phòng</th>
+                  <th style="width: 130px;">Giảng viên</th>
+                  <th style="width: 90px;" class="text-center">Độ tin cậy</th>
+                  <th style="width: 130px;">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="recognizedTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer d-flex justify-content-between">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+        <div class="d-flex gap-2" id="aiFooterActions" style="display: none !important;">
+          <button type="button" class="btn btn-outline-primary fw-semibold" onclick="importRecognizedAndAutoSchedule()">
+            <i class="bi bi-magic me-1"></i> Thêm & Tự động xếp lịch
+          </button>
+          <button type="button" class="btn btn-success fw-bold shadow-sm" onclick="saveRecognizedClassesToCalendar()">
+            <i class="bi bi-calendar-plus me-1"></i> Lưu vào Thời khóa biểu
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -639,6 +778,328 @@
       banner.classList.add('d-none');
       banner.classList.remove('d-flex');
     }
+  }
+
+  // =========================================================================
+  // AI VISION SCHEDULE SCANNER CONTROLLER
+  // =========================================================================
+  let currentScanImageSrc = null;
+  let currentRecognizedClasses = [];
+
+  function openAIScanModal() {
+    // Reset modal state
+    currentScanImageSrc = null;
+    currentRecognizedClasses = [];
+    document.getElementById('aiFileInput').value = '';
+    document.getElementById('aiPreviewImg').classList.add('d-none');
+    document.getElementById('aiPreviewPlaceholder').classList.remove('d-none');
+    document.getElementById('scannerLaser').classList.add('d-none');
+    document.getElementById('btnRunAIScan').disabled = true;
+    document.getElementById('btnScanText').textContent = 'Bắt đầu phân tích bằng AI Vision';
+    document.getElementById('aiResultSection').classList.add('d-none');
+    document.getElementById('aiFooterActions').style.setProperty('display', 'none', 'important');
+
+    const modal = new bootstrap.Modal(document.getElementById('aiScanModal'));
+    modal.show();
+  }
+
+  // Khởi tạo kéo thả và clipboard paste
+  document.addEventListener('DOMContentLoaded', () => {
+    const dropzone = document.getElementById('aiDropzone');
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('dragover');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove('dragover');
+        });
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+          readAndPreviewImageFile(files[0]);
+        }
+      });
+    }
+
+    // Lắng nghe phím Ctrl+V khi modal mở
+    window.addEventListener('paste', (e) => {
+      const modalEl = document.getElementById('aiScanModal');
+      if (modalEl && modalEl.classList.contains('show')) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+          if (item.type.indexOf('image') !== -1) {
+            const blob = item.getAsFile();
+            readAndPreviewImageFile(blob);
+            break;
+          }
+        }
+      }
+    });
+  });
+
+  function handleFileSelected(event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      readAndPreviewImageFile(file);
+    }
+  }
+
+  function readAndPreviewImageFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setScanPreviewImage(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function pasteImageFromClipboard() {
+    navigator.clipboard.read().then(items => {
+      for (let item of items) {
+        for (let type of item.types) {
+          if (type.startsWith('image/')) {
+            item.getType(type).then(blob => {
+              readAndPreviewImageFile(blob);
+            });
+            return;
+          }
+        }
+      }
+      showToast('Clipboard', 'Không tìm thấy ảnh trong bộ nhớ tạm. Hãy chụp màn hình (Alt+PrtScn) rồi thử lại.', 'warning');
+    }).catch(err => {
+      showToast('Phím tắt', 'Hãy bấm Ctrl + V trực tiếp trên bàn phím để dán ảnh chụp màn hình!', 'info');
+    });
+  }
+
+  // Ảnh mẫu thời khóa biểu sinh viên demo (SVG data URL mô phỏng bảng điểm TKB)
+  function loadSampleTimetableImage() {
+    const sampleSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340"><rect width="600" height="340" fill="%23ffffff"/><rect width="600" height="50" fill="%234f46e5"/><text x="20" y="32" fill="%23ffffff" font-family="Arial" font-size="16" font-weight="bold">THỜI KHÓA BIỂU HỌC KỲ 1 - NĂM HỌC 2026-2027</text><rect x="15" y="65" width="570" height="30" fill="%23f1f5f9"/><text x="25" y="85" fill="%230f172a" font-family="Arial" font-size="12" font-weight="bold">Mã HP | Tên học phần | Thứ | Tiết | Phòng | Giảng viên</text><rect x="15" y="105" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="132" fill="%23334155" font-family="Arial" font-size="12">IT4520 - Phát triển di động Flutter | Thứ 3 | 07:30 - 10:00 | B2-405 | TS. Hoàng M. Đức</text><rect x="15" y="160" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="187" fill="%23334155" font-family="Arial" font-size="12">IT4220 - Học máy &amp; Khai phá DL | Thứ 5 | 09:45 - 12:15 | C1-302 | PGS. Trần V. Kiên</text><rect x="15" y="215" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="242" fill="%23334155" font-family="Arial" font-size="12">IT3180 - HĐH Linux mã nguồn mở | Thứ 6 | 13:30 - 16:00 | Lab 5-PM | ThS. Đỗ Q. Linh</text><rect x="15" y="270" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="297" fill="%23334155" font-family="Arial" font-size="12">IT3090 - Kỹ nghệ phần mềm ứng dụng | Thứ 7 | 13:00 - 15:30 | A3-102 | TS. Vũ T. Hà</text></svg>`;
+    setScanPreviewImage(sampleSVG);
+    showToast('Đã nạp ảnh mẫu', 'Đã tải ảnh Thời khóa biểu mẫu sinh viên CNTT để kiểm thử!', 'success');
+  }
+
+  function setScanPreviewImage(src) {
+    currentScanImageSrc = src;
+    const imgEl = document.getElementById('aiPreviewImg');
+    imgEl.src = src;
+    imgEl.classList.remove('d-none');
+    document.getElementById('aiPreviewPlaceholder').classList.add('d-none');
+    document.getElementById('btnRunAIScan').disabled = false;
+  }
+
+  // Bắt đầu quét AI
+  async function startAIScanProcess() {
+    if (!currentScanImageSrc) return;
+
+    const laser = document.getElementById('scannerLaser');
+    const btn = document.getElementById('btnRunAIScan');
+    const btnText = document.getElementById('btnScanText');
+
+    laser.classList.remove('d-none');
+    btn.disabled = true;
+    btnText.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> AI Vision đang phân tích bảng biểu & trích xuất môn...`;
+
+    try {
+      const response = await ApiService.scanScheduleFromImage(currentScanImageSrc);
+      
+      laser.classList.add('d-none');
+      btn.disabled = false;
+      btnText.textContent = 'Phân tích lại ảnh';
+
+      if (response && response.classes) {
+        currentRecognizedClasses = response.classes;
+        renderRecognizedTable(currentRecognizedClasses);
+      }
+    } catch (err) {
+      laser.classList.add('d-none');
+      btn.disabled = false;
+      btnText.textContent = 'Bắt đầu phân tích bằng AI Vision';
+      Swal.fire('Lỗi AI Scan', 'Không thể phân tích ảnh: ' + (err.message || 'Vui lòng thử lại.'), 'error');
+    }
+  }
+
+  function renderRecognizedTable(classes) {
+    const tbody = document.getElementById('recognizedTableBody');
+    const resultSection = document.getElementById('aiResultSection');
+    const footerActions = document.getElementById('aiFooterActions');
+    const countBadge = document.getElementById('recognizedCount');
+
+    resultSection.classList.remove('d-none');
+    footerActions.style.setProperty('display', 'flex', 'important');
+    countBadge.textContent = classes.length;
+
+    const dayOptions = [
+      { val: 1, label: 'Thứ Hai' },
+      { val: 2, label: 'Thứ Ba' },
+      { val: 3, label: 'Thứ Tư' },
+      { val: 4, label: 'Thứ Năm' },
+      { val: 5, label: 'Thứ Sáu' },
+      { val: 6, label: 'Thứ Bảy' },
+      { val: 0, label: 'Chủ Nhật' }
+    ];
+
+    tbody.innerHTML = classes.map((item, idx) => {
+      // Kiểm tra trùng lịch với TKB hiện tại
+      const conflict = AppStore.checkClassConflict({
+        dayOfWeek: item.dayOfWeek,
+        startTime: item.startTime,
+        endTime: item.endTime
+      });
+
+      const daySelectHtml = dayOptions.map(d => 
+        `<option value="${d.val}" ${item.dayOfWeek === d.val ? 'selected' : ''}>${d.label}</option>`
+      ).join('');
+
+      return `
+        <tr id="row_${item.tempId}">
+          <td class="text-center">
+            <input type="checkbox" class="form-check-input custom-check recognized-row-check" data-id="${item.tempId}" ${item.selected ? 'checked' : ''}>
+          </td>
+          <td>
+            <input type="text" class="form-control form-control-sm fw-semibold text-main" id="title_${item.tempId}" value="${escapeHtml(item.title)}">
+          </td>
+          <td>
+            <input type="text" class="form-control form-control-sm" id="code_${item.tempId}" value="${escapeHtml(item.code || '')}">
+          </td>
+          <td>
+            <select class="form-select form-select-sm" id="day_${item.tempId}">
+              ${daySelectHtml}
+            </select>
+          </td>
+          <td>
+            <input type="time" class="form-control form-control-sm" id="start_${item.tempId}" value="${item.startTime}">
+          </td>
+          <td>
+            <input type="time" class="form-control form-control-sm" id="end_${item.tempId}" value="${item.endTime}">
+          </td>
+          <td>
+            <input type="text" class="form-control form-control-sm" id="room_${item.tempId}" value="${escapeHtml(item.room || '')}">
+          </td>
+          <td>
+            <input type="text" class="form-control form-control-sm" id="lecturer_${item.tempId}" value="${escapeHtml(item.lecturer || '')}">
+          </td>
+          <td class="text-center">
+            <span class="confidence-badge ${item.confidence >= 95 ? 'confidence-high' : 'confidence-medium'}">
+              ${item.confidence}%
+            </span>
+          </td>
+          <td>
+            ${conflict.hasConflict ? 
+              `<span class="badge bg-danger-subtle text-danger border border-danger-subtle small" title="Trùng với ${conflict.conflictingEvent.title}">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> Trùng lịch
+               </span>` : 
+              `<span class="badge bg-success-subtle text-success border border-success-subtle small">
+                <i class="bi bi-check2 me-1"></i> Hợp lệ
+               </span>`
+            }
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Cuộn mượt xuống kết quả
+    resultSection.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function toggleSelectAllRecognized(check) {
+    document.querySelectorAll('.recognized-row-check').forEach(cb => {
+      cb.checked = check;
+    });
+  }
+
+  // Thu thập danh sách môn được chọn và các giá trị đã chỉnh sửa
+  function getSelectedRecognizedClasses() {
+    const selected = [];
+    const checks = document.querySelectorAll('.recognized-row-check:checked');
+
+    checks.forEach(cb => {
+      const id = cb.getAttribute('data-id');
+      const title = document.getElementById(`title_${id}`).value.trim();
+      const code = document.getElementById(`code_${id}`).value.trim();
+      const dayOfWeek = parseInt(document.getElementById(`day_${id}`).value);
+      const startTime = document.getElementById(`start_${id}`).value;
+      const endTime = document.getElementById(`end_${id}`).value;
+      const room = document.getElementById(`room_${id}`).value.trim();
+      const lecturer = document.getElementById(`lecturer_${id}`).value.trim();
+      const defaultColor = document.getElementById('aiClassDefaultColor').value || '#4f46e5';
+
+      if (title && startTime && endTime) {
+        selected.push({
+          title,
+          code,
+          dayOfWeek,
+          startTime,
+          endTime,
+          room,
+          lecturer,
+          color: defaultColor,
+          notes: 'Nhập tự động qua AI Vision Schedule Scanner'
+        });
+      }
+    });
+
+    return selected;
+  }
+
+  // Lưu các môn vào thời khóa biểu
+  function saveRecognizedClassesToCalendar() {
+    const selected = getSelectedRecognizedClasses();
+    if (selected.length === 0) {
+      Swal.fire('Chưa chọn môn', 'Vui lòng tích chọn ít nhất 1 môn học để nhập vào lịch!', 'warning');
+      return;
+    }
+
+    const res = AppStore.batchAddClasses(selected);
+
+    bootstrap.Modal.getInstance(document.getElementById('aiScanModal')).hide();
+    calendar.refetchEvents();
+    checkBannerConflict();
+
+    if (res.conflicts.length > 0) {
+      Swal.fire({
+        title: 'Nhập hoàn tất có cảnh báo',
+        html: `Đã thêm <strong>${res.added.length}</strong> môn học. Có <strong>${res.conflicts.length}</strong> môn bị trùng giờ với lịch đã có. Vui lòng kiểm tra lại!`,
+        icon: 'warning'
+      });
+    } else {
+      Swal.fire({
+        title: 'Thành công tuyệt đối!',
+        text: `Đã thêm thành công ${res.added.length} môn học từ ảnh vào Thời khóa biểu. Không có xung đột nào!`,
+        icon: 'success'
+      });
+    }
+  }
+
+  // Lưu và chuyển ngay sang trang Tự động xếp lịch
+  function importRecognizedAndAutoSchedule() {
+    const selected = getSelectedRecognizedClasses();
+    if (selected.length === 0) {
+      Swal.fire('Chưa chọn môn', 'Vui lòng tích chọn ít nhất 1 môn học để nhập vào lịch!', 'warning');
+      return;
+    }
+
+    AppStore.batchAddClasses(selected);
+    bootstrap.Modal.getInstance(document.getElementById('aiScanModal')).hide();
+
+    Swal.fire({
+      title: 'Đã nhập Thời khóa biểu!',
+      text: 'Đang chuyển hướng sang trang Tự động sắp xếp lịch trình để phân bổ công việc của bạn...',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false
+    }).then(() => {
+      window.location.href = 'auto-schedule.html';
+    });
   }
 </script>
 </body>

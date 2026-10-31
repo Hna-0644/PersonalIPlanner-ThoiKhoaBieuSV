@@ -558,6 +558,100 @@ const AppStore = {
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
 
     return true;
+  },
+
+  // === AI VISION SCANNER - QUÉT THỜI KHÓA BIỂU TỪ ẢNH ===
+  batchAddClasses(classList) {
+    const added = [];
+    const conflicts = [];
+    classList.forEach(c => {
+      const res = this.addClass(c);
+      added.push(res.class);
+      if (res.conflict && res.conflict.hasConflict) {
+        conflicts.push({ class: res.class, conflictingWith: res.conflict.conflictingEvent });
+      }
+    });
+
+    const notifs = this.getNotifications();
+    notifs.unshift({
+      id: 'notif_' + Date.now(),
+      title: 'Nhập TKB từ AI thành công!',
+      message: `Đã thêm thành công ${added.length} môn học từ ảnh vào Thời khóa biểu.`,
+      type: 'success',
+      time: 'Vừa xong',
+      read: false
+    });
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+
+    return { added, conflicts };
+  },
+
+  // Mô phỏng trí tuệ nhân tạo OCR nhận diện bảng thời khóa biểu từ ảnh
+  async simulateAIScanSchedule(imageSrc) {
+    // Giả lập độ trễ AI phân tích ảnh thị giác máy tính
+    await new Promise(r => setTimeout(r, 1600));
+
+    // Kết quả nhận diện cấu trúc các môn học phổ biến từ ảnh TKB
+    const mockRecognizedClasses = [
+      {
+        tempId: 'ai_' + Math.random().toString(36).substr(2, 5),
+        title: 'Phát triển ứng dụng di động (Flutter / Android)',
+        code: 'IT4520',
+        room: 'B2-405',
+        lecturer: 'TS. Hoàng Minh Đức',
+        dayOfWeek: 2, // Thứ 3
+        startTime: '07:30',
+        endTime: '10:00',
+        color: '#6366f1',
+        confidence: 98,
+        selected: true
+      },
+      {
+        tempId: 'ai_' + Math.random().toString(36).substr(2, 5),
+        title: 'Khai phá dữ liệu & Học máy (Machine Learning)',
+        code: 'IT4220',
+        room: 'C1-302',
+        lecturer: 'PGS. TS. Trần Văn Kiên',
+        dayOfWeek: 4, // Thứ 5
+        startTime: '09:45',
+        endTime: '12:15',
+        color: '#ec4899',
+        confidence: 96,
+        selected: true
+      },
+      {
+        tempId: 'ai_' + Math.random().toString(36).substr(2, 5),
+        title: 'Hệ điều hành mã nguồn mở Linux',
+        code: 'IT3180',
+        room: 'Lab 5-PM',
+        lecturer: 'ThS. Đỗ Quang Linh',
+        dayOfWeek: 5, // Thứ 6
+        startTime: '13:30',
+        endTime: '16:00',
+        color: '#14b8a6',
+        confidence: 94,
+        selected: true
+      },
+      {
+        tempId: 'ai_' + Math.random().toString(36).substr(2, 5),
+        title: 'Kỹ nghệ phần mềm ứng dụng',
+        code: 'IT3090',
+        room: 'A3-102',
+        lecturer: 'TS. Vũ Thu Hà',
+        dayOfWeek: 6, // Thứ 7
+        startTime: '13:00',
+        endTime: '15:30',
+        color: '#f59e0b',
+        confidence: 92,
+        selected: true
+      }
+    ];
+
+    return {
+      success: true,
+      rawText: 'Thời khóa biểu Học kỳ 1 - Năm học 2026-2027\nNgành: Công nghệ thông tin\nNhận diện 4 lớp học phần...',
+      classes: mockRecognizedClasses
+    };
   }
 };
 

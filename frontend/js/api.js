@@ -178,6 +178,27 @@ const ApiService = {
       method: 'POST',
       body: JSON.stringify({ plan })
     });
+  },
+
+  // === AI VISION SCANNER API ===
+  async scanScheduleFromImage(imageFileOrBase64) {
+    if (API_CONFIG.USE_MOCK) {
+      return AppStore.simulateAIScanSchedule(imageFileOrBase64);
+    }
+    return this.request('/ai/scan-schedule', {
+      method: 'POST',
+      body: JSON.stringify({ image: imageFileOrBase64 })
+    });
+  },
+
+  async batchAddClasses(classList) {
+    if (API_CONFIG.USE_MOCK) {
+      return AppStore.batchAddClasses(classList);
+    }
+    return this.request('/classes/batch', {
+      method: 'POST',
+      body: JSON.stringify({ classes: classList })
+    });
   }
 };
 
