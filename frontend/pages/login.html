@@ -197,6 +197,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../js/store.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
 <script src="../js/ui-states.js"></script>
 
 <script>
@@ -229,7 +230,8 @@
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
 
-    const res = await ApiService.login(email, password, document.getElementById('rememberMe').checked);
+    const remember = document.getElementById('rememberMe').checked;
+    const res = await ApiService.login(email, password, remember);
     if (res.success) {
       Swal.fire({
         title: 'Đăng nhập thành công!',
@@ -238,18 +240,15 @@
         timer: 1500,
         showConfirmButton: false
       }).then(() => {
-        const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
-        const safeReturnUrl = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
-          ? returnUrl
-          : '../index.html';
-        window.location.href = safeReturnUrl;
+        window.location.href = AuthService.consumeReturnPath() || '../index.html';
       });
     }
   });
 
   // Handle Quick Demo Login
   function demoQuickLogin() {
-    ApiService.login('td863166@gmail.com', 'demo123').then(res => {
+    const remember = document.getElementById('rememberMe').checked;
+    ApiService.login('td863166@gmail.com', 'demo123', remember).then(res => {
       Swal.fire({
         title: 'Đăng nhập Demo thành công!',
         text: 'Đang chuyển hướng tới trang tổng quan...',
@@ -257,7 +256,7 @@
         timer: 1200,
         showConfirmButton: false
       }).then(() => {
-        window.location.href = '../index.html';
+        window.location.href = AuthService.consumeReturnPath() || '../index.html';
       });
     });
   }
