@@ -305,6 +305,28 @@ body {
   margin: 0 auto;
 }
 
+@media (min-width: 1200px) {
+  .content-body {
+    padding: 2.5rem 3rem;
+  }
+
+  .app-header {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .content-body {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
 .ui-state {
   min-height: 150px;
   padding: 2rem 1rem;
