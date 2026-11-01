@@ -2,6 +2,7 @@
 (function () {
   const TOKEN_KEY = 'pp_jwt_token';
   const RETURN_PATH_KEY = 'pp_auth_return_path';
+  const TOKEN_EXPIRY_SKEW_MS = 1000;
 
   function getStorage(name) {
     try {
@@ -53,7 +54,9 @@
     isTokenExpired(token = this.getToken()) {
       if (!token) return true;
       const payload = decodePayload(token);
-      return Boolean(payload && payload.exp && payload.exp * 1000 <= Date.now());
+      return !payload
+        || typeof payload.exp !== 'number'
+        || payload.exp * 1000 <= Date.now() + TOKEN_EXPIRY_SKEW_MS;
     },
 
     isAuthenticated() {
@@ -128,7 +131,9 @@
   });
 
   window.addEventListener('storage', (event) => {
-    if (event.key === TOKEN_KEY && !event.newValue && !window.location.pathname.endsWith('/login.html')) {
+    if (event.key === TOKEN_KEY
+      && !window.location.pathname.endsWith('/login.html')
+      && !AuthService.isAuthenticated()) {
       AuthService.redirectToLogin();
     }
   });

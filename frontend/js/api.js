@@ -9,6 +9,19 @@ const API_CONFIG = {
   TIMEOUT: 8000
 };
 
+function createMockToken() {
+  const encode = (value) => btoa(JSON.stringify(value))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  const header = encode({ alg: 'none', typ: 'JWT' });
+  const payload = encode({
+    sub: 'mock-user',
+    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60
+  });
+  return `${header}.${payload}.mock-signature`;
+}
+
 const ApiService = {
   getToken() {
     return window.AuthService ? AuthService.getToken() : localStorage.getItem('pp_jwt_token') || '';
@@ -70,7 +83,7 @@ const ApiService = {
 
   async login(email, password, remember = true) {
     if (API_CONFIG.USE_MOCK) {
-      const mockToken = `mock_jwt_token_${btoa(email)}_${Date.now()}`;
+      const mockToken = createMockToken();
       this.setToken(mockToken, remember);
       return {
         success: true,
@@ -93,7 +106,7 @@ const ApiService = {
 
   async register(userData) {
     if (API_CONFIG.USE_MOCK) {
-      const mockToken = `mock_jwt_token_${btoa(userData.email)}_${Date.now()}`;
+      const mockToken = createMockToken();
       this.setToken(mockToken, true);
       const newUser = AppStore.updateUser(userData);
       return {
