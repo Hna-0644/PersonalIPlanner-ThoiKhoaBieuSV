@@ -12,6 +12,106 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .profile-intro {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .profile-kicker {
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .profile-intro h1 {
+      font-size: clamp(1.45rem, 2.5vw, 2rem);
+      letter-spacing: -0.04em;
+      margin-bottom: 0.35rem;
+    }
+    .profile-summary-card {
+      background: linear-gradient(160deg, #ffffff 0%, #f5f7ff 100%);
+      border-top: 3px solid var(--primary);
+    }
+    .profile-avatar-ring {
+      position: relative;
+      padding: 5px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      box-shadow: 0 10px 24px rgba(79, 70, 229, 0.22);
+    }
+    .profile-avatar-ring::before {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .profile-avatar-status {
+      position: absolute;
+      right: 3px;
+      bottom: 5px;
+      width: 18px;
+      height: 18px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+    }
+    .profile-avatar-caption {
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .profile-detail-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .profile-detail-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 0.7rem;
+      border-radius: var(--radius-control);
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .profile-detail-item i {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    .profile-section-title {
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid #eef0f5;
+    }
+    .preference-block {
+      border-color: #e7eaf3 !important;
+      background: #f8f9fd !important;
+      transition: var(--transition);
+    }
+    .preference-block:focus-within {
+      border-color: #a5b4fc !important;
+      background: #f5f7ff !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+    }
+    @media (max-width: 767.98px) {
+      .profile-intro {
+        display: block;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -124,23 +224,37 @@
 
     <div class="content-body">
       <div id="profileLoadingState" class="d-none"></div>
+      <div class="profile-intro">
+        <div>
+          <div class="profile-kicker">Không gian cá nhân</div>
+          <h1> Tài khoản &amp; Thiết lập</h1>
+          <p class="text-muted mb-0">Quản lý thông tin, khung giờ học và cách PersonalPlanner nhắc việc cho bạn.</p>
+        </div>
+        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-2">
+          <i class="bi bi-shield-check me-1"></i> Tài khoản đang hoạt động
+        </span>
+      </div>
       <div id="profileContent" class="row g-4">
         <!-- Left: Profile Summary Card -->
         <div class="col-12 col-lg-4">
-          <div class="card-custom text-center mb-4">
+          <div class="card-custom profile-summary-card text-center mb-4">
             <div class="position-relative d-inline-block mb-3">
-              <img src="" alt="Avatar" class="user-avatar-target rounded-circle shadow" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid var(--primary);">
+              <div class="profile-avatar-ring">
+                <img src="" alt="Avatar" class="user-avatar-target rounded-circle" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #fff;">
+                <span class="profile-avatar-status" title="Đang hoạt động"></span>
+              </div>
             </div>
+            <div class="profile-avatar-caption mb-2">Ảnh đại diện của bạn</div>
             <h5 class="fw-bold mb-1 user-name-target">Đang tải...</h5>
             <p class="text-muted small mb-2 user-email-target">email@example.com</p>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">Sinh viên CNTT</span>
 
             <hr class="my-3">
 
-            <div class="text-start small d-flex flex-column gap-2 text-muted">
-              <div><i class="bi bi-credit-card-2-front me-2 text-primary"></i><strong>MSSV:</strong> <span id="displayStudentId">---</span></div>
-              <div><i class="bi bi-mortarboard me-2 text-primary"></i><strong>Ngành:</strong> <span id="displayMajor">---</span></div>
-              <div><i class="bi bi-building me-2 text-primary"></i><strong>Trường:</strong> <span id="displayUniversity">---</span></div>
+            <div class="profile-detail-list text-start small text-muted">
+              <div class="profile-detail-item"><i class="bi bi-credit-card-2-front"></i><span><strong>MSSV:</strong> <span id="displayStudentId">---</span></span></div>
+              <div class="profile-detail-item"><i class="bi bi-mortarboard"></i><span><strong>Ngành:</strong> <span id="displayMajor">---</span></span></div>
+              <div class="profile-detail-item"><i class="bi bi-building"></i><span><strong>Trường:</strong> <span id="displayUniversity">---</span></span></div>
             </div>
           </div>
 
@@ -163,7 +277,7 @@
         <div class="col-12 col-lg-8">
           <!-- Form 1: General Info -->
           <div class="card-custom mb-4">
-            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+            <h5 class="profile-section-title fw-bold mb-3 d-flex align-items-center gap-2">
               <i class="bi bi-person-lines-fill text-primary"></i> Thông tin cá nhân
             </h5>
             <form id="profileForm">
@@ -206,14 +320,14 @@
 
           <!-- Form 2: Study Hours Preferences for Auto-Schedule (Anchor #studyHours) -->
           <div class="card-custom mb-4" id="studyHours">
-            <h5 class="fw-bold mb-2 d-flex align-items-center gap-2">
+            <h5 class="profile-section-title fw-bold mb-2 d-flex align-items-center gap-2">
               <i class="bi bi-clock-history text-warning"></i> Khung giờ học tập ưa thích (Dành cho AI Auto-Schedule)
             </h5>
             <p class="text-muted small mb-3">Thuật toán tự động xếp lịch sẽ chỉ phân bổ bài tập và công việc vào các khoảng thời gian bạn bật dưới đây:</p>
 
             <form id="studyHoursForm">
               <!-- Morning -->
-              <div class="p-3 border rounded-3 mb-3 bg-light">
+              <div class="preference-block p-3 border rounded-3 mb-3 bg-light">
                 <div class="form-check form-switch mb-2">
                   <input class="form-check-input" type="checkbox" id="checkMorning" checked>
                   <label class="form-check-label fw-bold" for="checkMorning">Buổi Sáng</label>
@@ -231,7 +345,7 @@
               </div>
 
               <!-- Afternoon -->
-              <div class="p-3 border rounded-3 mb-3 bg-light">
+              <div class="preference-block p-3 border rounded-3 mb-3 bg-light">
                 <div class="form-check form-switch mb-2">
                   <input class="form-check-input" type="checkbox" id="checkAfternoon" checked>
                   <label class="form-check-label fw-bold" for="checkAfternoon">Buổi Chiều</label>
@@ -249,7 +363,7 @@
               </div>
 
               <!-- Evening -->
-              <div class="p-3 border rounded-3 mb-3 bg-light">
+              <div class="preference-block p-3 border rounded-3 mb-3 bg-light">
                 <div class="form-check form-switch mb-2">
                   <input class="form-check-input" type="checkbox" id="checkEvening" checked>
                   <label class="form-check-label fw-bold" for="checkEvening">Buổi Tối</label>
@@ -274,7 +388,7 @@
 
           <!-- Form 3: Notification Preferences -->
           <div class="card-custom">
-            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+            <h5 class="profile-section-title fw-bold mb-3 d-flex align-items-center gap-2">
               <i class="bi bi-bell-fill text-danger"></i> Cài đặt nhắc lịch tự động
             </h5>
             <div class="d-flex flex-column gap-3">
