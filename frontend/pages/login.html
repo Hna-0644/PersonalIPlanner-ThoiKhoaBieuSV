@@ -15,7 +15,10 @@
 
   <style>
     body {
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(129, 140, 248, 0.22), transparent 25rem),
+        radial-gradient(circle at 92% 88%, rgba(45, 212, 191, 0.14), transparent 22rem),
+        #f5f7fb;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -23,34 +26,100 @@
       padding: 1.5rem;
     }
     .auth-card {
-      background: #ffffff;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-color);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 28px 70px rgba(30, 41, 90, 0.18);
       overflow: hidden;
       max-width: 960px;
       width: 100%;
     }
     .auth-banner {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background:
+        linear-gradient(145deg, rgba(30, 34, 91, 0.97), rgba(79, 70, 229, 0.94)),
+        radial-gradient(circle at 85% 12%, #a78bfa, transparent 12rem);
       color: white;
-      padding: 3rem;
+      padding: 3.25rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       position: relative;
+    }
+    .auth-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: #ddd6fe;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+    .auth-banner h3 {
+      font-size: clamp(1.7rem, 3vw, 2.25rem);
+      line-height: 1.2;
+      letter-spacing: -0.04em;
+    }
+    .auth-feature {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .auth-feature i {
+      color: #fbbf24;
+      font-size: 1rem;
+    }
+    .auth-form-panel {
+      padding: 3.25rem !important;
+    }
+    .auth-form-heading {
+      font-size: 1.55rem;
+      letter-spacing: -0.04em;
+    }
+    .auth-nav-tabs {
+      border-bottom: 1px solid #e8ebf3;
     }
     .auth-nav-tabs .nav-link {
       color: var(--secondary);
       font-weight: 600;
       border: none;
       border-bottom: 3px solid transparent;
-      padding: 0.75rem 1.25rem;
+      padding: 0.75rem 1.1rem;
     }
     .auth-nav-tabs .nav-link.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
       background: transparent;
+    }
+    .auth-form-panel .form-control,
+    .auth-form-panel .input-group-text {
+      min-height: 46px;
+    }
+    .auth-form-panel .form-label {
+      color: #334155;
+    }
+    .auth-form-panel .input-group-text {
+      min-width: 44px;
+      justify-content: center;
+      border-color: #e2e8f0;
+    }
+    .auth-form-panel .btn-primary {
+      min-height: 46px;
+    }
+    .auth-demo-button {
+      border-color: #dbe1ee;
+      color: #475569;
+    }
+    .auth-demo-button:hover {
+      border-color: #a5b4fc;
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    @media (max-width: 767.98px) {
+      .auth-form-panel {
+        padding: 2rem 1.25rem !important;
+      }
     }
   </style>
 </head>
@@ -61,27 +130,33 @@
     <!-- Banner bên trái -->
     <div class="col-12 col-md-5 auth-banner d-none d-md-flex">
       <div>
+        <div class="auth-eyebrow"><i class="bi bi-stars"></i> Học tập chủ động hơn</div>
         <div class="d-flex align-items-center gap-2 mb-4">
           <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
             <i class="bi bi-calendar-check-fill fs-4 text-white"></i>
           </div>
           <span class="fs-4 fw-bold">PersonalPlanner</span>
         </div>
-        <h3 class="fw-bold mb-3">Tối ưu hóa thời gian & kế hoạch học tập</h3>
+        <h3 class="fw-bold mb-3">Biến lịch học thành lợi thế của bạn</h3>
         <p class="text-white-50">
-          Website quản lý thời khóa biểu và kế hoạch cá nhân tích hợp thuật toán sắp xếp lịch trình thông minh, cảnh báo trùng lịch và nhắc hạn tự động.
+          Quản lý thời khóa biểu, công việc và thời gian rảnh trong một không gian gọn gàng, trực quan.
         </p>
       </div>
 
       <div class="d-flex flex-column gap-2 small text-white-50 mt-4">
-        <div><i class="bi bi-check-circle-fill text-warning me-2"></i> Tự động phát hiện trùng lịch</div>
-        <div><i class="bi bi-check-circle-fill text-warning me-2"></i> Xác thực JWT an toàn & bảo mật</div>
-        <div><i class="bi bi-check-circle-fill text-warning me-2"></i> Trợ lý thông minh phân bổ lịch học</div>
+        <div class="auth-feature"><i class="bi bi-check-circle-fill"></i> Tự động phát hiện trùng lịch</div>
+        <div class="auth-feature"><i class="bi bi-check-circle-fill"></i> Nhắc hạn công việc đúng lúc</div>
+        <div class="auth-feature"><i class="bi bi-check-circle-fill"></i> Trợ lý thông minh phân bổ lịch học</div>
       </div>
     </div>
 
     <!-- Form bên phải -->
-    <div class="col-12 col-md-7 p-4 p-lg-5">
+    <div class="col-12 col-md-7 auth-form-panel">
+      <div class="mb-4">
+        <div class="text-primary fw-bold small mb-2">PERSONALPLANNER</div>
+        <h1 class="auth-form-heading fw-bold mb-2">Chào mừng bạn trở lại</h1>
+        <p class="text-muted small mb-0">Đăng nhập để tiếp tục kế hoạch học tập của bạn.</p>
+      </div>
       <!-- Tabs Switcher -->
       <ul class="nav auth-nav-tabs mb-4 justify-content-center" id="authTabs" role="tablist">
         <li class="nav-item">
@@ -134,7 +209,7 @@
             </button>
 
             <!-- Quick Demo Login Button -->
-            <button type="button" class="btn btn-outline-secondary w-100 py-2 btn-sm d-flex align-items-center justify-content-center gap-2" onclick="demoQuickLogin()">
+            <button type="button" class="auth-demo-button btn btn-outline-secondary w-100 py-2 btn-sm d-flex align-items-center justify-content-center gap-2" onclick="demoQuickLogin()">
               <i class="bi bi-person-badge"></i>
               <span>Vào nhanh với tài khoản Demo (Dương Văn Thanh)</span>
             </button>
