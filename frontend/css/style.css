@@ -207,6 +207,7 @@ body {
   flex: 1;
   margin-left: var(--sidebar-width);
   min-height: 100vh;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   transition: var(--transition);
@@ -215,6 +216,7 @@ body {
 /* Header */
 .app-header {
   height: var(--header-height);
+  min-width: 0;
   background: rgba(255, 255, 255, 0.86);
   border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
@@ -932,8 +934,24 @@ body {
       padding: 0 1rem;
     }
 
+    .app-header > .d-flex:first-child h4 {
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.95rem;
+    }
+
+    .app-header > .d-flex:first-child {
+      min-width: 0;
+    }
+
     .header-actions {
       gap: 0.5rem;
+    }
+
+    .app-header .header-actions > .btn span {
+      display: none;
     }
 
     .content-body {
