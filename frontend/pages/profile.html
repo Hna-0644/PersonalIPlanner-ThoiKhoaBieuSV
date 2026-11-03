@@ -69,6 +69,12 @@
       font-weight: 600;
       letter-spacing: 0.02em;
     }
+    .avatar-upload-control {
+      border: 1px dashed #c7d2fe;
+      background: #f5f7ff;
+      border-radius: var(--radius-control);
+      padding: 0.75rem;
+    }
     .profile-detail-list {
       display: flex;
       flex-direction: column;
@@ -308,8 +314,21 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label fw-semibold small">URL Ảnh đại diện (Avatar)</label>
-                <input type="url" class="form-control" id="inputAvatar">
+                <label class="form-label fw-semibold small" for="avatarFile">Ảnh đại diện (Avatar)</label>
+                <div class="avatar-upload-control">
+                  <div class="d-flex flex-wrap align-items-center gap-2">
+                    <label class="btn btn-outline-primary btn-sm mb-0" for="avatarFile">
+                      <i class="bi bi-image me-1"></i> Chọn ảnh từ thư viện
+                    </label>
+                    <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="removeAvatarBtn">
+                      <i class="bi bi-trash3 me-1"></i> Xóa ảnh
+                    </button>
+                    <input type="file" class="d-none" id="avatarFile" accept="image/jpeg,image/png,image/webp,image/gif">
+                  </div>
+                  <div class="text-muted small mt-2">JPG, PNG, WEBP hoặc GIF; tối đa 2 MB.</div>
+                  <div id="avatarFileName" class="small text-primary mt-1 d-none"></div>
+                </div>
+                <input type="hidden" id="inputAvatar">
               </div>
 
               <button type="submit" class="btn btn-primary fw-semibold btn-sm px-4">
@@ -459,6 +478,7 @@
     document.getElementById('inputMajor').value = user.major || '';
     document.getElementById('inputUniversity').value = user.university || '';
     document.getElementById('inputAvatar').value = user.avatar || '';
+    updateAvatarUploadState(user.avatar, user.avatar ? 'Ảnh đại diện hiện tại' : '');
 
     // Fill study hours
     const h = user.preferredHours || {};
@@ -482,6 +502,54 @@
     document.getElementById('checkEmailReminder').checked = user.emailReminder !== false;
     document.getElementById('checkBrowserReminder').checked = user.browserReminder !== false;
   }
+
+  function updateAvatarUploadState(avatar, fileName) {
+    const removeButton = document.getElementById('removeAvatarBtn');
+    const fileNameElement = document.getElementById('avatarFileName');
+    removeButton.classList.toggle('d-none', !avatar);
+    fileNameElement.classList.toggle('d-none', !fileName);
+    fileNameElement.textContent = fileName;
+  }
+
+  document.getElementById('avatarFile').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Ảnh không hợp lệ', 'Vui lòng chọn một tệp hình ảnh.', 'error');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Ảnh quá lớn', 'Vui lòng chọn ảnh có dung lượng tối đa 2 MB.', 'error');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const avatar = reader.result;
+      document.getElementById('inputAvatar').value = avatar;
+      updateAvatarUploadState(avatar, file.name);
+      document.querySelectorAll('.user-avatar-target').forEach((element) => {
+        element.src = avatar;
+      });
+    };
+    reader.onerror = () => {
+      showToast('Không thể đọc ảnh', 'Vui lòng thử chọn một ảnh khác.', 'error');
+      event.target.value = '';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('removeAvatarBtn').addEventListener('click', () => {
+    document.getElementById('inputAvatar').value = '';
+    document.getElementById('avatarFile').value = '';
+    updateAvatarUploadState('', '');
+    document.querySelectorAll('.user-avatar-target').forEach((element) => {
+      element.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    });
+  });
 
   // Save profile form
   document.getElementById('profileForm').addEventListener('submit', (e) => {
