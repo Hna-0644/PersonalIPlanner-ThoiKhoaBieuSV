@@ -1,3 +1,4 @@
+const path = require('node:path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -38,12 +39,16 @@ function createApp({ pool, config }) {
   const aiVisionService = createAiVisionService({ pool, config });
 
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({
     origin: String(config.CORS_ORIGIN || '').split(',').map(origin => origin.trim()).filter(Boolean),
     credentials: false
   }));
   app.use(express.json({ limit: '10mb' }));
+
+  // Phục vụ giao diện Frontend tĩnh
+  const frontendPath = path.join(__dirname, '../../frontend');
+  app.use(express.static(frontendPath));
 
   app.get('/api/health', (req, res) => res.json({ data: { status: 'ok' } }));
   app.use('/api/auth', createAuthRouter(authService));
@@ -53,7 +58,10 @@ function createApp({ pool, config }) {
   app.use('/api/schedule', createScheduleRouter(scheduleService, authenticate));
   app.use('/api/notifications', createNotificationRouter(notificationService, authenticate));
   app.use('/api/ai', createAiRouter(aiVisionService, authenticate));
-  app.use((req, res, next) => next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy API này.')));
+
+  // 404 cho API routes
+  app.use('/api/*', (req, res, next) => next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy API này.')));
+
   app.use(errorHandler);
 
   return app;

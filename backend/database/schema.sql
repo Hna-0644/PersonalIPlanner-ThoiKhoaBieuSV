@@ -1,13 +1,13 @@
 -- =====================================================================
 -- PersonalPlanner - MySQL Database Schema
--- Phiên bản: 1.0 (Chuẩn hóa theo docs/shared-contract.md & docs/diagrams.md)
+-- Phiên bản: 1.1 (Đã tối ưu Composite Indexes & chuẩn hóa preferred_hours)
 -- =====================================================================
 
-CREATE DATABASE IF NOT EXISTS `personalplanner` 
+CREATE DATABASE IF NOT EXISTS `personal_planner`
   CHARACTER SET utf8mb4 
   COLLATE utf8mb4_unicode_ci;
 
-USE `personalplanner`;
+USE `personal_planner`;
 
 -- Tắt kiểm tra khóa ngoại tạm thời để khởi tạo/reset an toàn
 SET FOREIGN_KEY_CHECKS = 0;
@@ -31,11 +31,11 @@ CREATE TABLE `users` (
   `email` VARCHAR(255) NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
   `student_id` VARCHAR(50) DEFAULT NULL,
-  `major` VARCHAR(150) DEFAULT NULL,
-  `university` VARCHAR(200) DEFAULT NULL,
+  `major` VARCHAR(500) DEFAULT NULL,
+  `university` VARCHAR(500) DEFAULT NULL,
   `avatar` VARCHAR(2048) DEFAULT NULL,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -46,13 +46,13 @@ CREATE TABLE `users` (
 CREATE TABLE `study_preferences` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL,
-  `preferred_windows` JSON NOT NULL COMMENT 'Cấu hình JSON: morning, afternoon, evening kèm active, start, end',
+  `preferred_hours` JSON NOT NULL COMMENT 'Cấu hình JSON: morning, afternoon, evening kèm active, start, end',
   `break_minutes` SMALLINT UNSIGNED NOT NULL DEFAULT 15,
   `timezone` VARCHAR(100) NOT NULL DEFAULT 'Asia/Ho_Chi_Minh',
   `email_reminder` BOOLEAN NOT NULL DEFAULT TRUE,
   `browser_reminder` BOOLEAN NOT NULL DEFAULT TRUE,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_study_pref_user` (`user_id`),
   CONSTRAINT `fk_study_pref_user` FOREIGN KEY (`user_id`) 
@@ -67,9 +67,9 @@ CREATE TABLE `classes` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL,
   `title` VARCHAR(200) NOT NULL,
-  `code` VARCHAR(50) DEFAULT NULL,
-  `room` VARCHAR(100) DEFAULT NULL,
-  `lecturer` VARCHAR(150) DEFAULT NULL,
+  `code` VARCHAR(500) DEFAULT NULL,
+  `room` VARCHAR(500) DEFAULT NULL,
+  `lecturer` VARCHAR(500) DEFAULT NULL,
   `day_of_week` TINYINT UNSIGNED NOT NULL COMMENT '0 = Chủ Nhật, 1 = Thứ Hai, ..., 6 = Thứ Bảy',
   `start_time` TIME NOT NULL,
   `end_time` TIME NOT NULL,
@@ -77,10 +77,10 @@ CREATE TABLE `classes` (
   `semester_end` DATE DEFAULT NULL,
   `color` VARCHAR(20) DEFAULT '#4f46e5',
   `notes` TEXT DEFAULT NULL,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
-  INDEX `idx_classes_user_day` (`user_id`, `day_of_week`),
+  INDEX `idx_classes_user_day_time` (`user_id`, `day_of_week`, `start_time`),
   CONSTRAINT `fk_classes_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `chk_classes_day_of_week` CHECK (`day_of_week` BETWEEN 0 AND 6),
@@ -95,23 +95,23 @@ CREATE TABLE `tasks` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL,
   `title` VARCHAR(200) NOT NULL,
-  `subject` VARCHAR(150) DEFAULT NULL,
+  `subject` VARCHAR(500) DEFAULT NULL,
   `description` TEXT DEFAULT NULL,
   `priority` ENUM('urgent', 'high', 'medium', 'low') NOT NULL DEFAULT 'medium',
   `status` ENUM('todo', 'inprogress', 'done') NOT NULL DEFAULT 'todo',
   `progress` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0 đến 100',
-  `estimated_hours` DECIMAL(5, 2) DEFAULT 1.50,
-  `deadline` DATETIME DEFAULT NULL,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `estimated_hours` DECIMAL(7, 2) DEFAULT 1.50,
+  `deadline` DATETIME(3) DEFAULT NULL,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
-  INDEX `idx_tasks_user_status` (`user_id`, `status`),
-  INDEX `idx_tasks_user_priority` (`user_id`, `priority`),
-  INDEX `idx_tasks_user_deadline` (`user_id`, `deadline`),
+  INDEX `idx_tasks_user_status_deadline` (`user_id`, `status`, `deadline`),
+  INDEX `idx_tasks_user_status_priority` (`user_id`, `status`, `priority`),
   CONSTRAINT `fk_tasks_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `chk_tasks_progress` CHECK (`progress` BETWEEN 0 AND 100),
-  CONSTRAINT `chk_tasks_estimated_hours` CHECK (`estimated_hours` IS NULL OR `estimated_hours` > 0)
+  CONSTRAINT `chk_tasks_estimated_hours` CHECK (`estimated_hours` IS NULL OR `estimated_hours` > 0),
+  CONSTRAINT `chk_tasks_done_progress` CHECK (`status` <> 'done' OR `progress` = 100)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -122,16 +122,16 @@ CREATE TABLE `scheduled_events` (
   `user_id` BIGINT UNSIGNED NOT NULL,
   `task_id` BIGINT UNSIGNED NOT NULL,
   `title` VARCHAR(200) NOT NULL,
-  `subject` VARCHAR(150) DEFAULT NULL,
-  `start_at` DATETIME NOT NULL,
-  `end_at` DATETIME NOT NULL,
+  `subject` VARCHAR(500) DEFAULT NULL,
+  `start_at` DATETIME(3) NOT NULL,
+  `end_at` DATETIME(3) NOT NULL,
   `source` ENUM('auto', 'manual') NOT NULL DEFAULT 'auto',
   `color` VARCHAR(20) DEFAULT '#8b5cf6',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   INDEX `idx_events_user_time` (`user_id`, `start_at`, `end_at`),
-  INDEX `idx_events_task_id` (`task_id`),
+  UNIQUE KEY `uq_events_task` (`task_id`),
   CONSTRAINT `fk_events_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_events_task` FOREIGN KEY (`task_id`) 
@@ -146,13 +146,14 @@ CREATE TABLE `notifications` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL,
   `type` ENUM('urgent', 'info', 'success') NOT NULL DEFAULT 'info',
-  `title` VARCHAR(255) NOT NULL,
+  `title` VARCHAR(200) NOT NULL,
   `message` TEXT NOT NULL,
-  `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
-  `read_at` DATETIME DEFAULT NULL,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `read_at` DATETIME(3) DEFAULT NULL,
+  `scheduled_at` DATETIME(3) DEFAULT NULL,
+  `delivery_status` VARCHAR(30) DEFAULT NULL,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
-  INDEX `idx_notif_user_read` (`user_id`, `is_read`, `created_at`),
+  INDEX `idx_notif_user_created` (`user_id`, `created_at`),
   CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -164,9 +165,9 @@ CREATE TABLE `refresh_tokens` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL,
   `token` VARCHAR(255) NOT NULL,
-  `expires_at` DATETIME NOT NULL,
+  `expires_at` DATETIME(3) NOT NULL,
   `revoked` BOOLEAN NOT NULL DEFAULT FALSE,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_refresh_token` (`token`),
   INDEX `idx_refresh_lookup` (`token`, `revoked`),
@@ -174,4 +175,3 @@ CREATE TABLE `refresh_tokens` (
   CONSTRAINT `fk_refresh_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-

@@ -2,7 +2,7 @@
 -- Demo login: demo@personalplanner.local / 12345678
 -- Re-running this script does not add duplicate sample records.
 
-USE `personalplanner`;
+USE `personal_planner`;
 
 INSERT INTO `users` (
   `full_name`, `email`, `password_hash`, `student_id`, `major`, `university`

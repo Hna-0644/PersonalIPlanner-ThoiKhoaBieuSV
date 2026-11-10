@@ -9,7 +9,7 @@ REST API MVP sử dụng Node.js, Express và MySQL. API hiện có đăng ký/�
 - Tạo database trước khi migrate, ví dụ:
 
 ```sql
-CREATE DATABASE personalplanner
+CREATE DATABASE personal_planner
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_0900_ai_ci;
 ```
@@ -26,9 +26,12 @@ Sửa `backend/.env` theo cấu hình MySQL của máy và đặt `JWT_SECRET` t
 
 ```powershell
 npm.cmd --prefix backend install
+docker compose --env-file backend/.env -f backend/docker-compose.yml up -d mysql
 npm.cmd --prefix backend run db:migrate
 npm.cmd --prefix backend run dev
 ```
+
+Docker Compose lấy mật khẩu root MySQL từ `backend/.env` và tạo `personal_planner` khi khởi tạo data directory mới. Các thiết lập khởi tạo MySQL không thay đổi volume `mysql_data` đã có; nếu dùng lại volume, hãy bảo đảm database và thông tin đăng nhập đã tồn tại trong đó.
 
 API mặc định chạy tại `http://localhost:5000`; health check tại `GET /api/health`. CORS origin mặc định là `http://127.0.0.1:5500`; cập nhật `CORS_ORIGIN` khi frontend chạy ở origin khác.
 
@@ -63,7 +66,7 @@ Các migration nằm trong `src/db/migrations/` và được ghi nhận tại b�
 Sau khi migration thành công, nạp dữ liệu mẫu bằng MySQL client:
 
 ```powershell
-Get-Content -Raw backend/database/seed.sql | mysql --default-character-set=utf8mb4 -u your_mysql_user -p personalplanner
+Get-Content -Raw backend/database/seed.sql | mysql --default-character-set=utf8mb4 -u your_mysql_user -p personal_planner
 ```
 
 Tài khoản demo: `demo@personalplanner.local`, mật khẩu `12345678`. Seed có thể chạy lại mà không thêm trùng các bản ghi mẫu.
