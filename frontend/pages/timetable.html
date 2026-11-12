@@ -446,11 +446,21 @@
   let calendar = null;
   let activeSelectedClassId = null;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     UIStates.loading(document.getElementById('calendarLoadingState'), 'Đang tải thời khóa biểu...');
-    initCalendar();
-    document.getElementById('calendarLoadingState').classList.add('d-none');
-    checkBannerConflict();
+    try {
+      const profileResponse = await ApiService.getProfile();
+      const user = profileResponse && profileResponse.data ? profileResponse.data : profileResponse;
+      initCalendar(user && user.timezone);
+      document.getElementById('calendarLoadingState').classList.add('d-none');
+      checkBannerConflict();
+    } catch (error) {
+      UIStates.error(
+        document.getElementById('calendarLoadingState'),
+        'Không thể tải thời khóa biểu',
+        escapeHtml(error.message || 'Vui lòng thử lại sau.')
+      );
+    }
 
     // Lắng nghe thay đổi giờ trong modal để kiểm tra trùng trực tiếp
     ['classDayOfWeekInput', 'classStartTimeInput', 'classEndTimeInput'].forEach(id => {
@@ -458,10 +468,11 @@
     });
   });
 
-  function initCalendar() {
+  function initCalendar(timezone) {
     const calendarEl = document.getElementById('calendar');
     
     calendar = new FullCalendar.Calendar(calendarEl, {
+      timeZone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Ho_Chi_Minh',
       initialView: 'timeGridWeek',
       locale: 'vi',
       headerToolbar: {
@@ -503,9 +514,8 @@
   }
 
   // Tải dữ liệu các lớp học và các task đã được tự động xếp vào calendar
-  function loadCalendarEvents(fetchInfo, successCallback) {
+  async function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
     const classes = AppStore.getClasses();
-    const scheduledEvents = AppStore.getScheduledEvents();
     const events = [];
 
     // Lịch học cố định (Lặp lại hàng tuần theo dayOfWeek)
@@ -525,21 +535,27 @@
       });
     });
 
-    // Các task được AI Auto-Schedule lên lịch
-    scheduledEvents.forEach(sch => {
-      events.push({
-        id: sch.id,
-        title: `⚡ [Task AI] ${sch.title}`,
-        start: sch.start,
-        end: sch.end,
-        backgroundColor: sch.color || '#8b5cf6',
-        borderColor: sch.color || '#8b5cf6',
-        extendedProps: {
-          type: 'scheduled_task',
-          data: sch
-        }
+    try {
+      const response = await ApiService.getScheduleEvents();
+      const scheduledEvents = response && response.data ? response.data : response;
+      scheduledEvents.forEach(sch => {
+        events.push({
+          id: sch.id,
+          title: `⚡ [Task AI] ${sch.title || sch.taskTitle}`,
+          start: sch.start,
+          end: sch.end,
+          backgroundColor: sch.color || '#8b5cf6',
+          borderColor: sch.color || '#8b5cf6',
+          extendedProps: {
+            type: 'scheduled_task',
+            data: sch
+          }
+        });
       });
-    });
+    } catch (error) {
+      failureCallback(error);
+      return;
+    }
 
     const emptyState = document.getElementById('calendarEmptyState');
     if (events.length === 0) {

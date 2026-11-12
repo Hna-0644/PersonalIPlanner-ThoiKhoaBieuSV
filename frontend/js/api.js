@@ -173,13 +173,26 @@ const ApiService = {
     if (API_CONFIG.USE_MOCK) return AppStore.deleteTask(id);
     return this.request(`/tasks/${id}`, { method: 'DELETE' });
   },
-  async generateAutoSchedule(params) {
-    if (API_CONFIG.USE_MOCK) return AppStore.generateAutoSchedule(params);
-    return this.request('/schedule/auto-generate', { method: 'POST', body: JSON.stringify(params) });
+  async getScheduleEvents() {
+    if (API_CONFIG.USE_MOCK) return AppStore.getScheduledEvents();
+    const response = await this.request('/schedule/events');
+    return response && response.data ? response.data : response;
   },
-  async applyAutoSchedule(plan) {
-    if (API_CONFIG.USE_MOCK) return AppStore.applyProposedSchedule(plan);
-    return this.request('/schedule/apply', { method: 'POST', body: JSON.stringify({ plan }) });
+  async generateAutoSchedule(params) {
+    if (API_CONFIG.USE_MOCK) return ScheduleService.generate(params);
+    const response = await this.request('/schedule/auto-generate', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+    return response && response.data ? response.data : response;
+  },
+  async applyAutoSchedule(schedule) {
+    if (API_CONFIG.USE_MOCK) return ScheduleService.apply(schedule.plan, schedule);
+    const response = await this.request('/schedule/apply', {
+      method: 'POST',
+      body: JSON.stringify(schedule)
+    });
+    return response && response.data ? response.data : response;
   },
   async scanScheduleFromImage(imageFileOrBase64) {
     if (API_CONFIG.USE_MOCK) return AppStore.simulateAIScanSchedule(imageFileOrBase64);

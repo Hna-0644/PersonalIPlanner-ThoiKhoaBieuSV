@@ -244,13 +244,13 @@ Hợp đồng trên là chuẩn mục tiêu. Prototype hiện có một số kh�
 | Auth | `ApiService.USE_MOCK` bật; token mock được lưu ở localStorage. | Chỉ dùng demo; không coi là xác thực an toàn. Backend phải xác thực token và giới hạn tài nguyên theo user. |
 | Auth response | Mock hiện trả `{ success, message, token, user }`; màn hình đăng nhập đọc `res.success` và `res.user`. | Backend dùng response envelope `{ data: { user, accessToken, tokenType } }`; `ApiService` cần chuyển response sang view model frontend hoặc cập nhật màn hình đăng nhập đồng bộ. |
 | Cập nhật resource | Prototype dùng `PUT` cho update local/API wrapper. | `PATCH` là method chuẩn partial; `PUT` backend giữ alias tạm cho tương thích. Khi nối API, chuyển client sang `PATCH`. |
-| Nối frontend với API | Frontend hiện gọi trực tiếp `AppStore` ở nhiều màn hình và không xử lý envelope `data`. | Chưa đổi `USE_MOCK` trước khi adapter `ApiService` chuẩn hóa response/auth, ánh xạ public IDs và cập nhật CRUD/schedule/notification trên tất cả màn hình. |
-| Task chọn để lập lịch | UI lọc kết quả sau khi `AppStore.generateAutoSchedule()` đã sinh lịch cho toàn bộ task chưa hoàn thành. | Truyền `taskIds` vào thuật toán/API trước khi lập lịch. |
-| Task đã được xếp | `generateAutoSchedule()` hiện lấy mọi task chưa hoàn thành, không loại task đã scheduled. | Loại event/task đã có khỏi slot và không tạo event lặp; reschedule phải explicit. |
-| Slot bận | Thuật toán hiện đưa lớp học vào danh sách bận; cần xác nhận/đồng bộ đầy đủ scheduled event đã áp dụng. | Tất cả lớp, event đã lưu và slot mới đều tham gia kiểm tra overlap. |
-| Việc không xếp được | Hiện tại kết quả là một plan, thiếu danh sách nguyên nhân cho task không xếp được. | Trả `{ plan, unscheduled }` với reason ổn định. |
-| Ngày giờ | Prototype kết hợp `Date`, local time và `toISOString()`; có thể lệch ngày theo timezone. | Chuẩn hóa cách xử lý timezone trước khi dùng API/DB thật; thêm test boundary. |
-| Lưu lịch | Prototype giữ `scheduled`/`scheduledTime` trên Task cùng danh sách ScheduledEvent. | Dùng ScheduledEvent làm nguồn sự thật; field cũ chỉ tương thích/chuyển đổi, tránh cập nhật lệch. |
+| Nối frontend với API | Luồng tự động xếp lịch và đọc sự kiện lịch đã đi qua `ApiService`; các màn hình khác vẫn còn gọi trực tiếp `AppStore` và `USE_MOCK` đang bật. | Chưa đổi `USE_MOCK` cho toàn ứng dụng trước khi adapter chuẩn hóa response/auth, ánh xạ public IDs và cập nhật CRUD/notification trên các màn hình còn lại. |
+| Task chọn để lập lịch | Màn hình tự động xếp lịch gửi danh sách checkbox `taskIds` trước khi tính; mock và API trả cùng dạng `{ plan, unscheduled, breakMinutes, timezone }`. | Giữ `taskIds` là đầu vào tường minh, không lọc kết quả sau khi chạy thuật toán. |
+| Task đã được xếp | Màn hình loại task hoàn tất/đã xếp khỏi lựa chọn; thuật toán mock và backend đều kiểm tra ScheduledEvent trước khi tạo đề xuất. | Không tạo event lặp; reschedule phải là thao tác riêng. |
+| Slot bận | Thuật toán đưa lớp học, event đã lưu và slot vừa tạo vào lịch bận; bước áp dụng kiểm tra lại xung đột. | Tất cả hoạt động phải tham gia kiểm tra overlap trước khi lưu. |
+| Việc không xếp được | Kết quả trả `unscheduled` cùng reason chuẩn và giao diện hiển thị lý do cho từng task. | Giữ reason theo `UnscheduledReason`; không biến kết quả một phần thành thành công toàn bộ. |
+| Ngày giờ | Mock diễn giải LocalDate/LocalTime trong timezone IANA của hồ sơ (hoặc timezone thiết bị khi chưa cấu hình); event lưu dưới dạng ISO instant. Calendar hiển thị theo timezone hồ sơ. | Tiếp tục giữ LocalDate/LocalTime cho lịch địa phương và Instant có offset cho deadline/event. |
+| Lưu lịch | Bước áp dụng gửi lại `plan`, `breakMinutes`, `timezone`; mock và backend kiểm tra lại đề xuất rồi lưu ScheduledEvent. | ScheduledEvent là nguồn sự thật; field `scheduled` trên Task chỉ tương thích, không thay thế event. |
 
 ## 10. Checklist trước khi hoàn tất một thay đổi
 

@@ -285,45 +285,80 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../js/store.js"></script>
+<script src="../js/schedule.js"></script>
 <script src="../js/api.js"></script>
 <script src="../js/auth.js"></script>
 <script src="../js/ui-states.js"></script>
 <script src="../js/main.js"></script>
 
 <script>
-  let latestProposedPlan = [];
+  let latestSchedule = null;
+  let availableTasks = [];
+  let scheduledEvents = [];
+  let currentTimezone = 'Asia/Ho_Chi_Minh';
 
   document.addEventListener('DOMContentLoaded', () => {
-    loadUserHoursPreview();
-    UIStates.loading(document.getElementById('unassignedTasksList'));
-    requestAnimationFrame(renderUnassignedTasks);
+    initializeSchedulePage().catch(error => {
+      UIStates.error(
+        document.getElementById('unassignedTasksList'),
+        'Không thể tải công việc',
+        escapeHtml(error.message || 'Vui lòng thử lại sau.')
+      );
+    });
   });
 
-  function loadUserHoursPreview() {
-    const user = AppStore.getUser();
+  function unwrapData(response, fallback) {
+    return response && Object.prototype.hasOwnProperty.call(response, 'data')
+      ? response.data
+      : (response ?? fallback);
+  }
+
+  async function initializeSchedulePage() {
+    const [profileResponse, tasksResponse, eventsResponse] = await Promise.all([
+      ApiService.getProfile(),
+      ApiService.getTasks(),
+      ApiService.getScheduleEvents()
+    ]);
+    const user = unwrapData(profileResponse, AppStore.getUser());
+    availableTasks = unwrapData(tasksResponse, []);
+    scheduledEvents = unwrapData(eventsResponse, []);
+    currentTimezone = user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Ho_Chi_Minh';
+    loadUserHoursPreview(user);
+    renderUnassignedTasks();
+    document.getElementById('unassignedTasksList').addEventListener('change', invalidateProposal);
+    document.getElementById('scheduleDaysSelect').addEventListener('change', invalidateProposal);
+    document.getElementById('breakMinutesSelect').addEventListener('change', invalidateProposal);
+  }
+
+  function loadUserHoursPreview(user) {
     const hours = user.preferredHours || {};
     const container = document.getElementById('userHoursPreview');
 
     let html = '';
     if (hours.morning?.active) {
-      html += `<div>• Buổi Sáng: <strong>${hours.morning.start} - ${hours.morning.end}</strong></div>`;
+      html += `<div>• Buổi Sáng: <strong>${escapeHtml(hours.morning.start)} - ${escapeHtml(hours.morning.end)}</strong></div>`;
     }
     if (hours.afternoon?.active) {
-      html += `<div>• Buổi Chiều: <strong>${hours.afternoon.start} - ${hours.afternoon.end}</strong></div>`;
+      html += `<div>• Buổi Chiều: <strong>${escapeHtml(hours.afternoon.start)} - ${escapeHtml(hours.afternoon.end)}</strong></div>`;
     }
     if (hours.evening?.active) {
-      html += `<div>• Buổi Tối: <strong>${hours.evening.start} - ${hours.evening.end}</strong></div>`;
+      html += `<div>• Buổi Tối: <strong>${escapeHtml(hours.evening.start)} - ${escapeHtml(hours.evening.end)}</strong></div>`;
     }
 
     container.innerHTML = html || '<div>Chưa thiết lập khung giờ rảnh</div>';
   }
 
   function renderUnassignedTasks() {
-    const tasks = AppStore.getTasks().filter(t => t.status !== 'done');
+    const scheduledTaskIds = new Set(scheduledEvents.map(event => event.taskId));
+    const tasks = availableTasks.filter(task =>
+      task.status !== 'done' &&
+      !task.scheduled &&
+      !scheduledTaskIds.has(task.id)
+    );
     const container = document.getElementById('unassignedTasksList');
 
     if (tasks.length === 0) {
-      UIStates.empty(container, 'Không còn công việc cần xếp lịch', 'Các công việc chưa hoàn thành sẽ xuất hiện tại đây.');
+      UIStates.empty(container, 'Không còn công việc cần xếp lịch', 'Các công việc chưa hoàn thành và chưa có lịch sẽ xuất hiện tại đây.');
       return;
     }
 
@@ -332,18 +367,28 @@
     container.innerHTML = tasks.map(t => {
       let deadlineStr = 'Không hạn';
       if (t.deadline) {
-        const d = new Date(t.deadline);
-        deadlineStr = `${d.getDate()}/${d.getMonth()+1}`;
+        const deadlineValue = String(t.deadline);
+        const hasTimezone = /[zZ]$|[+-]\d{2}:\d{2}$/.test(deadlineValue);
+        const parsed = hasTimezone
+          ? new Date(deadlineValue)
+          : new Date(`${deadlineValue.slice(0, 10)}T12:00:00Z`);
+        deadlineStr = Number.isNaN(parsed.getTime())
+          ? 'Deadline không hợp lệ'
+          : new Intl.DateTimeFormat('vi-VN', {
+            timeZone: hasTimezone ? currentTimezone : 'UTC',
+            day: 'numeric',
+            month: 'numeric'
+          }).format(parsed);
       }
 
       return `
         <div class="p-2 border rounded-3 bg-white d-flex align-items-center gap-2">
-          <input type="checkbox" class="form-check-input task-select-check custom-check" value="${t.id}" checked>
+          <input type="checkbox" class="form-check-input task-select-check custom-check" value="${escapeHtml(t.id)}" checked aria-label="Chọn công việc ${escapeHtml(t.title)}">
           <div class="flex-grow-1 overflow-hidden">
             <div class="fw-semibold text-truncate small">${escapeHtml(t.title)}</div>
             <div class="d-flex align-items-center gap-2 mt-1" style="font-size: 0.72rem;">
-              <span class="badge-priority priority-${t.priority}" style="padding: 0.15rem 0.4rem;">${priorityLabels[t.priority]}</span>
-              <span class="text-muted"><i class="bi bi-clock me-1"></i>${t.estimatedHours || 1.5}h</span>
+              <span class="badge-priority priority-${escapeHtml(t.priority)}" style="padding: 0.15rem 0.4rem;">${escapeHtml(priorityLabels[t.priority] || 'Trung bình')}</span>
+              <span class="text-muted"><i class="bi bi-clock me-1"></i>${Number(t.estimatedHours) > 0 ? Number(t.estimatedHours) : 1.5}h</span>
               <span class="text-danger"><i class="bi bi-alarm me-1"></i>${deadlineStr}</span>
             </div>
           </div>
@@ -356,10 +401,17 @@
     document.querySelectorAll('.task-select-check').forEach(cb => {
       cb.checked = check;
     });
+    invalidateProposal();
   }
 
-  // Chạy thuật toán sắp xếp
-  function runSchedulingAlgorithm() {
+  function invalidateProposal() {
+    latestSchedule = null;
+    document.getElementById('applyActionGroup').classList.add('d-none');
+    document.getElementById('resultSubtitle').textContent =
+      'Cấu hình đã thay đổi. Hãy chạy lại để tạo đề xuất mới.';
+  }
+
+  async function runSchedulingAlgorithm() {
     const checkedBoxes = Array.from(document.querySelectorAll('.task-select-check:checked')).map(cb => cb.value);
     
     if (checkedBoxes.length === 0) {
@@ -367,50 +419,56 @@
       return;
     }
 
-    const days = parseInt(document.getElementById('scheduleDaysSelect').value) || 7;
-    const breakMinutes = parseInt(document.getElementById('breakMinutesSelect').value) || 15;
+    invalidateProposal();
+    const daysSelect = document.getElementById('scheduleDaysSelect');
+    const breakSelect = document.getElementById('breakMinutesSelect');
+    const days = parseInt(daysSelect.value) || 7;
+    const breakMinutes = parseInt(breakSelect.value) || 15;
 
     // Hiệu ứng loading mô phỏng AI tính toán
     const btn = document.getElementById('btnRunSchedule');
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Đang phân tích khoảng trống...`;
 
-    setTimeout(() => {
-      // Gọi thuật toán từ AppStore
-      const fullPlan = AppStore.generateAutoSchedule({ days, breakMinutes });
-      
-      // Lọc lại chỉ giữ các task người dùng đã tích chọn
-      latestProposedPlan = fullPlan.filter(item => checkedBoxes.includes(item.taskId));
-
+    try {
+      latestSchedule = await ApiService.generateAutoSchedule({
+        taskIds: checkedBoxes,
+        days,
+        breakMinutes
+      });
+      if (!latestSchedule || !Array.isArray(latestSchedule.plan) ||
+        !Array.isArray(latestSchedule.unscheduled)) {
+        throw new Error('Máy chủ trả về kết quả lập lịch không hợp lệ.');
+      }
+      const currentSelection = Array.from(
+        document.querySelectorAll('.task-select-check:checked')
+      ).map(cb => cb.value);
+      if (currentSelection.length !== checkedBoxes.length ||
+        currentSelection.some(id => !checkedBoxes.includes(id)) ||
+        Number(daysSelect.value) !== days ||
+        Number(breakSelect.value) !== breakMinutes) {
+        throw new Error('Lựa chọn hoặc cấu hình đã thay đổi. Hãy chạy lại để tạo đề xuất mới.');
+      }
+      currentTimezone = latestSchedule.timezone || currentTimezone;
+      renderProposedPlanResult(latestSchedule.plan, latestSchedule.unscheduled);
+    } catch (error) {
+      latestSchedule = null;
+      Swal.fire('Không thể tạo đề xuất', error.message || 'Vui lòng thử lại sau.', 'error');
+    } finally {
       btn.disabled = false;
       btn.innerHTML = `<i class="bi bi-magic fs-5"></i> <span>Chạy thuật toán sắp xếp ngay</span>`;
-
-      renderProposedPlanResult(latestProposedPlan);
-    }, 600);
+    }
   }
 
-  function renderProposedPlanResult(plan) {
+  function renderProposedPlanResult(plan, unscheduled) {
     const container = document.getElementById('scheduleResultContent');
     const applyGroup = document.getElementById('applyActionGroup');
     const subtitle = document.getElementById('resultSubtitle');
 
-    if (plan.length === 0) {
-      applyGroup.classList.add('d-none');
-      subtitle.textContent = 'Không tìm thấy khoảng trống phù hợp';
-      container.innerHTML = `
-        <div class="text-center py-5">
-          <i class="bi bi-exclamation-circle text-warning fs-1"></i>
-          <h6 class="fw-bold mt-3">Không tìm thấy khung giờ trống!</h6>
-          <p class="text-muted small" style="max-width: 400px; margin: 0 auto;">
-            Thời khóa biểu và các sự kiện của bạn đã kín hoặc các công việc có thời lượng lớn hơn khoảng rảnh trong ngày. Vui lòng mở rộng khung giờ trong phần Hồ sơ cá nhân.
-          </p>
-        </div>
-      `;
-      return;
-    }
-
-    applyGroup.classList.remove('d-none');
-    subtitle.innerHTML = `Đã xếp thành công <strong class="text-success">${plan.length}</strong> ca học & làm việc thông minh.`;
+    applyGroup.classList.toggle('d-none', plan.length === 0);
+    subtitle.textContent = plan.length
+      ? `Đã xếp ${plan.length} công việc${unscheduled.length ? `; ${unscheduled.length} công việc chưa xếp được` : ''}.`
+      : 'Không có công việc nào được xếp trong khung thời gian này.';
 
     // Nhóm kết quả theo ngày (date: 'YYYY-MM-DD')
     const groupedByDate = {};
@@ -424,18 +482,16 @@
     const dayNameMap = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
     const priorityLabels = { urgent: 'Khẩn cấp', high: 'Cao', medium: 'Trung bình', low: 'Thấp' };
 
-    let html = `
+    let html = plan.length ? `
       <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 mb-4 shadow-sm">
         <i class="bi bi-check-circle-fill text-success fs-5"></i>
-        <div class="small">
-          Thuật toán đã tối ưu hóa lịch trình, <strong>không có xung đột</strong> với thời khóa biểu trường học của bạn.
-        </div>
+        <div class="small">Đề xuất đã kiểm tra xung đột với lớp học và lịch đã áp dụng.</div>
       </div>
       <div class="timeline-container">
-    `;
+    ` : '';
 
     Object.keys(groupedByDate).sort().forEach(dateStr => {
-      const dObj = new Date(dateStr + 'T00:00:00');
+      const dObj = new Date(`${dateStr}T00:00:00Z`);
       const dayOfWeekName = dayNameMap[dObj.getDay()];
       const formattedDate = `${dayOfWeekName}, ngày ${dObj.getDate()}/${dObj.getMonth() + 1}/${dObj.getFullYear()}`;
 
@@ -456,7 +512,7 @@
               <div>
                 <div class="fw-bold text-main">${escapeHtml(item.taskTitle)}</div>
                 <div class="d-flex align-items-center gap-2 mt-1 flex-wrap" style="font-size: 0.78rem;">
-                  <span class="badge-priority priority-${item.priority}">${priorityLabels[item.priority]}</span>
+                  <span class="badge-priority priority-${escapeHtml(item.priority)}">${escapeHtml(priorityLabels[item.priority] || 'Trung bình')}</span>
                   <span class="text-muted"><i class="bi bi-book me-1"></i>${escapeHtml(item.subject || 'Chung')}</span>
                   <span class="text-secondary"><i class="bi bi-hourglass-split me-1"></i>Thời lượng: ${item.durationMinutes} phút</span>
                 </div>
@@ -475,42 +531,90 @@
       `;
     });
 
-    html += `</div>`;
+    if (plan.length) html += `</div>`;
+    if (unscheduled.length) {
+      const reasonLabels = {
+        NO_AVAILABLE_SLOT: 'Không còn khoảng trống phù hợp trong thời gian đã chọn.',
+        DEADLINE_PASSED: 'Deadline của công việc đã qua.',
+        DEADLINE_INFEASIBLE: 'Không đủ thời gian để xếp trước deadline.',
+        DURATION_EXCEEDS_WINDOW: 'Thời lượng dài hơn các khung giờ học đang bật.',
+        NO_ACTIVE_STUDY_WINDOW: 'Chưa bật khung giờ học nào trong hồ sơ.'
+      };
+      html += `
+        <div class="alert alert-warning mt-3 mb-0">
+          <h6 class="fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>${unscheduled.length} công việc chưa xếp được</h6>
+          <ul class="mb-0 small">
+            ${unscheduled.map(item => {
+              const task = availableTasks.find(candidate => candidate.id === item.taskId);
+              return `<li><strong>${escapeHtml(task?.title || item.taskId)}</strong>: ${escapeHtml(reasonLabels[item.reason] || item.message || 'Không thể xếp lịch.')}</li>`;
+            }).join('')}
+          </ul>
+        </div>
+      `;
+    }
+    if (!html) {
+      html = '<div class="text-center py-5 text-muted"><i class="bi bi-calendar-x fs-1"></i><p class="mt-3 mb-0">Không có công việc nào cần xếp lịch.</p></div>';
+    }
     container.innerHTML = html;
   }
 
   // Áp dụng đề xuất vào hệ thống
-  function applyProposedScheduleToSystem() {
-    if (!latestProposedPlan || latestProposedPlan.length === 0) return;
+  async function applyProposedScheduleToSystem() {
+    if (!latestSchedule || latestSchedule.plan.length === 0) return;
+    const scheduleToApply = latestSchedule;
 
-    Swal.fire({
+    const confirmation = await Swal.fire({
       title: 'Xác nhận áp dụng lịch trình?',
-      text: `Hệ thống sẽ thêm ${latestProposedPlan.length} buổi học/làm bài này vào Thời khóa biểu và đồng bộ nhiệm vụ!`,
+      text: `Hệ thống sẽ thêm ${scheduleToApply.plan.length} buổi học/làm bài này vào Thời khóa biểu và đồng bộ nhiệm vụ!`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Đồng ý áp dụng',
       cancelButtonText: 'Xem lại',
       confirmButtonColor: '#10b981'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        AppStore.applyProposedSchedule(latestProposedPlan);
-        
-        Swal.fire({
-          title: 'Thành công!',
-          text: 'Lịch trình đã được ghi nhận vào Thời khóa biểu của bạn.',
-          icon: 'success',
-          showCancelButton: true,
-          confirmButtonText: 'Mở Thời khóa biểu xem ngay',
-          cancelButtonText: 'Ở lại đây'
-        }).then((nav) => {
-          if (nav.isConfirmed) {
-            window.location.href = 'timetable.html';
-          } else {
-            renderUnassignedTasks();
-          }
-        });
-      }
     });
+    if (!confirmation.isConfirmed || latestSchedule !== scheduleToApply) return;
+
+    const applyButton = document.querySelector('#applyActionGroup button');
+    applyButton.disabled = true;
+    try {
+      await ApiService.applyAutoSchedule({
+        plan: scheduleToApply.plan,
+        breakMinutes: scheduleToApply.breakMinutes,
+        timezone: scheduleToApply.timezone
+      });
+    } catch (error) {
+      latestSchedule = null;
+      applyButton.disabled = false;
+      document.getElementById('applyActionGroup').classList.add('d-none');
+      renderUnassignedTasks();
+      await Swal.fire('Không thể áp dụng lịch', error.message || 'Dữ liệu đã thay đổi. Hãy tạo đề xuất mới.', 'error');
+      return;
+    }
+
+    latestSchedule = null;
+    document.getElementById('applyActionGroup').classList.add('d-none');
+    let refreshMessage = '';
+    try {
+      const [tasksResponse, eventsResponse] = await Promise.all([
+        ApiService.getTasks(),
+        ApiService.getScheduleEvents()
+      ]);
+      availableTasks = unwrapData(tasksResponse, []);
+      scheduledEvents = unwrapData(eventsResponse, []);
+      renderUnassignedTasks();
+    } catch (error) {
+      refreshMessage = ' Lịch đã lưu; không tải lại được danh sách mới, vui lòng làm mới trang.';
+    }
+
+    const navigation = await Swal.fire({
+      title: 'Thành công!',
+      text: `Lịch trình đã được ghi nhận vào Thời khóa biểu của bạn.${refreshMessage}`,
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonText: 'Mở Thời khóa biểu xem ngay',
+      cancelButtonText: 'Ở lại đây'
+    });
+    if (navigation.isConfirmed) window.location.href = 'timetable.html';
   }
 </script>
 </body>

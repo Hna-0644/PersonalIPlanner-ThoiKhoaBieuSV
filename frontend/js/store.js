@@ -12,6 +12,8 @@ const STORAGE_KEYS = {
   AUTH_TOKEN: 'pp_jwt_token'
 };
 
+const DEMO_DEADLINE_MIGRATION_KEY = 'pp_demo_deadline_migration_v1';
+
 // Dữ liệu mẫu ban đầu
 const INITIAL_DATA = {
   user: {
@@ -208,8 +210,43 @@ function initStorage() {
   }
 }
 
+function refreshExpiredDemoDeadlines() {
+  if (localStorage.getItem(DEMO_DEADLINE_MIGRATION_KEY)) return;
+
+  const taskOffsets = {
+    tsk_001: 2,
+    tsk_002: 1,
+    tsk_003: 4,
+    tsk_005: 6
+  };
+  const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS)) || [];
+  const now = Date.now();
+  let changed = false;
+
+  const migratedTasks = tasks.map(task => {
+    const offset = taskOffsets[task.id];
+    if (offset === undefined ||
+      task.title !== INITIAL_DATA.tasks.find(seed => seed.id === task.id).title ||
+      task.status === 'done' ||
+      task.scheduled ||
+      !task.deadline ||
+      new Date(task.deadline).getTime() >= now) {
+      return task;
+    }
+
+    changed = true;
+    return { ...task, deadline: getRelativeDate(offset, task.id === 'tsk_002' ? '18:00' : '23:59') };
+  });
+
+  if (changed) {
+    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(migratedTasks));
+  }
+  localStorage.setItem(DEMO_DEADLINE_MIGRATION_KEY, 'done');
+}
+
 // Chạy khởi tạo ngay
 initStorage();
+refreshExpiredDemoDeadlines();
 
 const AppStore = {
   // === USER ===
