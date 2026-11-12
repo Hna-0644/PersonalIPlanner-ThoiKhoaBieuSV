@@ -130,6 +130,46 @@
     </header>
 
     <div class="content-body">
+      <section class="card-custom mb-4" aria-labelledby="statsPeriodHeading">
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-3">
+          <div>
+            <h5 class="fw-bold mb-1" id="statsPeriodHeading">Phạm vi báo cáo</h5>
+            <p class="text-muted small mb-0">Lọc công việc theo ngày deadline, không phải ngày tạo hoặc ngày hoàn thành.</p>
+          </div>
+          <div class="d-flex flex-wrap align-items-end gap-2">
+            <div>
+              <label class="form-label small fw-semibold mb-1" for="statsPeriodSelect">Khoảng thời gian</label>
+              <select class="form-select form-select-sm" id="statsPeriodSelect">
+                <option value="all">Toàn bộ công việc</option>
+                <option value="thisMonth">Tháng này</option>
+                <option value="next30">30 ngày tới</option>
+                <option value="next90">90 ngày tới</option>
+                <option value="custom">Tùy chọn ngày</option>
+              </select>
+            </div>
+            <div class="d-none" id="customStatsDateRange">
+              <label class="form-label small fw-semibold mb-1" for="statsStartDate">Từ ngày</label>
+              <input type="date" class="form-control form-control-sm" id="statsStartDate">
+            </div>
+            <div class="d-none" id="customStatsDateRangeEnd">
+              <label class="form-label small fw-semibold mb-1" for="statsEndDate">Đến ngày</label>
+              <input type="date" class="form-control form-control-sm" id="statsEndDate">
+            </div>
+          </div>
+        </div>
+        <div class="small text-muted mt-3" id="statsPeriodSummary" aria-live="polite"></div>
+        <details class="small mt-2">
+          <summary class="text-primary fw-semibold">Cách tính các chỉ số</summary>
+          <ul class="text-muted mt-2 mb-0">
+            <li>Tỷ lệ hoàn thành = số việc hiện ở trạng thái “Đã hoàn thành” / tổng việc trong phạm vi.</li>
+            <li>Giờ dự kiến = tổng thời lượng ước tính đã nhập; việc chưa có thời lượng không cộng giờ.</li>
+            <li>Môn học = số môn/chủ đề khác nhau trên các công việc trong phạm vi.</li>
+            <li>Quá hạn = việc chưa hoàn thành có deadline trước thời điểm hiện tại.</li>
+            <li>Khi lọc theo ngày, chỉ tính việc có deadline nằm trong khoảng đã chọn; việc không deadline chỉ có trong “Toàn bộ công việc”.</li>
+          </ul>
+        </details>
+      </section>
+
       <!-- KPI Row -->
       <div class="row g-3 mb-4">
         <div class="col-12 col-sm-6 col-xl-3">
@@ -163,7 +203,7 @@
             </div>
             <div>
               <div class="stat-value" id="kpiTotalSubjects">0</div>
-              <div class="stat-label">Môn học đang theo dõi</div>
+              <div class="stat-label">Môn học / chủ đề</div>
             </div>
           </div>
         </div>
@@ -219,7 +259,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <div>
             <h5 class="fw-bold mb-1">Chi tiết công việc và tiến độ cá nhân</h5>
-            <p class="text-muted small mb-0">Báo cáo tổng hợp toàn bộ các nhiệm vụ học tập</p>
+            <p class="text-muted small mb-0" id="statsTableCaption">Danh sách công việc theo phạm vi báo cáo đã chọn</p>
           </div>
           <a href="tasks.html" class="btn btn-sm btn-outline-primary">Quản lý nhiệm vụ</a>
         </div>
@@ -258,47 +298,199 @@
 <script src="../js/main.js"></script>
 
 <script>
+  let taskSource = [];
+  let statisticsTimezone = 'Asia/Ho_Chi_Minh';
+  let statisticsCharts = [];
+
   document.addEventListener('DOMContentLoaded', () => {
     UIStates.loading(document.getElementById('statsTaskTableBody'));
-    requestAnimationFrame(initStatistics);
+    document.getElementById('statsPeriodSelect').addEventListener('change', handlePeriodChange);
+    document.getElementById('statsStartDate').addEventListener('change', refreshStatistics);
+    document.getElementById('statsEndDate').addEventListener('change', refreshStatistics);
+    loadStatistics().catch(error => {
+      UIStates.error(
+        document.getElementById('statsTaskTableBody'),
+        'Không thể tải thống kê',
+        escapeHtml(error.message || 'Vui lòng thử lại sau.')
+      );
+    });
   });
 
-  function initStatistics() {
-    const tasks = AppStore.getTasks();
-    const classes = AppStore.getClasses();
-    const chartsGrid = document.getElementById('statisticsChartsGrid');
-    if (tasks.length === 0 && classes.length === 0) {
-      chartsGrid.innerHTML = '';
-      UIStates.empty(chartsGrid, 'Chưa có dữ liệu thống kê', 'Hãy tạo công việc hoặc thêm lịch học để xem báo cáo tiến độ.');
-      renderStatsTable(tasks);
+  async function loadStatistics() {
+    const [taskResponse, profileResponse] = await Promise.all([
+      ApiService.getTasks(),
+      ApiService.getProfile()
+    ]);
+    taskSource = taskResponse && taskResponse.data ? taskResponse.data : taskResponse;
+    const user = profileResponse && profileResponse.data ? profileResponse.data : profileResponse;
+    if (!Array.isArray(taskSource)) throw new Error('Dữ liệu công việc trả về không hợp lệ.');
+    statisticsTimezone = user && user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Ho_Chi_Minh';
+    refreshStatistics();
+  }
+
+  function localDateKey(value, timezone = statisticsTimezone) {
+    if (!value) return null;
+    const input = String(value);
+    const hasOffset = /[zZ]$|[+-]\d{2}:\d{2}$/.test(input);
+    if (!hasOffset) {
+      const match = input.match(/^(\d{4}-\d{2}-\d{2})/);
+      return match ? match[1] : null;
+    }
+    const date = new Date(input);
+    if (Number.isNaN(date.getTime())) return null;
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date);
+    const part = type => parts.find(item => item.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  }
+
+  function deadlineEpoch(value) {
+    if (!value) return null;
+    const input = String(value);
+    if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(input)) {
+      const epoch = Date.parse(input);
+      return Number.isFinite(epoch) ? epoch : null;
+    }
+
+    const match = input.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!match) return null;
+    const [, yearText, monthText, dayText, hourText, minuteText, secondText] = match;
+    const target = Date.UTC(
+      Number(yearText), Number(monthText) - 1, Number(dayText),
+      Number(hourText), Number(minuteText), Number(secondText || 0)
+    );
+    let epoch = target;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: statisticsTimezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23'
+      }).formatToParts(new Date(epoch));
+      const part = type => Number(parts.find(item => item.type === type).value);
+      const represented = Date.UTC(
+        part('year'), part('month') - 1, part('day'),
+        part('hour'), part('minute'), part('second')
+      );
+      epoch += target - represented;
+    }
+    return epoch;
+  }
+
+  function dateKeyToDate(value) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  function formatDateKey(value) {
+    if (!value) return '';
+    const [year, month, day] = value.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
+  function addDaysToKey(value, days) {
+    const date = dateKeyToDate(value);
+    date.setDate(date.getDate() + days);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function todayDateKey() {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: statisticsTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date());
+    const part = type => parts.find(item => item.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  }
+
+  function handlePeriodChange() {
+    const customRange = document.getElementById('statsPeriodSelect').value === 'custom';
+    document.getElementById('customStatsDateRange').classList.toggle('d-none', !customRange);
+    document.getElementById('customStatsDateRangeEnd').classList.toggle('d-none', !customRange);
+    refreshStatistics();
+  }
+
+  function getSelectedRange() {
+    const period = document.getElementById('statsPeriodSelect').value;
+    const today = todayDateKey();
+    if (period === 'all') return { start: null, end: null, label: 'Toàn bộ công việc' };
+    if (period === 'thisMonth') {
+      const start = `${today.slice(0, 7)}-01`;
+      const nextMonth = dateKeyToDate(start);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(0);
+      const end = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-${String(nextMonth.getDate()).padStart(2, '0')}`;
+      return { start, end, label: `Tháng này (${formatDateKey(start)} – ${formatDateKey(end)})` };
+    }
+    if (period === 'next30' || period === 'next90') {
+      const days = period === 'next30' ? 30 : 90;
+      const end = addDaysToKey(today, days - 1);
+      return { start: today, end, label: `${days} ngày tới (${formatDateKey(today)} – ${formatDateKey(end)})` };
+    }
+    const start = document.getElementById('statsStartDate').value;
+    const end = document.getElementById('statsEndDate').value;
+    return { start, end, label: start && end ? `${formatDateKey(start)} – ${formatDateKey(end)}` : 'Chọn ngày bắt đầu và kết thúc' };
+  }
+
+  function refreshStatistics() {
+    const range = getSelectedRange();
+    const customRange = document.getElementById('statsPeriodSelect').value === 'custom';
+    const invalidRange = customRange && range.start && range.end && range.start > range.end;
+    document.getElementById('statsPeriodSummary').textContent = invalidRange
+      ? 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.'
+      : `Phạm vi: ${range.label}. ${customRange && (!range.start || !range.end) ? 'Hãy chọn đủ hai mốc ngày.' : ''}`;
+    if (invalidRange || (customRange && (!range.start || !range.end))) {
+      renderStats([]);
       return;
     }
 
-    // KPI 1: Completion rate
+    const selectedTasks = taskSource.filter(task => {
+      if (!range.start && !range.end) return true;
+      const deadlineDate = localDateKey(task.deadline);
+      return deadlineDate !== null && deadlineDate >= range.start && deadlineDate <= range.end;
+    });
+    renderStats(selectedTasks);
+  }
+
+  function renderStats(tasks) {
     const doneTasks = tasks.filter(t => t.status === 'done');
     const completionRate = tasks.length > 0 ? Math.round((doneTasks.length / tasks.length) * 100) : 0;
     document.getElementById('kpiCompletionRate').textContent = `${completionRate}%`;
 
-    // KPI 2: Total hours
-    const totalHours = tasks.reduce((sum, t) => sum + (parseFloat(t.estimatedHours) || 0), 0);
-    document.getElementById('kpiTotalHours').textContent = `${totalHours}h`;
+    const totalHours = tasks.reduce((sum, task) => {
+      const hours = Number(task.estimatedHours);
+      return sum + (Number.isFinite(hours) && hours > 0 ? hours : 0);
+    }, 0);
+    document.getElementById('kpiTotalHours').textContent = `${Number(totalHours.toFixed(1))}h`;
 
-    // KPI 3: Unique subjects
-    const subjects = new Set([...classes.map(c => c.title), ...tasks.map(t => t.subject)].filter(Boolean));
+    const subjects = new Set(tasks.map(task => String(task.subject || '').trim()).filter(Boolean));
     document.getElementById('kpiTotalSubjects').textContent = subjects.size;
 
-    // KPI 4: Overdue tasks
     const now = new Date();
-    const overdueTasks = tasks.filter(t => t.status !== 'done' && t.deadline && new Date(t.deadline) < now);
+    const overdueTasks = tasks.filter(task => {
+      const deadline = deadlineEpoch(task.deadline);
+      return task.status !== 'done' && deadline !== null && deadline < now.getTime();
+    });
     document.getElementById('kpiOverdueTasks').textContent = overdueTasks.length;
 
-    // Render Charts
+    statisticsCharts.forEach(chart => chart.destroy());
+    statisticsCharts = [];
     renderStatusDonut(tasks);
     renderPriorityBar(tasks);
     renderSubjectHours(tasks);
-
-    // Render Table
     renderStatsTable(tasks);
+    document.getElementById('statsTableCaption').textContent =
+      `${tasks.length} công việc trong phạm vi đang chọn; bảng, KPI và biểu đồ cùng dùng danh sách này.`;
   }
 
   function renderStatusDonut(tasks) {
@@ -307,7 +499,7 @@
     const done = tasks.filter(t => t.status === 'done').length;
 
     const ctx = document.getElementById('statusDonutChart').getContext('2d');
-    new Chart(ctx, {
+    statisticsCharts.push(new Chart(ctx, {
       type: 'doughnut',
       data: {
         labels: ['Chưa làm', 'Đang làm', 'Đã xong'],
@@ -325,7 +517,7 @@
         },
         cutout: '68%'
       }
-    });
+    }));
   }
 
   function renderPriorityBar(tasks) {
@@ -335,7 +527,7 @@
     const low = tasks.filter(t => t.priority === 'low').length;
 
     const ctx = document.getElementById('priorityBarChart').getContext('2d');
-    new Chart(ctx, {
+    statisticsCharts.push(new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ['Khẩn cấp', 'Cao', 'Trung bình', 'Thấp'],
@@ -355,37 +547,37 @@
           x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans' } } }
         }
       }
-    });
+    }));
   }
 
   function renderSubjectHours(tasks) {
     const map = {};
     tasks.forEach(t => {
       const sub = t.subject || 'Khác';
-      map[sub] = (map[sub] || 0) + (parseFloat(t.estimatedHours) || 1);
+      const hours = Number(t.estimatedHours);
+      if (!Number.isFinite(hours) || hours <= 0) return;
+      map[sub] = (map[sub] || 0) + hours;
     });
 
     const labels = Object.keys(map);
     const data = Object.values(map);
 
     const ctx = document.getElementById('subjectHoursChart').getContext('2d');
-    new Chart(ctx, {
+    statisticsCharts.push(new Chart(ctx, {
       type: 'pie',
       data: {
-        labels: labels,
+        labels: labels.length ? labels : ['Chưa có giờ ước tính'],
         datasets: [{
-          data: data,
-          backgroundColor: ['#4f46e5', '#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899']
+          data: labels.length ? data : [1],
+          backgroundColor: labels.length ? ['#4f46e5', '#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899'] : ['#e2e8f0']
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', size: 10 } } }
-        }
+        plugins: { legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', size: 10 } } } }
       }
-    });
+    }));
   }
 
   function renderStatsTable(tasks) {
@@ -400,16 +592,15 @@
     tbody.innerHTML = tasks.map(t => {
       let deadlineStr = 'Không hạn';
       if (t.deadline) {
-        const d = new Date(t.deadline);
-        deadlineStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+        deadlineStr = formatDateKey(localDateKey(t.deadline)) || 'Deadline không hợp lệ';
       }
 
       return `
         <tr>
           <td class="fw-semibold">${escapeHtml(t.title)}</td>
           <td><span class="badge bg-light text-dark border">${escapeHtml(t.subject || 'Chung')}</span></td>
-          <td><span class="badge-priority priority-${t.priority}">${priorityLabels[t.priority]}</span></td>
-          <td>${t.estimatedHours || 1} giờ</td>
+          <td><span class="badge-priority priority-${escapeHtml(t.priority)}">${escapeHtml(priorityLabels[t.priority] || 'Trung bình')}</span></td>
+          <td>${Number(t.estimatedHours) > 0 ? `${Number(t.estimatedHours)} giờ` : 'Chưa ước tính'}</td>
           <td style="width: 140px;">
             <div class="d-flex align-items-center gap-2">
               <div class="progress flex-grow-1" style="height: 6px;">
@@ -419,7 +610,7 @@
             </div>
           </td>
           <td class="small text-muted">${deadlineStr}</td>
-          <td><span class="badge-status status-${t.status}">${statusLabels[t.status]}</span></td>
+          <td><span class="badge-status status-${escapeHtml(t.status)}">${escapeHtml(statusLabels[t.status] || 'Không rõ')}</span></td>
         </tr>
       `;
     }).join('');
