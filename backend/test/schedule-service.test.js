@@ -47,6 +47,271 @@ test('busy calendar includes weekly classes and applied events on local dates', 
   assert.deepEqual(calendar.get('2026-10-27'), []);
 });
 
+test('schedule event cache hit returns cached events without querying MySQL', async () => {
+  const cachedEvents = [{ id: 'sch_82', title: 'Cached event' }];
+  const keys = [];
+  const service = createScheduleService({
+    pool: {
+      async execute() {
+        throw new Error('MySQL should not be queried on a cache hit');
+      }
+    },
+    redisClient: {
+      async get(key) {
+        keys.push(key);
+        return key === 'schedule:events:version:5'
+          ? '0'
+          : JSON.stringify(cachedEvents);
+      }
+    }
+  });
+
+  const result = await service.listEvents('5');
+
+  assert.deepEqual(result, cachedEvents);
+  assert.deepEqual(keys, ['schedule:events:version:5', 'schedule:events:5:0']);
+});
+
+test('schedule event cache miss reads MySQL and caches events for one hour', async () => {
+  const calls = [];
+  const rows = [{
+    id: '82',
+    task_id: '18',
+    title: 'Database event',
+    subject: 'Study',
+    start_at: '2026-10-28 01:00:00',
+    end_at: '2026-10-28 02:00:00',
+    source: 'auto',
+    color: '#8b5cf6'
+  }];
+  const service = createScheduleService({
+    pool: {
+      async execute(sql, params) {
+        calls.push({ kind: 'mysql', sql, params });
+        return [rows, []];
+      }
+    },
+    redisClient: {
+      async get(key) {
+        calls.push({ kind: 'get', key });
+        return key === 'schedule:events:version:5' ? null : null;
+      },
+      async setEx(key, ttl, value) {
+        calls.push({ kind: 'setEx', key, ttl, value });
+      }
+    }
+  });
+
+  const result = await service.listEvents('5');
+
+  assert.deepEqual(result, [{
+    id: 'sch_82',
+    taskId: 'tsk_18',
+    title: 'Database event',
+    subject: 'Study',
+    start: '2026-10-28T01:00:00.000Z',
+    end: '2026-10-28T02:00:00.000Z',
+    source: 'auto',
+    color: '#8b5cf6'
+  }]);
+  assert.equal(calls.find(call => call.kind === 'setEx').key, 'schedule:events:5:0');
+  assert.equal(calls.find(call => call.kind === 'setEx').ttl, 3600);
+  assert.deepEqual(JSON.parse(calls.find(call => call.kind === 'setEx').value), result);
+  assert.equal(calls.filter(call => call.kind === 'mysql').length, 1);
+});
+
+test('an empty schedule event cache is a hit', async () => {
+  let mysqlCalls = 0;
+  const service = createScheduleService({
+    pool: {
+      async execute() {
+        mysqlCalls += 1;
+        return [[], []];
+      }
+    },
+    redisClient: {
+      async get(key) {
+        return key === 'schedule:events:version:5' ? null : '[]';
+      }
+    }
+  });
+
+  assert.deepEqual(await service.listEvents('5'), []);
+  assert.equal(mysqlCalls, 0);
+});
+
+test('malformed schedule event cache is refreshed from MySQL', async () => {
+  const values = [];
+  const originalError = console.error;
+  console.error = (...args) => values.push(args);
+  const service = createScheduleService({
+    pool: {
+      async execute() {
+        return [[], []];
+      }
+    },
+    redisClient: {
+      async get(key) {
+        return key === 'schedule:events:version:5' ? null : '{';
+      },
+      async setEx(key, ttl, value) {
+        values.push([key, ttl, value]);
+      }
+    }
+  });
+
+  try {
+    assert.deepEqual(await service.listEvents('5'), []);
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.ok(values.some(args => args[0] === 'schedule:events:5:0' && args[1] === 3600 && args[2] === '[]'));
+  assert.ok(values.some(args => String(args[0]).includes('cache')));
+});
+
+test('Redis read errors fall back to MySQL and are logged', async () => {
+  const logs = [];
+  const originalError = console.error;
+  console.error = (...args) => logs.push(args);
+  let mysqlCalls = 0;
+  const service = createScheduleService({
+    pool: {
+      async execute() {
+        mysqlCalls += 1;
+        return [[], []];
+      }
+    },
+    redisClient: {
+      async get() { throw new Error('Redis unavailable'); },
+      async setEx() {}
+    }
+  });
+
+  try {
+    assert.deepEqual(await service.listEvents('5'), []);
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.equal(mysqlCalls, 1);
+  assert.ok(logs.some(args => args[1]?.message === 'Redis unavailable'));
+});
+
+test('Redis write errors do not discard schedule events read from MySQL', async () => {
+  const logs = [];
+  const originalError = console.error;
+  console.error = (...args) => logs.push(args);
+  const service = createScheduleService({
+    pool: { async execute() { return [[], []]; } },
+    redisClient: {
+      async get(key) {
+        return key === 'schedule:events:version:5' ? null : null;
+      },
+      async setEx() { throw new Error('Redis write unavailable'); }
+    }
+  });
+
+  try {
+    assert.deepEqual(await service.listEvents('5'), []);
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.ok(logs.some(args => args[1]?.message === 'Redis write unavailable'));
+});
+
+test('an unready Redis client is bypassed so MySQL remains available', async () => {
+  let redisCalls = 0;
+  const service = createScheduleService({
+    pool: { async execute() { return [[], []]; } },
+    redisClient: {
+      isReady: false,
+      async get() {
+        redisCalls += 1;
+        throw new Error('Redis is reconnecting');
+      },
+      async setEx() { redisCalls += 1; }
+    }
+  });
+
+  assert.deepEqual(await service.listEvents('5'), []);
+  assert.equal(redisCalls, 0);
+});
+
+test('a late schedule read cannot repopulate cache after invalidation', async () => {
+  const versionKey = 'schedule:events:version:5';
+  const cache = new Map();
+  let version = '0';
+  const redisClient = {
+    async get(key) {
+      return key === versionKey ? version : cache.get(key) ?? null;
+    },
+    async setEx(key, ttl, value) {
+      cache.set(key, value);
+    },
+    async incr(key) {
+      assert.equal(key, versionKey);
+      version = String(Number(version) + 1);
+      return Number(version);
+    },
+    async del(key) {
+      cache.delete(key);
+    }
+  };
+  let startFirstQuery;
+  let finishFirstQuery;
+  const firstQueryStarted = new Promise(resolve => {
+    startFirstQuery = resolve;
+  });
+  const firstQueryGate = new Promise(resolve => {
+    finishFirstQuery = resolve;
+  });
+  let queryCount = 0;
+  const pool = {
+    async execute() {
+      queryCount += 1;
+      if (queryCount === 1) {
+        startFirstQuery();
+        await firstQueryGate;
+        return [[{
+          id: '82',
+          task_id: '18',
+          title: 'Old event',
+          subject: null,
+          start_at: '2026-10-28 01:00:00',
+          end_at: '2026-10-28 02:00:00',
+          source: 'auto',
+          color: '#8b5cf6'
+        }], []];
+      }
+      return [[{
+        id: '83',
+        task_id: '19',
+        title: 'New event',
+        subject: null,
+        start_at: '2026-10-28 03:00:00',
+        end_at: '2026-10-28 04:00:00',
+        source: 'auto',
+        color: '#8b5cf6'
+      }], []];
+    }
+  };
+  const service = createScheduleService({ pool, redisClient });
+
+  const pendingRead = service.listEvents('5');
+  await firstQueryStarted;
+  const nextVersion = await redisClient.incr(versionKey);
+  await redisClient.del(`schedule:events:5:${nextVersion - 1}`);
+  finishFirstQuery();
+  await pendingRead;
+
+  const eventsAfterInvalidation = await service.listEvents('5');
+
+  assert.equal(eventsAfterInvalidation[0].title, 'New event');
+  assert.equal(queryCount, 2);
+});
+
 test('schedule generation respects selected tasks and returns a partial-plan shape', async () => {
   const calls = [];
   const pool = {
@@ -92,10 +357,14 @@ test('schedule generation respects selected tasks and returns a partial-plan sha
 
 test('schedule application validates and persists events in one transaction', async () => {
   const statements = [];
+  const operations = [];
   let committed = false;
   const connection = {
     async beginTransaction() {},
-    async commit() { committed = true; },
+    async commit() {
+      committed = true;
+      operations.push('commit');
+    },
     async rollback() {},
     release() {},
     async execute(sql, params) {
@@ -130,7 +399,19 @@ test('schedule application validates and persists events in one transaction', as
     }
   };
   const service = createScheduleService({
-    pool: { getConnection: async () => connection }
+    pool: { getConnection: async () => connection },
+    redisClient: {
+      async incr(key) {
+        assert.equal(committed, true);
+        assert.equal(key, 'schedule:events:version:5');
+        operations.push('incr');
+        return 1;
+      },
+      async del(key) {
+        assert.equal(committed, true);
+        operations.push(`del:${key}`);
+      }
+    }
   });
   const date = DateTime.now().setZone('Asia/Ho_Chi_Minh').plus({ days: 2 }).toISODate();
 
@@ -146,6 +427,32 @@ test('schedule application validates and persists events in one transaction', as
   assert.equal(result.events.length, 1);
   assert.equal(result.events[0].id, 'sch_82');
   assert.ok(statements.some(sql => sql.includes('INSERT INTO scheduled_events')));
+  assert.deepEqual(operations, ['commit', 'incr', 'del:schedule:events:5:0']);
+});
+
+test('failed schedule application does not invalidate the event cache', async () => {
+  let deleteCalls = 0;
+  const connection = {
+    async beginTransaction() {},
+    async commit() {},
+    async rollback() {},
+    release() {},
+    async execute(sql) {
+      if (sql.includes('SELECT id FROM users')) return [[{ id: '5' }], []];
+      if (sql.includes('FROM study_preferences')) return [[], []];
+      throw new Error(`Unexpected SQL in test: ${sql}`);
+    }
+  };
+  const service = createScheduleService({
+    pool: { getConnection: async () => connection },
+    redisClient: { async del() { deleteCalls += 1; } }
+  });
+
+  await assert.rejects(
+    service.apply('5', [], 0, 'Asia/Ho_Chi_Minh'),
+    error => error.code === 'NOT_FOUND'
+  );
+  assert.equal(deleteCalls, 0);
 });
 
 test('schedule generation distinguishes an infeasible future deadline from an expired one', async () => {

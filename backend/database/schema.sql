@@ -107,6 +107,7 @@ CREATE TABLE `tasks` (
   PRIMARY KEY (`id`),
   INDEX `idx_tasks_user_status_deadline` (`user_id`, `status`, `deadline`),
   INDEX `idx_tasks_user_status_priority` (`user_id`, `status`, `priority`),
+  INDEX `idx_tasks_user_deadline` (`user_id`, `deadline`),
   CONSTRAINT `fk_tasks_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `chk_tasks_progress` CHECK (`progress` BETWEEN 0 AND 100),
@@ -154,6 +155,7 @@ CREATE TABLE `notifications` (
   `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   INDEX `idx_notif_user_created` (`user_id`, `created_at`),
+  INDEX `idx_notifications_user_read` (`user_id`, `read_at`, `created_at`),
   CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

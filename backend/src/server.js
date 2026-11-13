@@ -1,21 +1,25 @@
 require('dotenv').config();
 const { loadEnv } = require('./config/env');
 const { createDatabase } = require('./config/database');
+const redisClient = require('./config/redis');
 const { createApp } = require('./app');
 
 async function start() {
   const config = loadEnv();
   const pool = createDatabase(config);
   await pool.query('SELECT 1');
-  const app = createApp({ pool, config });
+  const app = createApp({ pool, config, redisClient });
   const server = app.listen(config.PORT, () => {
     console.log(`PersonalPlanner API listening on port ${config.PORT}`);
+  });
+  redisClient.connectRedis().catch(error => {
+    console.error('Failed to connect to Redis:', error);
   });
 
   const shutdown = async signal => {
     console.log(`Received ${signal}; shutting down.`);
     server.close(async error => {
-      await pool.end();
+      await Promise.all([pool.end(), redisClient.close()]);
       if (error) {
         console.error(error);
         process.exitCode = 1;

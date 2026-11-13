@@ -5,16 +5,39 @@ const { lockUser } = require('./class-service');
 
 const PRIORITY_WEIGHT = { urgent: 4, high: 3, medium: 2, low: 1 };
 const DEFAULT_TASK_MINUTES = 90;
+const SCHEDULE_EVENTS_CACHE_TTL_SECONDS = 3600;
 
-function createScheduleService({ pool }) {
+function createScheduleService({ pool, redisClient }) {
   async function listEvents(userId) {
+    const cacheKeyPrefix = `schedule:events:${userId}`;
+    const versionKey = `schedule:events:version:${userId}`;
+    let cacheKey;
+    if (redisClient && redisClient.isReady !== false) {
+      try {
+        const version = await redisClient.get(versionKey) || '0';
+        cacheKey = `${cacheKeyPrefix}:${version}`;
+        const cachedValue = await redisClient.get(cacheKey);
+        if (cachedValue !== null) {
+          try {
+            const cachedEvents = JSON.parse(cachedValue);
+            if (Array.isArray(cachedEvents)) return cachedEvents;
+            throw new Error('Cached schedule events must be an array.');
+          } catch (error) {
+            console.error('Failed to parse schedule events cache:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to read schedule events cache:', error);
+      }
+    }
+
     const [rows] = await pool.execute(
       `SELECT id, task_id, title, subject, start_at, end_at, source, color
        FROM scheduled_events
        WHERE user_id = ? ORDER BY start_at`,
       [userId]
     );
-    return rows.map(row => ({
+    const events = rows.map(row => ({
       id: toPublicId('schedule', row.id),
       taskId: toPublicId('task', row.task_id),
       title: row.title,
@@ -24,6 +47,18 @@ function createScheduleService({ pool }) {
       source: row.source,
       color: row.color
     }));
+    if (redisClient && cacheKey) {
+      try {
+        await redisClient.setEx(
+          cacheKey,
+          SCHEDULE_EVENTS_CACHE_TTL_SECONDS,
+          JSON.stringify(events)
+        );
+      } catch (error) {
+        console.error('Failed to write schedule events cache:', error);
+      }
+    }
+    return events;
   }
 
   async function generate(userId, input) {
@@ -173,6 +208,7 @@ function createScheduleService({ pool }) {
 
   async function apply(userId, plan, breakMinutes, timezone) {
     const connection = await pool.getConnection();
+    let result;
     try {
       await connection.beginTransaction();
       await lockUser(connection, userId);
@@ -332,13 +368,24 @@ function createScheduleService({ pool }) {
         [userId, 'Đã áp dụng lịch', `Đã thêm ${inserted.length} phiên vào lịch của bạn.`]
       );
       await connection.commit();
-      return { events: inserted };
+      result = { events: inserted };
     } catch (error) {
       await connection.rollback();
       throw error;
     } finally {
       connection.release();
     }
+    if (redisClient && redisClient.isReady === false) {
+      console.error('Failed to invalidate schedule events cache: Redis client is not ready.');
+    } else if (redisClient) {
+      try {
+        const nextVersion = await redisClient.incr(`schedule:events:version:${userId}`);
+        await redisClient.del(`schedule:events:${userId}:${nextVersion - 1}`);
+      } catch (error) {
+        console.error('Failed to invalidate schedule events cache:', error);
+      }
+    }
+    return result;
   }
 
   return { listEvents, generate, apply };

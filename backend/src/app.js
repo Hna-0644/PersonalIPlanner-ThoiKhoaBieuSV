@@ -20,7 +20,7 @@ const { createScheduleRouter } = require('./routes/schedule-routes');
 const { createNotificationRouter } = require('./routes/notification-routes');
 const { createAiRouter } = require('./routes/ai-routes');
 
-function createApp({ pool, config }) {
+function createApp({ pool, config, redisClient }) {
   if (!pool) throw new Error('A database pool is required.');
   if (!config || !config.JWT_SECRET) throw new Error('JWT configuration is required.');
 
@@ -34,7 +34,7 @@ function createApp({ pool, config }) {
   const profileService = createProfileService({ pool });
   const classService = createClassService({ pool });
   const taskService = createTaskService({ pool });
-  const scheduleService = createScheduleService({ pool });
+  const scheduleService = createScheduleService({ pool, redisClient });
   const notificationService = createNotificationService({ pool });
   const aiVisionService = createAiVisionService({ pool, config });
 

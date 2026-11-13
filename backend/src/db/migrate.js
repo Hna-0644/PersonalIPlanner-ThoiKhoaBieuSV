@@ -27,7 +27,14 @@ async function migrate() {
       const sql = await fs.readFile(path.join(migrationsDirectory, file), 'utf8');
       const statements = sql.split(/;\s*(?:\r?\n|$)/).map(statement => statement.trim()).filter(Boolean);
       for (const statement of statements) {
-        await connection.query(statement);
+        try {
+          await connection.query(statement);
+        } catch (err) {
+          if (err && (err.code === 'ER_DUP_KEYNAME' || err.errno === 1061)) {
+            continue;
+          }
+          throw err;
+        }
       }
       await connection.execute('INSERT INTO schema_migrations (name) VALUES (?)', [file]);
       console.log(`Applied migration ${file}`);
