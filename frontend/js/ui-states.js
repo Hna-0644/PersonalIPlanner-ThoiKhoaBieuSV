@@ -46,14 +46,16 @@
     error(container, title = 'Không thể tải dữ liệu', message = 'Vui lòng thử lại sau.') {
       renderState(container, '<i class="bi bi-exclamation-triangle"></i>', title, message, 'danger');
     },
-    showApiError(error, message = 'Vui lòng thử lại sau.') {
-      const detail = error && error.message ? ` ${error.message}` : '';
+    showApiError(error, fallbackMessage = 'Vui lòng thử lại sau.') {
+      const errMsg = error && error.message ? String(error.message).trim() : '';
+      const text = errMsg || fallbackMessage;
       if (window.Swal) {
         Swal.fire({
-          title: 'Lỗi kết nối',
-          text: `${message}${detail}`,
+          title: 'Thông báo',
+          text,
           icon: 'error',
-          confirmButtonText: 'Đã hiểu'
+          confirmButtonText: 'Đã hiểu',
+          confirmButtonColor: '#0d7480'
         });
       }
     }

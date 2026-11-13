@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebar();
   initNotifications();
   highlightActiveMenu();
+  init24HourTimeInputs();
+  if (window.AppStore && typeof AppStore.syncFromServer === 'function') {
+    AppStore.syncFromServer();
+  }
 });
 
 // Hiển thị thông tin người dùng trên Header & Sidebar
@@ -162,4 +166,216 @@ window.showToast = showToast;
 window.markNotificationRead = markNotificationRead;
 window.markAllNotificationsRead = markAllNotificationsRead;
 window.escapeHtml = escapeHtml;
+
+// =========================================================================
+// HỆ THỐNG KHUNG GIỜ 24 GIỜ (00:00 - 23:59) TOÀN ỨNG DỤNG (LOẠI BỎ AM/PM)
+// =========================================================================
+function normalizeTime24(raw) {
+  if (!raw || typeof raw !== 'string') return '08:00';
+  const match = raw.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return '08:00';
+  const hh = Math.min(23, Math.max(0, parseInt(match[1], 10) || 0));
+  const mm = Math.min(59, Math.max(0, parseInt(match[2], 10) || 0));
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+function normalizeDateTime24(raw) {
+  if (!raw || typeof raw !== 'string') {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    const yyyy = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mo}-${dd}T23:59`;
+  }
+  const parts = raw.trim().split('T');
+  const datePart = parts[0] && /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) ? parts[0] : new Date().toISOString().slice(0, 10);
+  const timePart = normalizeTime24(parts[1] || '23:59');
+  return `${datePart}T${timePart}`;
+}
+
+function buildHourOptionsHtml(selectedHour) {
+  let html = '';
+  for (let h = 0; h < 24; h++) {
+    const val = String(h).padStart(2, '0');
+    html += `<option value="${val}"${val === selectedHour ? ' selected' : ''}>${val}</option>`;
+  }
+  return html;
+}
+
+function buildMinuteOptionsHtml(selectedMin) {
+  let html = '';
+  for (let m = 0; m < 60; m++) {
+    const val = String(m).padStart(2, '0');
+    html += `<option value="${val}"${val === selectedMin ? ' selected' : ''}>${val}</option>`;
+  }
+  return html;
+}
+
+function upgradeSingleTimeInput(input) {
+  if (!input || input.dataset.upgraded24h === 'true') return;
+  input.dataset.upgraded24h = 'true';
+
+  const isSmall = input.classList.contains('form-control-sm');
+  let internalVal = normalizeTime24(input.getAttribute('value') || input.value || '08:00');
+  const [initH, initM] = internalVal.split(':');
+
+  input.type = 'hidden';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = `time-24h-picker${isSmall ? ' time-24h-sm' : ''}`;
+
+  const hourSelect = document.createElement('select');
+  hourSelect.className = 'time-24h-select';
+  hourSelect.title = 'Giờ (00 - 23)';
+  hourSelect.innerHTML = buildHourOptionsHtml(initH);
+
+  const sep = document.createElement('span');
+  sep.className = 'time-24h-sep';
+  sep.textContent = ':';
+
+  const minSelect = document.createElement('select');
+  minSelect.className = 'time-24h-select';
+  minSelect.title = 'Phút (00 - 59)';
+  minSelect.innerHTML = buildMinuteOptionsHtml(initM);
+
+  const badge = document.createElement('span');
+  badge.className = 'time-24h-badge';
+  badge.textContent = '24h';
+
+  wrapper.appendChild(hourSelect);
+  wrapper.appendChild(sep);
+  wrapper.appendChild(minSelect);
+  if (!isSmall) wrapper.appendChild(badge);
+
+  input.insertAdjacentElement('afterend', wrapper);
+
+  function syncFromInternal() {
+    const [h, m] = internalVal.split(':');
+    hourSelect.value = h;
+    minSelect.value = m;
+    input.setAttribute('value', internalVal);
+  }
+
+  function handleUserChange() {
+    internalVal = `${hourSelect.value}:${minSelect.value}`;
+    input.setAttribute('value', internalVal);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  hourSelect.addEventListener('change', handleUserChange);
+  minSelect.addEventListener('change', handleUserChange);
+
+  Object.defineProperty(input, 'value', {
+    configurable: true,
+    get() {
+      return internalVal;
+    },
+    set(newVal) {
+      internalVal = normalizeTime24(String(newVal || '08:00'));
+      syncFromInternal();
+    }
+  });
+}
+
+function upgradeSingleDateTimeInput(input) {
+  if (!input || input.dataset.upgraded24h === 'true') return;
+  input.dataset.upgraded24h = 'true';
+
+  let internalVal = normalizeDateTime24(input.getAttribute('value') || input.value);
+  const [initDate, initTime] = internalVal.split('T');
+  const [initH, initM] = initTime.split(':');
+
+  input.type = 'hidden';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'datetime-24h-picker';
+
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.className = 'form-control datetime-24h-date';
+  dateInput.value = initDate;
+
+  const timeBox = document.createElement('div');
+  timeBox.className = 'time-24h-picker';
+
+  const hourSelect = document.createElement('select');
+  hourSelect.className = 'time-24h-select';
+  hourSelect.title = 'Giờ (00 - 23)';
+  hourSelect.innerHTML = buildHourOptionsHtml(initH);
+
+  const sep = document.createElement('span');
+  sep.className = 'time-24h-sep';
+  sep.textContent = ':';
+
+  const minSelect = document.createElement('select');
+  minSelect.className = 'time-24h-select';
+  minSelect.title = 'Phút (00 - 59)';
+  minSelect.innerHTML = buildMinuteOptionsHtml(initM);
+
+  timeBox.appendChild(hourSelect);
+  timeBox.appendChild(sep);
+  timeBox.appendChild(minSelect);
+
+  wrapper.appendChild(dateInput);
+  wrapper.appendChild(timeBox);
+
+  input.insertAdjacentElement('afterend', wrapper);
+
+  function syncFromInternal() {
+    const [dPart, tPart] = internalVal.split('T');
+    const [h, m] = (tPart || '23:59').split(':');
+    dateInput.value = dPart;
+    hourSelect.value = h;
+    minSelect.value = m;
+    input.setAttribute('value', internalVal);
+  }
+
+  function handleUserChange() {
+    const dPart = dateInput.value || new Date().toISOString().slice(0, 10);
+    internalVal = `${dPart}T${hourSelect.value}:${minSelect.value}`;
+    input.setAttribute('value', internalVal);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  dateInput.addEventListener('change', handleUserChange);
+  hourSelect.addEventListener('change', handleUserChange);
+  minSelect.addEventListener('change', handleUserChange);
+
+  Object.defineProperty(input, 'value', {
+    configurable: true,
+    get() {
+      return internalVal;
+    },
+    set(newVal) {
+      internalVal = normalizeDateTime24(String(newVal || ''));
+      syncFromInternal();
+    }
+  });
+}
+
+function scanAndUpgrade24HourInputs(root = document) {
+  root.querySelectorAll('input[type="time"]').forEach(upgradeSingleTimeInput);
+  root.querySelectorAll('input[type="datetime-local"]').forEach(upgradeSingleDateTimeInput);
+}
+
+function init24HourTimeInputs() {
+  scanAndUpgrade24HourInputs(document);
+  if (typeof MutationObserver !== 'undefined' && document.body) {
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.addedNodes && m.addedNodes.length > 0) {
+          scanAndUpgrade24HourInputs(document);
+          break;
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
+window.init24HourTimeInputs = init24HourTimeInputs;
+
 

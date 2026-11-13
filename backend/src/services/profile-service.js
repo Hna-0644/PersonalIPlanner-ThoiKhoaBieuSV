@@ -3,6 +3,7 @@ const { mapUser } = require('./auth-service');
 
 const USER_COLUMNS = {
   fullName: 'full_name',
+  email: 'email',
   studentId: 'student_id',
   major: 'major',
   university: 'university',

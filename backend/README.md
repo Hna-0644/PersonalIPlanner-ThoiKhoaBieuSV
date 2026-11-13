@@ -23,6 +23,7 @@ Copy-Item backend\.env.example backend\.env
 ```
 
 Sửa `backend/.env` theo cấu hình MySQL của máy và đặt `JWT_SECRET` thành secret ngẫu nhiên tối thiểu 32 ký tự. Không đưa file `.env` lên Git.
+Để quét thời khóa biểu, đặt `GEMINI_API_KEY` trong `backend/.env`; nếu thiếu khóa hoặc Gemini không khả dụng, API trả lỗi thay vì hiển thị dữ liệu môn học mẫu.
 
 ```powershell
 npm.cmd --prefix backend install
@@ -54,6 +55,7 @@ Danh sách endpoint hiện thực:
 - `GET /api/schedule/events`
 - `POST /api/schedule/auto-generate`, `POST /api/schedule/apply`
 - `GET /api/notifications`, `PUT /api/notifications/read-all`, `PUT /api/notifications/{id}/read`
+- `POST /api/ai/scan-schedule` — gửi ảnh dưới dạng data URL/base64 trong JSON; giờ tiết được quy đổi theo trường trong hồ sơ tài khoản.
 
 Token access hiện không có refresh-token endpoint. Gửi email nhắc lịch, quên mật khẩu và worker định kỳ chưa được triển khai.
 

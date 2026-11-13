@@ -38,10 +38,24 @@ function createApp({ pool, config, redisClient }) {
   const notificationService = createNotificationService({ pool });
   const aiVisionService = createAiVisionService({ pool, config });
 
+  const allowedOrigins = String(config.CORS_ORIGIN || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
   app.disable('x-powered-by');
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({
-    origin: String(config.CORS_ORIGIN || '').split(',').map(origin => origin.trim()).filter(Boolean),
+    origin(origin, callback) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     credentials: false
   }));
   app.use(express.json({ limit: '10mb' }));
@@ -57,7 +71,7 @@ function createApp({ pool, config, redisClient }) {
   app.use('/api/tasks', createTaskRouter(taskService, authenticate));
   app.use('/api/schedule', createScheduleRouter(scheduleService, authenticate));
   app.use('/api/notifications', createNotificationRouter(notificationService, authenticate));
-  app.use('/api/ai', createAiRouter(aiVisionService, authenticate));
+  app.use('/api/ai', createAiRouter(aiVisionService, profileService, authenticate));
 
   // 404 cho API routes
   app.use('/api/*', (req, res, next) => next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy API này.')));

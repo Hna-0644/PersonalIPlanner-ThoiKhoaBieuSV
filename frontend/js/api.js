@@ -1,13 +1,30 @@
 /**
  * PersonalPlanner - API Service Client
- * Cầu nối giữa giao diện Frontend và Máy chủ Backend RESTful API
+ * Cầu nối giữa giao diện Frontend và Máy chủ Backend RESTful API (Không dùng Mock Data chung)
  */
 
 const API_CONFIG = {
-  USE_MOCK: true,
-  BASE_URL: 'http://localhost:5000/api',
+  USE_MOCK: false,
+  BASE_URL:
+    window.location.port === '5000'
+      ? `${window.location.origin}/api`
+      : 'http://localhost:5000/api',
   TIMEOUT: 8000
 };
+
+function isNetworkOfflineError(err) {
+  if (!err) return false;
+  if (err.status && err.status >= 400 && err.status < 500 && err.status !== 404 && err.status !== 405) {
+    return false;
+  }
+  return (
+    !err.status ||
+    err.status === 404 ||
+    err.status === 405 ||
+    err.name === 'TypeError' ||
+    /Failed to fetch|NetworkError|Load failed/i.test(String(err.message || ''))
+  );
+}
 
 const ApiService = {
   getToken() {
@@ -26,6 +43,9 @@ const ApiService = {
     } else {
       localStorage.removeItem('pp_jwt_token');
     }
+    if (window.AppStore && typeof AppStore.clearCurrentUserSession === 'function') {
+      AppStore.clearCurrentUserSession();
+    }
   },
   isAuthenticated() {
     return window.AuthService ? AuthService.isAuthenticated() : !!this.getToken();
@@ -42,77 +62,114 @@ const ApiService = {
 
     try {
       const response = await fetch(url, { ...options, headers });
-      if (response.status === 401) {
-        this.removeToken();
-        if (window.AuthService) {
-          AuthService.redirectToLogin();
-        } else {
-          window.location.href = '/pages/login.html';
+      if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+        // Nếu đang dùng token local offline thì không ép đăng xuất
+        if (!String(token).endsWith('.local_sig')) {
+          this.removeToken();
+          if (window.AuthService) {
+            AuthService.redirectToLogin();
+          } else {
+            window.location.href = '/pages/login.html';
+          }
         }
         return null;
       }
 
-      const payload = await response.json();
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const error = new Error((payload && payload.message) || 'Yêu cầu không thành công.');
+        let msg =
+          (payload && payload.error && payload.error.message) ||
+          (payload && payload.message) ||
+          'Yêu cầu không thành công.';
+        if (response.status === 409 && endpoint === '/auth/register') {
+          msg = 'Email này đã được đăng ký tài khoản. Vui lòng đăng nhập hoặc dùng email khác.';
+        }
+        const error = new Error(msg);
         error.status = response.status;
+        error.details = payload?.error?.details || null;
         throw error;
       }
       return payload;
     } catch (error) {
-      console.error('Fetch error:', error);
-      if (window.UIStates) {
-        UIStates.showApiError(error, 'Không thể hoàn tất yêu cầu đến máy chủ.');
+      if (!options.silent && !options.skipErrorModal && window.UIStates) {
+        UIStates.showApiError(error, error.message || 'Không thể hoàn tất yêu cầu đến máy chủ.');
       }
       throw error;
     }
   },
 
   async login(email, password, remember = true) {
-    if (API_CONFIG.USE_MOCK) {
-      const mockToken = `mock_jwt_token_${btoa(email)}_${Date.now()}`;
-      this.setToken(mockToken, remember);
-      return {
-        success: true,
-        message: 'Đăng nhập thành công!',
-        token: mockToken,
-        user: AppStore.getUser()
-      };
+    try {
+      const response = await this.request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+        skipErrorModal: true
+      });
+      const data = response && response.data ? response.data : response;
+      const token = data && (data.accessToken || data.token);
+      if (token) {
+        this.setToken(token, remember);
+      }
+      if (data && data.user && window.AppStore) {
+        AppStore.syncAccountRegistryUser(data.user, password);
+        AppStore.setCurrentUserSession(data.user);
+        await AppStore.syncFromServer();
+      }
+      return { ...response, ...data, success: true };
+    } catch (err) {
+      if (isNetworkOfflineError(err) && window.AppStore) {
+        try {
+          const localRes = AppStore.loginLocalAccount(email, password);
+          this.setToken(localRes.accessToken, remember);
+          return { ...localRes, success: true };
+        } catch (localErr) {
+          if (window.UIStates) UIStates.showApiError(localErr);
+          throw localErr;
+        }
+      }
+      if (window.UIStates) UIStates.showApiError(err);
+      throw err;
     }
-
-    const response = await this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-    const data = response && response.data ? response.data : response;
-    if (data && (data.token || data.accessToken)) {
-      this.setToken(data.token || data.accessToken, remember);
-    }
-    return { ...response, ...data, success: true };
   },
 
   async register(userData) {
-    if (API_CONFIG.USE_MOCK) {
-      const mockToken = `mock_jwt_token_${btoa(userData.email)}_${Date.now()}`;
-      this.setToken(mockToken, true);
-      const newUser = AppStore.updateUser(userData);
-      return {
-        success: true,
-        message: 'Đăng ký tài khoản thành công!',
-        token: mockToken,
-        user: newUser
-      };
+    const payload = {
+      fullName: userData.fullName,
+      email: userData.email,
+      password: userData.password,
+      ...(userData.studentId ? { studentId: userData.studentId } : {})
+    };
+    try {
+      const response = await this.request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        skipErrorModal: true
+      });
+      const data = response && response.data ? response.data : response;
+      const token = data && (data.accessToken || data.token);
+      if (token) {
+        this.setToken(token, true);
+      }
+      if (data && data.user && window.AppStore) {
+        AppStore.syncAccountRegistryUser(data.user, userData.password);
+        AppStore.setCurrentUserSession(data.user, { isNewUser: true });
+        await AppStore.syncFromServer();
+      }
+      return { ...response, ...data, success: true };
+    } catch (err) {
+      if (isNetworkOfflineError(err) && window.AppStore) {
+        try {
+          const localRes = AppStore.registerLocalAccount(payload);
+          this.setToken(localRes.accessToken, true);
+          return { ...localRes, success: true };
+        } catch (localErr) {
+          if (window.UIStates) UIStates.showApiError(localErr);
+          throw localErr;
+        }
+      }
+      if (window.UIStates) UIStates.showApiError(err);
+      throw err;
     }
-
-    const response = await this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData)
-    });
-    const data = response && response.data ? response.data : response;
-    if (data && (data.token || data.accessToken)) {
-      this.setToken(data.token || data.accessToken, true);
-    }
-    return { ...response, ...data, success: true };
   },
 
   async logout() {
@@ -120,64 +177,173 @@ const ApiService = {
     return { success: true };
   },
 
-  async getProfile() {
-    if (API_CONFIG.USE_MOCK) return AppStore.getUser();
-    return this.request('/user/profile');
+  async getProfile(options = {}) {
+    const res = await this.request('/user/profile', { silent: options.silent });
+    return res && res.data ? res.data : res;
   },
-  async updateProfile(profileData) {
-    if (API_CONFIG.USE_MOCK) return AppStore.updateUser(profileData);
-    return this.request('/user/profile', { method: 'PUT', body: JSON.stringify(profileData) });
+  async updateProfile(profileData, options = {}) {
+    const res = await this.request('/user/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(profileData),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
-  async getClasses() {
-    if (API_CONFIG.USE_MOCK) return AppStore.getClasses();
-    return this.request('/classes');
+  async getClasses(options = {}) {
+    const res = await this.request('/classes', { silent: options.silent });
+    return res && res.data ? res.data : res;
   },
-  async createClass(classData) {
-    if (API_CONFIG.USE_MOCK) return AppStore.addClass(classData);
-    return this.request('/classes', { method: 'POST', body: JSON.stringify(classData) });
+  async createClass(classData, options = {}) {
+    const res = await this.request('/classes', {
+      method: 'POST',
+      body: JSON.stringify(classData),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
-  async updateClass(id, classData) {
-    if (API_CONFIG.USE_MOCK) return AppStore.updateClass(id, classData);
-    return this.request(`/classes/${id}`, { method: 'PUT', body: JSON.stringify(classData) });
+  async updateClass(id, classData, options = {}) {
+    const res = await this.request(`/classes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(classData),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
-  async deleteClass(id) {
-    if (API_CONFIG.USE_MOCK) return AppStore.deleteClass(id);
-    return this.request(`/classes/${id}`, { method: 'DELETE' });
+  async deleteClass(id, options = {}) {
+    const res = await this.request(`/classes/${id}`, {
+      method: 'DELETE',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
-  async getTasks() {
-    if (API_CONFIG.USE_MOCK) return AppStore.getTasks();
-    return this.request('/tasks');
+  async getTasks(options = {}) {
+    const res = await this.request('/tasks', { silent: options.silent });
+    return res && res.data ? res.data : res;
   },
-  async createTask(taskData) {
-    if (API_CONFIG.USE_MOCK) return AppStore.addTask(taskData);
-    return this.request('/tasks', { method: 'POST', body: JSON.stringify(taskData) });
+  async createTask(taskData, options = {}) {
+    const res = await this.request('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(taskData),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
-  async updateTask(id, taskData) {
-    if (API_CONFIG.USE_MOCK) return AppStore.updateTask(id, taskData);
-    return this.request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(taskData) });
+  async updateTask(id, taskData, options = {}) {
+    const res = await this.request(`/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(taskData),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
-  async deleteTask(id) {
-    if (API_CONFIG.USE_MOCK) return AppStore.deleteTask(id);
-    return this.request(`/tasks/${id}`, { method: 'DELETE' });
+  async deleteTask(id, options = {}) {
+    const res = await this.request(`/tasks/${id}`, {
+      method: 'DELETE',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
-  async generateAutoSchedule(params) {
-    if (API_CONFIG.USE_MOCK) return AppStore.generateAutoSchedule(params);
-    return this.request('/schedule/auto-generate', { method: 'POST', body: JSON.stringify(params) });
+  async getScheduledEvents(options = {}) {
+    const res = await this.request('/schedule/events', { silent: options.silent });
+    return res && res.data ? res.data : res;
   },
-  async applyAutoSchedule(plan) {
-    if (API_CONFIG.USE_MOCK) return AppStore.applyProposedSchedule(plan);
-    return this.request('/schedule/apply', { method: 'POST', body: JSON.stringify({ plan }) });
+  async generateAutoSchedule(params, options = {}) {
+    const res = await this.request('/schedule/auto-generate', {
+      method: 'POST',
+      body: JSON.stringify(params),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async applyAutoSchedule(plan, breakMinutes = 15, timezone = 'Asia/Ho_Chi_Minh', options = {}) {
+    const res = await this.request('/schedule/apply', {
+      method: 'POST',
+      body: JSON.stringify({ plan, breakMinutes, timezone }),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async getNotifications(options = {}) {
+    const res = await this.request('/notifications', { silent: options.silent });
+    return res && res.data ? res.data : res;
+  },
+  async markNotificationRead(id, options = {}) {
+    const res = await this.request(`/notifications/${id}/read`, {
+      method: 'PUT',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async markAllNotificationsRead(options = {}) {
+    const res = await this.request('/notifications/read-all', {
+      method: 'PUT',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
   },
   async scanScheduleFromImage(imageFileOrBase64) {
-    if (API_CONFIG.USE_MOCK) return AppStore.simulateAIScanSchedule(imageFileOrBase64);
-    return this.request('/ai/scan-schedule', {
-      method: 'POST',
-      body: JSON.stringify({ image: imageFileOrBase64 })
-    });
+    const normalizeItem = (c, idx = 0) => {
+      const palette = ['#0d7480', '#1d5bd6', '#1f3038', '#0f7d45'];
+      let dayOfWeek = c.dayOfWeek;
+      if (dayOfWeek === undefined || dayOfWeek === null) {
+        if (c.date && /^\d{4}-\d{2}-\d{2}$/.test(String(c.date).trim())) {
+          const d = new Date(`${String(c.date).trim()}T00:00:00`);
+          if (!Number.isNaN(d.getTime())) dayOfWeek = d.getDay();
+        } else if (c.day_of_week !== undefined && c.day_of_week !== null) {
+          const raw = Number(c.day_of_week);
+          dayOfWeek = raw === 8 || raw === 0 ? 0 : raw >= 2 && raw <= 7 ? raw - 1 : 1;
+        } else {
+          dayOfWeek = 1;
+        }
+      }
+      const title = c.title || c.subject_name || 'Môn học';
+      const code = c.code || c.class_code || '';
+      const startTime = String(c.startTime || c.start_time || '06:45').slice(0, 5);
+      const endTime = String(c.endTime || c.end_time || '09:00').slice(0, 5);
+      return {
+        ...c,
+        tempId: c.tempId || 'ai_' + Math.random().toString(36).slice(2, 7),
+        title,
+        subject_name: title,
+        code,
+        class_code: code,
+        dayOfWeek: Number(dayOfWeek),
+        day_of_week: Number(dayOfWeek) === 0 ? 8 : Number(dayOfWeek) + 1,
+        date: c.date || null,
+        startTime,
+        start_time: startTime,
+        endTime,
+        end_time: endTime,
+        room: c.room || '',
+        lecturer: c.lecturer || '',
+        color: c.color || palette[idx % palette.length],
+        selected: c.selected !== false,
+        confidence: c.confidence || 96
+      };
+    };
+
+    try {
+      const res = await this.request('/ai/scan-schedule', {
+        method: 'POST',
+        body: JSON.stringify({ image: imageFileOrBase64 }),
+        skipErrorModal: true
+      });
+      const data = res && res.data ? res.data : res;
+      if (!Array.isArray(data) && (!data || !Array.isArray(data.classes))) {
+        throw new Error('Máy chủ không trả về kết quả quét hợp lệ.');
+      }
+      const rawList = Array.isArray(data) ? data : data?.classes || [];
+      return {
+        ...(Array.isArray(data) ? { success: true } : data),
+        classes: rawList.map(normalizeItem)
+      };
+    } catch (err) {
+      if (window.UIStates) UIStates.showApiError(err);
+      throw err;
+    }
   },
   async batchAddClasses(classList) {
-    if (API_CONFIG.USE_MOCK) return AppStore.batchAddClasses(classList);
-    return this.request('/classes/batch', { method: 'POST', body: JSON.stringify({ classes: classList }) });
+    return AppStore.batchAddClasses(classList);
   }
 };
 

@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-type="software" data-radius="soft">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PersonalPlanner - Quản lý công việc & Kế hoạch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="page-type" content="software">
+  <meta name="site-kind" content="software">
+  <title>PersonalPlanner — Quản lý công việc & kế hoạch</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -273,10 +275,10 @@
             <div class="col-6">
               <label class="form-label fw-semibold">Mức độ ưu tiên</label>
               <select class="form-select" id="taskPriority">
-                <option value="urgent">🔴 Khẩn cấp</option>
-                <option value="high" selected>🟠 Cao</option>
-                <option value="medium">🟡 Trung bình</option>
-                <option value="low">🟢 Thấp</option>
+                <option value="urgent">Khẩn cấp</option>
+                <option value="high" selected>Cao</option>
+                <option value="medium">Trung bình</option>
+                <option value="low">Thấp</option>
               </select>
             </div>
             <div class="col-6">
@@ -488,9 +490,9 @@
 
         <div class="task-card-meta">
           <span class="text-truncate" style="max-width: 140px;"><i class="bi bi-book me-1"></i>${escapeHtml(t.subject || 'Chung')}</span>
-          <span class="${isOverdue ? 'text-danger fw-bold' : ''}"><i class="bi bi-alarm me-1"></i>${deadlineStr}</span>
-          <span><i class="bi bi-clock me-1"></i>${t.estimatedHours || 1}h</span>
-          ${t.scheduled ? `<span class="badge bg-purple text-white ms-auto" style="font-size: 0.7rem;"><i class="bi bi-magic me-1"></i>Đã xếp lịch</span>` : ''}
+          <span class="font-monospace ${isOverdue ? 'text-danger fw-bold' : ''}"><i class="bi bi-alarm me-1"></i>${deadlineStr}</span>
+          <span class="font-monospace"><i class="bi bi-clock me-1"></i>${t.estimatedHours || 1}h</span>
+          ${t.scheduled ? `<span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-auto" style="font-size: 0.72rem;"><i class="bi bi-calendar-check me-1"></i>Đã xếp lịch</span>` : ''}
         </div>
       `;
 

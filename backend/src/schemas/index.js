@@ -56,12 +56,18 @@ const loginSchema = z.object({
   password: z.string().min(1).max(72)
 }).strict();
 
+const avatarInput = z.string().trim().max(500000).refine(
+  val => /^https?:\/\//i.test(val) || /^data:image\/[a-zA-Z0-9.+-]+;base64,/i.test(val),
+  'Ảnh đại diện phải là đường dẫn URL hợp lệ hoặc ảnh tải lên từ thiết bị.'
+);
+
 const profileSchema = z.object({
   fullName: z.string().trim().min(1).max(150).optional(),
+  email: z.string().trim().email().max(254).transform(value => value.toLowerCase()).optional(),
   studentId: nullableText,
   major: nullableText,
   university: nullableText,
-  avatar: z.string().trim().url().max(2048).nullable().optional(),
+  avatar: avatarInput.nullable().optional(),
   preferredHours: preferredHours.optional(),
   breakMinutes: z.number().int().min(0).max(180).optional(),
   timezone: timezone.optional(),

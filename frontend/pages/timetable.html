@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-type="software" data-radius="soft">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PersonalPlanner - Quản lý thời khóa biểu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="page-type" content="software">
+  <meta name="site-kind" content="software">
+  <title>PersonalPlanner — Quản lý thời khóa biểu</title>
   
-  <!-- Google Fonts -->
+  <!-- Dealt Google Fonts: Host Grotesk + JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
   
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -16,7 +18,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <!-- FullCalendar CSS via CDN -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
-  <!-- Custom CSS -->
+  <!-- Design Taste Custom CSS -->
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -103,9 +105,9 @@
       </div>
 
       <div class="header-actions">
-        <button class="btn btn-warning btn-sm fw-bold d-flex align-items-center gap-2 text-dark shadow-sm" onclick="openAIScanModal()" title="Chụp hoặc tải ảnh thời khóa biểu để AI tự động trích xuất">
-          <i class="bi bi-camera-fill text-danger fs-6"></i>
-          <span>Quét TKB bằng AI 📸</span>
+        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" onclick="openAIScanModal()" title="Chụp hoặc tải ảnh thời khóa biểu để AI tự động trích xuất">
+          <i class="bi bi-camera"></i>
+          <span>Quét TKB bằng AI</span>
         </button>
 
         <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onclick="scanAllConflicts()">
@@ -164,8 +166,8 @@
       <div class="card-custom mb-3 py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <span class="small fw-bold text-muted me-2">Ghi chú loại lịch:</span>
-          <span class="badge" style="background-color: #4f46e5;"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i> Lịch học cố định</span>
-          <span class="badge" style="background-color: #8b5cf6;"><i class="bi bi-magic me-1"></i> Tự động sắp xếp AI</span>
+          <span class="badge" style="background-color: #0d7480;"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i> Lịch học cố định</span>
+          <span class="badge" style="background-color: #1f3038;"><i class="bi bi-sliders me-1"></i> Tự động sắp xếp AI</span>
         </div>
         <div class="d-flex align-items-center gap-2">
           <button class="btn btn-sm btn-light border" onclick="calendar.changeView('timeGridDay')">Ngày</button>
@@ -248,7 +250,7 @@
             <div class="col-6">
               <label class="form-label fw-semibold">Màu hiển thị</label>
               <div class="d-flex align-items-center gap-2">
-                <input type="color" class="form-control form-control-color" id="classColorInput" value="#4f46e5" title="Chọn màu sắc cho môn">
+                <input type="color" class="form-control form-control-color" id="classColorInput" value="#0d7480" title="Chọn màu sắc cho môn">
                 <span class="small text-muted">Nhận diện môn</span>
               </div>
             </div>
@@ -358,13 +360,13 @@
                   <div class="col-12 col-sm-6">
                     <label class="form-label small fw-semibold mb-1">Hệ thống tiết học:</label>
                     <select class="form-select form-select-sm" id="periodFormatSelect">
-                      <option value="standard" selected>Quy chuẩn ĐHQG (Tiết 1: 07:00, 50p)</option>
+                      <option value="standard" selected>Quy chuẩn 15 Tiết (Tiết 1: 06:45, 45p/tiết)</option>
                       <option value="direct">Trực tiếp theo giờ ghi trên ảnh</option>
                     </select>
                   </div>
                   <div class="col-12 col-sm-6">
                     <label class="form-label small fw-semibold mb-1">Màu mặc định cho môn:</label>
-                    <input type="color" class="form-control form-control-sm form-control-color w-100" id="aiClassDefaultColor" value="#4f46e5">
+                    <input type="color" class="form-control form-control-sm form-control-color w-100" id="aiClassDefaultColor" value="#0d7480">
                   </div>
                 </div>
               </div>
@@ -478,6 +480,16 @@
       },
       slotMinTime: '06:00:00',
       slotMaxTime: '23:00:00',
+      slotLabelFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      },
+      eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      },
       allDaySlot: false,
       slotDuration: '00:30:00',
       expandRows: true,
@@ -517,8 +529,8 @@
         startTime: c.startTime + ':00',
         endTime: c.endTime + ':00',
         daysOfWeek: [parseInt(c.dayOfWeek)], // 0: CN, 1: T2...
-        backgroundColor: c.color || '#4f46e5',
-        borderColor: c.color || '#4f46e5',
+        backgroundColor: c.color || '#0d7480',
+        borderColor: c.color || '#0d7480',
         extendedProps: {
           type: 'class',
           data: c
@@ -530,11 +542,11 @@
     scheduledEvents.forEach(sch => {
       events.push({
         id: sch.id,
-        title: `⚡ [Task AI] ${sch.title}`,
+        title: `[Task AI] ${sch.title}`,
         start: sch.start,
         end: sch.end,
-        backgroundColor: sch.color || '#8b5cf6',
-        borderColor: sch.color || '#8b5cf6',
+        backgroundColor: sch.color || '#1f3038',
+        borderColor: sch.color || '#1f3038',
         extendedProps: {
           type: 'scheduled_task',
           data: sch
@@ -563,11 +575,11 @@
       document.getElementById('detailClassTitle').textContent = c.title;
       document.getElementById('detailClassBody').innerHTML = `
         <div class="mb-3">
-          <span class="badge" style="background-color: ${c.color || '#4f46e5'}">${c.code || 'Môn học'}</span>
+          <span class="badge font-monospace" style="background-color: ${c.color || '#0d7480'}">${c.code || 'Môn học'}</span>
           <span class="badge bg-secondary ms-1">${dayNames[c.dayOfWeek]}</span>
         </div>
         <div class="d-flex flex-column gap-2 small">
-          <div><i class="bi bi-clock me-2 text-primary"></i><strong>Thời gian:</strong> ${c.startTime} - ${c.endTime}</div>
+          <div><i class="bi bi-clock me-2 text-primary"></i><strong>Thời gian:</strong> <span class="font-monospace">${c.startTime} - ${c.endTime}</span></div>
           <div><i class="bi bi-geo-alt me-2 text-danger"></i><strong>Phòng học:</strong> ${c.room || 'Chưa cập nhật'}</div>
           <div><i class="bi bi-person me-2 text-info"></i><strong>Giảng viên:</strong> ${c.lecturer || 'Chưa cập nhật'}</div>
           ${c.notes ? `<div class="p-2 bg-light rounded mt-2"><i class="bi bi-sticky me-1 text-warning"></i>${escapeHtml(c.notes)}</div>` : ''}
@@ -638,7 +650,7 @@
     document.getElementById('classDayOfWeekInput').value = c.dayOfWeek;
     document.getElementById('classStartTimeInput').value = c.startTime;
     document.getElementById('classEndTimeInput').value = c.endTime;
-    document.getElementById('classColorInput').value = c.color || '#4f46e5';
+    document.getElementById('classColorInput').value = c.color || '#0d7480';
     document.getElementById('classNotesInput').value = c.notes || '';
 
     document.getElementById('classModalTitle').textContent = 'Chỉnh sửa môn học';
@@ -895,9 +907,9 @@
     });
   }
 
-  // Ảnh mẫu thời khóa biểu sinh viên demo (SVG data URL mô phỏng bảng điểm TKB)
+  // Ảnh mẫu thời khóa biểu sinh viên demo (SVG data URL mô phỏng bảng điểm TKB chuẩn 15 tiết)
   function loadSampleTimetableImage() {
-    const sampleSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340"><rect width="600" height="340" fill="%23ffffff"/><rect width="600" height="50" fill="%234f46e5"/><text x="20" y="32" fill="%23ffffff" font-family="Arial" font-size="16" font-weight="bold">THỜI KHÓA BIỂU HỌC KỲ 1 - NĂM HỌC 2026-2027</text><rect x="15" y="65" width="570" height="30" fill="%23f1f5f9"/><text x="25" y="85" fill="%230f172a" font-family="Arial" font-size="12" font-weight="bold">Mã HP | Tên học phần | Thứ | Tiết | Phòng | Giảng viên</text><rect x="15" y="105" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="132" fill="%23334155" font-family="Arial" font-size="12">IT4520 - Phát triển di động Flutter | Thứ 3 | 07:30 - 10:00 | B2-405 | TS. Hoàng M. Đức</text><rect x="15" y="160" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="187" fill="%23334155" font-family="Arial" font-size="12">IT4220 - Học máy &amp; Khai phá DL | Thứ 5 | 09:45 - 12:15 | C1-302 | PGS. Trần V. Kiên</text><rect x="15" y="215" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="242" fill="%23334155" font-family="Arial" font-size="12">IT3180 - HĐH Linux mã nguồn mở | Thứ 6 | 13:30 - 16:00 | Lab 5-PM | ThS. Đỗ Q. Linh</text><rect x="15" y="270" width="570" height="45" fill="%23f8fafc" stroke="%23e2e8f0"/><text x="25" y="297" fill="%23334155" font-family="Arial" font-size="12">IT3090 - Kỹ nghệ phần mềm ứng dụng | Thứ 7 | 13:00 - 15:30 | A3-102 | TS. Vũ T. Hà</text></svg>`;
+    const sampleSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340"><rect width="600" height="340" fill="%23ffffff"/><rect width="600" height="50" fill="%231f3038"/><text x="20" y="32" fill="%23ffffff" font-family="Arial" font-size="16" font-weight="bold">THỜI KHÓA BIỂU HỌC KỲ 1 - NĂM HỌC 2026-2027</text><rect x="15" y="65" width="570" height="30" fill="%23ecf0f2"/><text x="25" y="85" fill="%231f3038" font-family="Arial" font-size="12" font-weight="bold">Mã HP | Tên học phần | Thứ | Tiết | Phòng | Giảng viên</text><rect x="15" y="105" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="132" fill="%231f3038" font-family="Arial" font-size="12">IT4520 - Phát triển di động Flutter | Thứ 3 | Tiết: 1 - 3 (06:45-09:00) | B2-405 | TS. Hoàng M. Đức</text><rect x="15" y="160" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="187" fill="%231f3038" font-family="Arial" font-size="12">IT4220 - Học máy &amp; Khai phá DL | Thứ 5 | Tiết: 4 - 6 (09:15-11:30) | C1-302 | PGS. Trần V. Kiên</text><rect x="15" y="215" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="242" fill="%231f3038" font-family="Arial" font-size="12">IT3180 - HĐH Linux mã nguồn mở | Thứ 6 | Tiết: 7 - 9 (12:30-14:45) | Lab 5-PM | ThS. Đỗ Q. Linh</text><rect x="15" y="270" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="297" fill="%231f3038" font-family="Arial" font-size="12">IT3090 - Kỹ nghệ phần mềm ứng dụng | Thứ 7 | Tiết: 10 - 12 (15:00-17:15) | A3-102 | TS. Vũ T. Hà</text></svg>`;
     setScanPreviewImage(sampleSVG);
     showToast('Đã nạp ảnh mẫu', 'Đã tải ảnh Thời khóa biểu mẫu sinh viên CNTT để kiểm thử!', 'success');
   }
@@ -1051,7 +1063,7 @@
       const endTime = document.getElementById(`end_${id}`).value;
       const room = document.getElementById(`room_${id}`).value.trim();
       const lecturer = document.getElementById(`lecturer_${id}`).value.trim();
-      const defaultColor = document.getElementById('aiClassDefaultColor').value || '#4f46e5';
+      const defaultColor = document.getElementById('aiClassDefaultColor').value || '#0d7480';
 
       if (title && startTime && endTime) {
         selected.push({

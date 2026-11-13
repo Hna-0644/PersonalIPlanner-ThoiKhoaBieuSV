@@ -11,7 +11,8 @@ const envSchema = z.object({
   DB_NAME: z.string().min(1).default('personal_planner'),
   DB_USER: z.string().min(1).default('root'),
   DB_PASSWORD: z.string().default(''),
-  DB_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(100).default(10)
+  DB_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(100).default(10),
+  GEMINI_API_KEY: z.string().trim().optional().default('')
 });
 
 function loadEnv(source = process.env) {

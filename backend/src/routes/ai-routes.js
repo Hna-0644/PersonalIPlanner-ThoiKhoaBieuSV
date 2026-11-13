@@ -1,7 +1,7 @@
 const express = require('express');
 const { asyncHandler } = require('../utils/async-handler');
 
-function createAiRouter(aiVisionService, authenticate) {
+function createAiRouter(aiVisionService, profileService, authenticate) {
   const router = express.Router();
 
   // Yêu cầu xác thực JWT
@@ -13,7 +13,12 @@ function createAiRouter(aiVisionService, authenticate) {
    */
   router.post('/scan-schedule', asyncHandler(async (req, res) => {
     const { image, periodFormat } = req.body;
-    const result = await aiVisionService.scanScheduleImage({ image, periodFormat });
+    const profile = await profileService.getProfile(req.user.id);
+    const result = await aiVisionService.scanScheduleImage({
+      image,
+      periodFormat,
+      university: profile.university
+    });
     res.json({ data: result });
   }));
 

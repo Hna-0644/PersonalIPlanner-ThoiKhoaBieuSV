@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-type="software" data-radius="soft">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PersonalPlanner - Hồ sơ cá nhân & Thiết lập</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="page-type" content="software">
+  <meta name="site-kind" content="software">
+  <title>PersonalPlanner — Hồ sơ cá nhân & thiết lập</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -128,8 +130,11 @@
         <!-- Left: Profile Summary Card -->
         <div class="col-12 col-lg-4">
           <div class="card-custom text-center mb-4">
-            <div class="position-relative d-inline-block mb-3">
-              <img src="" alt="Avatar" class="user-avatar-target rounded-circle shadow" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid var(--primary);">
+            <div class="avatar-hero-wrapper mb-3">
+              <img src="" alt="Avatar" class="user-avatar-target avatar-hero-img">
+              <button type="button" class="avatar-edit-trigger" onclick="triggerAvatarUpload()" title="Chọn ảnh đại diện từ thư viện">
+                <i class="bi bi-camera-fill"></i>
+              </button>
             </div>
             <h5 class="fw-bold mb-1 user-name-target">Đang tải...</h5>
             <p class="text-muted small mb-2 user-email-target">email@example.com</p>
@@ -138,25 +143,16 @@
             <hr class="my-3">
 
             <div class="text-start small d-flex flex-column gap-2 text-muted">
-              <div><i class="bi bi-credit-card-2-front me-2 text-primary"></i><strong>MSSV:</strong> <span id="displayStudentId">---</span></div>
+              <div><i class="bi bi-credit-card-2-front me-2 text-primary"></i><strong>MSSV:</strong> <span id="displayStudentId" class="font-monospace">---</span></div>
               <div><i class="bi bi-mortarboard me-2 text-primary"></i><strong>Ngành:</strong> <span id="displayMajor">---</span></div>
               <div><i class="bi bi-building me-2 text-primary"></i><strong>Trường:</strong> <span id="displayUniversity">---</span></div>
             </div>
           </div>
 
-          <!-- Token & Security Card -->
-          <div class="card-custom">
-            <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
-              <i class="bi bi-shield-lock-fill text-success"></i> Bảo mật tài khoản & JWT
-            </h6>
-            <p class="small text-muted mb-3">Tài khoản được bảo vệ bởi JSON Web Token (JWT) và mã hóa bcrypt.</p>
-            <div class="p-2 bg-light rounded text-break font-monospace small mb-3 text-secondary" style="font-size: 0.72rem;" id="tokenDisplay">
-              Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-            </div>
-            <button class="btn btn-outline-danger btn-sm w-100" onclick="logoutSession()">
-              <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất phiên làm việc
-            </button>
-          </div>
+          <!-- Logout Action -->
+          <button class="btn btn-outline-danger btn-sm w-100 py-2" onclick="logoutSession()">
+            <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất phiên làm việc
+          </button>
         </div>
 
         <!-- Right: Forms -->
@@ -181,21 +177,63 @@
               <div class="row g-3 mb-3">
                 <div class="col-12 col-md-4">
                   <label class="form-label fw-semibold small">Mã số sinh viên (MSSV)</label>
-                  <input type="text" class="form-control" id="inputStudentId">
+                  <input type="text" class="form-control font-monospace" id="inputStudentId">
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="form-label fw-semibold small">Ngành / Khoa</label>
                   <input type="text" class="form-control" id="inputMajor">
                 </div>
                 <div class="col-12 col-md-4">
-                  <label class="form-label fw-semibold small">Trường đại học</label>
+                  <label class="form-label fw-semibold small">Trường đại học, cao đẳng</label>
                   <input type="text" class="form-control" id="inputUniversity">
                 </div>
               </div>
 
+              <!-- Primary: Upload Avatar from Device Library -->
               <div class="mb-3">
-                <label class="form-label fw-semibold small">URL Ảnh đại diện (Avatar)</label>
-                <input type="url" class="form-control" id="inputAvatar">
+                <label class="form-label fw-semibold small d-flex align-items-center justify-content-between">
+                  <span>Ảnh đại diện (Avatar)</span>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle" id="avatarSourceBadge">Thư viện thiết bị</span>
+                </label>
+
+                <input type="file" id="avatarFileInput" accept="image/*" class="d-none" onchange="handleAvatarFileChange(event)">
+
+                <div class="avatar-upload-zone" id="avatarDropZone">
+                  <div class="d-flex align-items-center gap-3">
+                    <img src="" alt="Preview Avatar" class="avatar-upload-preview user-avatar-target" id="avatarUploadPreview">
+                    <div>
+                      <div class="fw-semibold small text-main">Tải ảnh lên từ thư viện thiết bị</div>
+                      <div class="text-muted" style="font-size: 0.8rem;" id="avatarHelperText">
+                        Chọn ảnh JPG, PNG, WEBP từ máy hoặc kéo thả vào đây (tự động căn chuẩn vuông).
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="triggerAvatarUpload()">
+                      <i class="bi bi-images"></i> Chọn ảnh từ thư viện
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm border" onclick="resetDefaultAvatar()" title="Khôi phục ảnh mặc định">
+                      <i class="bi bi-arrow-counterclockwise"></i> Mặc định
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Secondary / Expandable: Avatar URL Option -->
+                <details class="avatar-url-expander" id="avatarUrlExpander">
+                  <summary>
+                    <span><i class="bi bi-link-45deg me-1"></i> Tùy chọn mở rộng: Nhập đường dẫn URL ảnh trực tuyến</span>
+                    <i class="bi bi-chevron-down small"></i>
+                  </summary>
+                  <div class="expander-body">
+                    <label class="form-label small text-muted mb-1" for="inputAvatar">Đường dẫn ảnh trực tuyến (https://...)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="url" class="form-control" id="inputAvatar" placeholder="https://images.unsplash.com/photo-...">
+                      <button class="btn btn-outline-primary" type="button" onclick="applyAvatarUrlInput()">
+                        Áp dụng URL
+                      </button>
+                    </div>
+                  </div>
+                </details>
               </div>
 
               <button type="submit" class="btn btn-primary fw-semibold btn-sm px-4">
@@ -306,6 +344,9 @@
 <script src="../js/main.js"></script>
 
 <script>
+  const DEFAULT_AVATAR_URL = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+  let currentAvatarValue = DEFAULT_AVATAR_URL;
+
   document.addEventListener('DOMContentLoaded', () => {
     const loadingState = document.getElementById('profileLoadingState');
     UIStates.loading(loadingState, 'Đang tải hồ sơ...');
@@ -315,8 +356,134 @@
       loadingState.classList.add('d-none');
       document.getElementById('profileContent').classList.remove('d-none');
       loadProfileData();
+      initAvatarDropZone();
     });
   });
+
+  function triggerAvatarUpload() {
+    const fileInput = document.getElementById('avatarFileInput');
+    if (fileInput) fileInput.click();
+  }
+
+  function initAvatarDropZone() {
+    const zone = document.getElementById('avatarDropZone');
+    if (!zone) return;
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      zone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      zone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.remove('dragover');
+      });
+    });
+
+    zone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        processAvatarImageFile(files[0]);
+      }
+    });
+  }
+
+  function handleAvatarFileChange(event) {
+    const file = event.target.files?.[0];
+    if (file) {
+      processAvatarImageFile(file);
+    }
+  }
+
+  // Nén & cắt vuông trung tâm 256x256 bằng Canvas để lưu mượt vào LocalStorage
+  function processAvatarImageFile(file) {
+    if (!file.type.startsWith('image/')) {
+      showToast('Định dạng không hợp lệ', 'Vui lòng chọn tệp hình ảnh (JPG, PNG, WEBP).', 'warning');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const size = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        // Center crop square
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+        currentAvatarValue = dataUrl;
+
+        // Xóa ô URL mở rộng vì đang dùng ảnh từ thư viện thiết bị
+        document.getElementById('inputAvatar').value = '';
+        updateAvatarStatusUI(dataUrl, file.name);
+
+        // Lưu tức thì vào AppStore & đồng bộ toàn trang
+        AppStore.updateUser({ avatar: dataUrl });
+        initUserUI();
+        showToast('Đã cập nhật ảnh đại diện', `Đã tải ảnh "${file.name}" từ thư viện thiết bị!`, 'success');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function applyAvatarUrlInput() {
+    const urlVal = document.getElementById('inputAvatar').value.trim();
+    if (!urlVal) {
+      showToast('Thiếu đường dẫn URL', 'Vui lòng nhập đường dẫn URL ảnh hợp lệ (https://...).', 'warning');
+      return;
+    }
+    currentAvatarValue = urlVal;
+    updateAvatarStatusUI(urlVal);
+    AppStore.updateUser({ avatar: urlVal });
+    initUserUI();
+    showToast('Đã áp dụng URL', 'Ảnh đại diện từ đường dẫn URL đã được cập nhật!', 'success');
+  }
+
+  function resetDefaultAvatar() {
+    currentAvatarValue = DEFAULT_AVATAR_URL;
+    document.getElementById('inputAvatar').value = DEFAULT_AVATAR_URL;
+    const fileInput = document.getElementById('avatarFileInput');
+    if (fileInput) fileInput.value = '';
+    updateAvatarStatusUI(DEFAULT_AVATAR_URL);
+    AppStore.updateUser({ avatar: DEFAULT_AVATAR_URL });
+    initUserUI();
+    showToast('Đã đặt lại', 'Đã khôi phục ảnh đại diện mặc định.', 'info');
+  }
+
+  function updateAvatarStatusUI(avatarSrc, fileName = '') {
+    const badge = document.getElementById('avatarSourceBadge');
+    const helper = document.getElementById('avatarHelperText');
+    const preview = document.getElementById('avatarUploadPreview');
+    if (preview) preview.src = avatarSrc || DEFAULT_AVATAR_URL;
+
+    if (avatarSrc && avatarSrc.startsWith('data:image/')) {
+      if (badge) badge.textContent = 'Ảnh từ thư viện máy';
+      if (helper) {
+        helper.textContent = fileName
+          ? `Đang dùng ảnh "${fileName}" từ thư viện thiết bị (đã tối ưu kích thước).`
+          : 'Đang dùng ảnh tải lên từ thư viện thiết bị của bạn.';
+      }
+    } else {
+      if (badge) badge.textContent = 'Ảnh trực tuyến (URL)';
+      if (helper) {
+        helper.textContent = 'Chọn ảnh JPG, PNG, WEBP từ máy hoặc kéo thả vào đây (tự động căn chuẩn vuông).';
+      }
+    }
+  }
 
   function loadProfileData() {
     const user = AppStore.getUser();
@@ -331,12 +498,6 @@
     document.getElementById('displayStudentId').textContent = user.studentId || 'Chưa cập nhật';
     document.getElementById('displayMajor').textContent = user.major || 'Chưa cập nhật';
     document.getElementById('displayUniversity').textContent = user.university || 'Chưa cập nhật';
-    
-    // Fill token display
-    const token = ApiService.getToken();
-    if (token) {
-      document.getElementById('tokenDisplay').textContent = `Bearer ${token.substring(0, 35)}...`;
-    }
 
     // Fill form fields
     document.getElementById('inputFullName').value = user.fullName || '';
@@ -344,7 +505,11 @@
     document.getElementById('inputStudentId').value = user.studentId || '';
     document.getElementById('inputMajor').value = user.major || '';
     document.getElementById('inputUniversity').value = user.university || '';
-    document.getElementById('inputAvatar').value = user.avatar || '';
+
+    currentAvatarValue = user.avatar || DEFAULT_AVATAR_URL;
+    // Chỉ điền vào ô URL mở rộng nếu là đường dẫn http/https (tránh chuỗi base64 dài)
+    document.getElementById('inputAvatar').value = currentAvatarValue.startsWith('data:image/') ? '' : currentAvatarValue;
+    updateAvatarStatusUI(currentAvatarValue);
 
     // Fill study hours
     const h = user.preferredHours || {};
@@ -372,13 +537,16 @@
   // Save profile form
   document.getElementById('profileForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    const urlInputVal = document.getElementById('inputAvatar').value.trim();
+    const finalAvatar = urlInputVal || currentAvatarValue || DEFAULT_AVATAR_URL;
+
     const updated = {
       fullName: document.getElementById('inputFullName').value.trim(),
       email: document.getElementById('inputEmail').value.trim(),
       studentId: document.getElementById('inputStudentId').value.trim(),
       major: document.getElementById('inputMajor').value.trim(),
       university: document.getElementById('inputUniversity').value.trim(),
-      avatar: document.getElementById('inputAvatar').value.trim()
+      avatar: finalAvatar
     };
 
     AppStore.updateUser(updated);

@@ -48,12 +48,16 @@
       const session = getStorage('sessionStorage');
       if (local) local.removeItem(TOKEN_KEY);
       if (session) session.removeItem(TOKEN_KEY);
+      if (window.AppStore && typeof AppStore.clearCurrentUserSession === 'function') {
+        AppStore.clearCurrentUserSession();
+      }
     },
 
     isTokenExpired(token = this.getToken()) {
-      if (!token) return true;
+      if (!token || String(token).startsWith('mock_')) return true;
       const payload = decodePayload(token);
-      return Boolean(payload && payload.exp && payload.exp * 1000 <= Date.now());
+      if (!payload || !payload.sub) return true;
+      return Boolean(payload.exp && payload.exp * 1000 <= Date.now());
     },
 
     isAuthenticated() {
