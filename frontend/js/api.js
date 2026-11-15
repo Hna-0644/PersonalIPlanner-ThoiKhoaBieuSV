@@ -243,6 +243,33 @@ const ApiService = {
     });
     return res && res.data ? res.data : res;
   },
+  async getWorkSchedules(options = {}) {
+    const res = await this.request('/work-schedules', { silent: options.silent });
+    return res && res.data ? res.data : res;
+  },
+  async createWorkSchedule(data, options = {}) {
+    const res = await this.request('/work-schedules', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async updateWorkSchedule(id, data, options = {}) {
+    const res = await this.request(`/work-schedules/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async deleteWorkSchedule(id, options = {}) {
+    const res = await this.request(`/work-schedules/${id}`, {
+      method: 'DELETE',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
   async getScheduledEvents(options = {}) {
     const res = await this.request('/schedule/events', { silent: options.silent });
     return res && res.data ? res.data : res;

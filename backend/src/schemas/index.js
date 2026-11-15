@@ -178,6 +178,46 @@ const scheduleApplySchema = z.object({
   path: ['plan']
 });
 
+const workScheduleFieldsSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  workplace: nullableText,
+  dayOfWeek: z.number().int().min(0).max(6).nullable().optional(),
+  workDate: localDate.nullable().optional(),
+  startTime: localTime,
+  endTime: localTime,
+  startDate: localDate.nullable().optional(),
+  endDate: localDate.nullable().optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
+  notes: z.string().trim().max(5000).nullable().optional()
+}).strict();
+
+const workScheduleSchema = workScheduleFieldsSchema
+  .refine(value => (value.dayOfWeek !== undefined && value.dayOfWeek !== null) || (value.workDate !== undefined && value.workDate !== null), {
+    message: 'Cần có thứ trong tuần (lịch lặp) hoặc ngày làm việc cụ thể.',
+    path: ['dayOfWeek']
+  })
+  .refine(value => value.startTime < value.endTime, {
+    message: 'Giờ kết thúc phải sau giờ bắt đầu.',
+    path: ['endTime']
+  })
+  .refine(value => !value.startDate || !value.endDate || value.startDate <= value.endDate, {
+    message: 'Ngày kết thúc không được trước ngày bắt đầu.',
+    path: ['endDate']
+  });
+
+const workScheduleUpdateSchema = workScheduleFieldsSchema.partial().strict()
+  .refine(value => Object.keys(value).length > 0, {
+    message: 'Cần có ít nhất một trường để cập nhật.'
+  })
+  .refine(value => !value.startTime || !value.endTime || value.startTime < value.endTime, {
+    message: 'Giờ kết thúc phải sau giờ bắt đầu.',
+    path: ['endTime']
+  })
+  .refine(value => !value.startDate || !value.endDate || value.startDate <= value.endDate, {
+    message: 'Ngày kết thúc không được trước ngày bắt đầu.',
+    path: ['endDate']
+  });
+
 module.exports = {
   preferredHours,
   registerSchema,
@@ -188,5 +228,8 @@ module.exports = {
   taskSchema,
   taskUpdateSchema,
   scheduleRequestSchema,
-  scheduleApplySchema
+  schedulePlanItemSchema,
+  scheduleApplySchema,
+  workScheduleSchema,
+  workScheduleUpdateSchema
 };

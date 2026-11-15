@@ -184,26 +184,6 @@
       </header>
 
       <div class="content-body">
-        <!-- AI Algorithm Intro Banner -->
-        <div class="ai-assistant-card mb-4 shadow">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <i class="bi bi-cpu-fill fs-3 text-warning"></i>
-            <h4 class="fw-bold mb-0">Thuật toán phân bổ lịch học & công việc tự động</h4>
-          </div>
-          <p class="text-white-50 mb-3" style="max-width: 800px;">
-            Hệ thống tự động quét các khoảng thời gian trống ngoài thời khóa biểu, tính toán trọng số mức độ ưu tiên và
-            hạn chót (Deadline) để sắp xếp công việc vào thời gian học tối ưu nhất, không gây xung đột.
-          </p>
-          <div class="d-flex gap-2 flex-wrap">
-            <span class="algorithm-step-pill"><i class="bi bi-shield-check me-1 text-success"></i> 100% Không trùng
-              lịch</span>
-            <span class="algorithm-step-pill"><i class="bi bi-sort-numeric-down me-1 text-warning"></i> Ưu tiên theo
-              Deadline & Độ quan trọng</span>
-            <span class="algorithm-step-pill"><i class="bi bi-battery-charging me-1 text-info"></i> Tự động chèn giờ
-              giải lao 15 phút</span>
-          </div>
-        </div>
-
         <div class="row g-4">
           <!-- Configuration & Task Selection Panel (Left) -->
           <div class="col-12 col-lg-5">
@@ -212,15 +192,15 @@
                 <i class="bi bi-sliders text-primary"></i> 1. Cấu hình điều kiện xếp lịch
               </h5>
 
-            <div class="mb-3">
-              <label class="form-label fw-semibold small">Khoảng thời gian dự kiến</label>
-              <select class="form-select form-select-sm" id="scheduleDaysSelect">
-                <option value="3">3 ngày tới (Ưu tiên việc cấp bách)</option>
-                <option value="7" selected>7 ngày tới (Trong tuần này)</option>
-                <option value="14">14 ngày tới (Hai tuần tới)</option>
-                <option value="30">30 ngày tới (Trong 1 tháng)</option>
-              </select>
-            </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold small">Khoảng thời gian dự kiến</label>
+                <select class="form-select form-select-sm" id="scheduleDaysSelect">
+                  <option value="3">3 ngày tới (Ưu tiên việc cấp bách)</option>
+                  <option value="7" selected>7 ngày tới (Trong tuần này)</option>
+                  <option value="14">14 ngày tới (Hai tuần tới)</option>
+                  <option value="30">30 ngày tới (Trong 1 tháng)</option>
+                </select>
+              </div>
 
               <div class="mb-3">
                 <label class="form-label fw-semibold small">Thời gian nghỉ giải lao giữa các ca</label>
@@ -321,6 +301,8 @@
 
   <script>
     let latestProposedPlan = [];
+    let latestBreakMinutes = 15;
+    let latestTimezone = 'Asia/Ho_Chi_Minh';
 
     document.addEventListener('DOMContentLoaded', () => {
       loadUserHoursPreview();
@@ -388,7 +370,7 @@
     }
 
     // Chạy thuật toán sắp xếp
-    function runSchedulingAlgorithm() {
+    async function runSchedulingAlgorithm() {
       const checkedBoxes = Array.from(document.querySelectorAll('.task-select-check:checked')).map(cb => cb.value);
 
       if (checkedBoxes.length === 0) {
@@ -399,42 +381,99 @@
       const days = parseInt(document.getElementById('scheduleDaysSelect').value) || 7;
       const breakMinutes = parseInt(document.getElementById('breakMinutesSelect').value) || 15;
 
-      // Hiệu ứng loading mô phỏng AI tính toán
       const btn = document.getElementById('btnRunSchedule');
       btn.disabled = true;
       btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Đang phân tích khoảng trống...`;
 
-      setTimeout(() => {
-        // Gọi thuật toán từ AppStore
-        const fullPlan = AppStore.generateAutoSchedule({ days, breakMinutes });
+      try {
+        let result;
+        const isOnline = window.ApiService && ApiService.isAuthenticated() && !String(ApiService.getToken()).endsWith('.local_sig');
+        if (isOnline) {
+          result = await ApiService.generateAutoSchedule({
+            taskIds: checkedBoxes,
+            days,
+            breakMinutes
+          });
+        } else {
+          result = AppStore.generateAutoSchedule({
+            taskIds: checkedBoxes,
+            days,
+            breakMinutes
+          });
+        }
 
-        // Lọc lại chỉ giữ các task người dùng đã tích chọn
-        latestProposedPlan = fullPlan.filter(item => checkedBoxes.includes(item.taskId));
+        latestProposedPlan = (result && result.plan) ? result.plan : (Array.isArray(result) ? result : []);
+        latestBreakMinutes = (result && result.breakMinutes) || breakMinutes;
+        latestTimezone = (result && result.timezone) || 'Asia/Ho_Chi_Minh';
 
+        renderProposedPlanResult(result);
+      } catch (err) {
+        console.error('Lỗi khi chạy thuật toán tự động xếp lịch:', err);
+        Swal.fire('Lỗi xếp lịch', err.message || 'Không thể tạo phương án xếp lịch tự động.', 'error');
+      } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="bi bi-magic fs-5"></i> <span>Chạy thuật toán sắp xếp ngay</span>`;
-
-        renderProposedPlanResult(latestProposedPlan);
-      }, 600);
+      }
     }
 
-    function renderProposedPlanResult(plan) {
+    function renderProposedPlanResult(result) {
       const container = document.getElementById('scheduleResultContent');
       const applyGroup = document.getElementById('applyActionGroup');
       const subtitle = document.getElementById('resultSubtitle');
+
+      const plan = (result && result.plan) ? result.plan : (Array.isArray(result) ? result : []);
+      const unscheduled = (result && result.unscheduled) ? result.unscheduled : [];
+
+      const reasonBadgeMap = {
+        DEADLINE_PASSED: { label: 'Hạn chót đã qua', class: 'bg-danger text-white' },
+        DEADLINE_INFEASIBLE: { label: 'Không đủ thời gian trước hạn', class: 'bg-warning text-dark' },
+        NO_AVAILABLE_SLOT: { label: 'Hết khung giờ trống', class: 'bg-secondary text-white' },
+        DURATION_EXCEEDS_WINDOW: { label: 'Thời lượng quá dài', class: 'bg-warning text-dark' },
+        NO_ACTIVE_STUDY_WINDOW: { label: 'Chưa bật khung giờ học', class: 'bg-secondary text-white' }
+      };
+
+      let unscheduledHtml = '';
+      if (unscheduled.length > 0) {
+        unscheduledHtml = `
+          <div id="unscheduledContainer" class="card-custom border-warning mb-4 p-3 bg-light">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold text-warning mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Công việc chưa thể xếp lịch (${unscheduled.length})</span>
+              </h6>
+              <span class="small text-muted">Cần điều chỉnh thời lượng, deadline hoặc mở rộng khung giờ học</span>
+            </div>
+            <div class="d-flex flex-column gap-2 mt-2">
+              ${unscheduled.map(u => {
+                const badgeInfo = reasonBadgeMap[u.reason] || { label: u.reason || 'Chưa xếp được', class: 'bg-warning text-dark' };
+                return `
+                  <div class="d-flex justify-content-between align-items-center small p-2 bg-white rounded border">
+                    <div>
+                      <strong>${escapeHtml(u.taskTitle || u.taskId)}</strong>
+                      ${u.message ? `<span class="text-muted ms-2">${escapeHtml(u.message)}</span>` : ''}
+                    </div>
+                    <span class="badge ${badgeInfo.class}">${badgeInfo.label}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
 
       if (plan.length === 0) {
         applyGroup.classList.add('d-none');
         subtitle.textContent = 'Không tìm thấy khoảng trống phù hợp';
         container.innerHTML = `
-        <div class="text-center py-5">
-          <i class="bi bi-exclamation-circle text-warning fs-1"></i>
-          <h6 class="fw-bold mt-3">Không tìm thấy khung giờ trống!</h6>
-          <p class="text-muted small" style="max-width: 400px; margin: 0 auto;">
-            Thời khóa biểu và các sự kiện của bạn đã kín hoặc các công việc có thời lượng lớn hơn khoảng rảnh trong ngày. Vui lòng mở rộng khung giờ trong phần Hồ sơ cá nhân.
-          </p>
-        </div>
-      `;
+          ${unscheduledHtml}
+          <div class="text-center py-5">
+            <i class="bi bi-exclamation-circle text-warning fs-1"></i>
+            <h6 class="fw-bold mt-3">Không tìm thấy khung giờ trống!</h6>
+            <p class="text-muted small" style="max-width: 400px; margin: 0 auto;">
+              Thời khóa biểu, ca làm việc và các sự kiện của bạn đã kín hoặc các công việc có thời lượng lớn hơn khoảng rảnh trong ngày. Vui lòng mở rộng khung giờ trong phần Hồ sơ cá nhân.
+            </p>
+          </div>
+        `;
         return;
       }
 
@@ -454,14 +493,15 @@
       const priorityLabels = { urgent: 'Khẩn cấp', high: 'Cao', medium: 'Trung bình', low: 'Thấp' };
 
       let html = `
-      <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 mb-4 shadow-sm">
-        <i class="bi bi-check-circle-fill text-success fs-5"></i>
-        <div class="small">
-          Thuật toán đã tối ưu hóa lịch trình, <strong>không có xung đột</strong> với thời khóa biểu trường học của bạn.
+        ${unscheduledHtml}
+        <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 mb-4 shadow-sm">
+          <i class="bi bi-check-circle-fill text-success fs-5"></i>
+          <div class="small">
+            Thuật toán đã tối ưu hóa lịch trình, <strong>không có xung đột</strong> với thời khóa biểu trường học và ca làm việc của bạn.
+          </div>
         </div>
-      </div>
-      <div class="timeline-container">
-    `;
+        <div class="timeline-container">
+      `;
 
       Object.keys(groupedByDate).sort().forEach(dateStr => {
         const dObj = new Date(dateStr + 'T00:00:00');
@@ -469,39 +509,39 @@
         const formattedDate = `${dayOfWeekName}, ngày ${dObj.getDate()}/${dObj.getMonth() + 1}/${dObj.getFullYear()}`;
 
         html += `
-        <div class="timeline-day-block">
-          <h6 class="fw-bold text-primary mb-3"><i class="bi bi-calendar3 me-2"></i>${formattedDate}</h6>
-          <div class="d-flex flex-column">
-      `;
+          <div class="timeline-day-block">
+            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-calendar3 me-2"></i>${formattedDate}</h6>
+            <div class="d-flex flex-column">
+        `;
 
         groupedByDate[dateStr].forEach(item => {
           html += `
-          <div class="timeline-item d-flex align-items-center justify-content-between gap-3 flex-wrap">
-            <div class="d-flex align-items-start gap-3">
-              <div class="free-slot-badge text-center" style="min-width: 105px;">
-                <i class="bi bi-clock-history"></i>
-                <span>${item.startTime} - ${item.endTime}</span>
-              </div>
-              <div>
-                <div class="fw-bold text-main">${escapeHtml(item.taskTitle)}</div>
-                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap" style="font-size: 0.78rem;">
-                  <span class="badge-priority priority-${item.priority}">${priorityLabels[item.priority]}</span>
-                  <span class="text-muted"><i class="bi bi-book me-1"></i>${escapeHtml(item.subject || 'Chung')}</span>
-                  <span class="text-secondary"><i class="bi bi-hourglass-split me-1"></i>Thời lượng: ${item.durationMinutes} phút</span>
+            <div class="timeline-item d-flex align-items-center justify-content-between gap-3 flex-wrap">
+              <div class="d-flex align-items-start gap-3">
+                <div class="free-slot-badge text-center" style="min-width: 105px;">
+                  <i class="bi bi-clock-history"></i>
+                  <span>${item.startTime} - ${item.endTime}</span>
+                </div>
+                <div>
+                  <div class="fw-bold text-main">${escapeHtml(item.taskTitle)}</div>
+                  <div class="d-flex align-items-center gap-2 mt-1 flex-wrap" style="font-size: 0.78rem;">
+                    <span class="badge-priority priority-${item.priority}">${priorityLabels[item.priority]}</span>
+                    <span class="text-muted"><i class="bi bi-book me-1"></i>${escapeHtml(item.subject || 'Chung')}</span>
+                    <span class="text-secondary"><i class="bi bi-hourglass-split me-1"></i>Thời lượng: ${item.durationMinutes} phút</span>
+                  </div>
                 </div>
               </div>
+              <span class="badge bg-light text-success border border-success-subtle">
+                <i class="bi bi-check2 me-1"></i> Đã khớp slot trống
+              </span>
             </div>
-            <span class="badge bg-light text-success border border-success-subtle">
-              <i class="bi bi-check2 me-1"></i> Đã khớp slot trống
-            </span>
-          </div>
-        `;
+          `;
         });
 
         html += `
+            </div>
           </div>
-        </div>
-      `;
+        `;
       });
 
       html += `</div>`;
@@ -509,37 +549,63 @@
     }
 
     // Áp dụng đề xuất vào hệ thống
-    function applyProposedScheduleToSystem() {
+    async function applyProposedScheduleToSystem() {
       if (!latestProposedPlan || latestProposedPlan.length === 0) return;
 
-      Swal.fire({
+      const confirmResult = await Swal.fire({
         title: 'Xác nhận áp dụng lịch trình?',
         text: `Hệ thống sẽ thêm ${latestProposedPlan.length} buổi học/làm bài này vào Thời khóa biểu và đồng bộ nhiệm vụ!`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Đồng ý áp dụng',
         cancelButtonText: 'Xem lại',
-        confirmButtonColor: '#10b981'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          AppStore.applyProposedSchedule(latestProposedPlan);
-
-          Swal.fire({
-            title: 'Thành công!',
-            text: 'Lịch trình đã được ghi nhận vào Thời khóa biểu của bạn.',
-            icon: 'success',
-            showCancelButton: true,
-            confirmButtonText: 'Mở Thời khóa biểu xem ngay',
-            cancelButtonText: 'Ở lại đây'
-          }).then((nav) => {
-            if (nav.isConfirmed) {
-              window.location.href = 'timetable.html';
-            } else {
-              renderUnassignedTasks();
-            }
-          });
-        }
+        confirmButtonColor: '#0d7480'
       });
+
+      if (!confirmResult.isConfirmed) return;
+
+      try {
+        const isOnline = window.ApiService && ApiService.isAuthenticated() && !String(ApiService.getToken()).endsWith('.local_sig');
+        if (isOnline) {
+          const validPlan = latestProposedPlan
+            .filter(item => /^tsk_[1-9]\d*$/.test(item.taskId))
+            .map(item => ({
+              taskId: item.taskId,
+              date: item.date,
+              startTime: String(item.startTime).slice(0, 5),
+              endTime: String(item.endTime).slice(0, 5)
+            }));
+          if (validPlan.length > 0) {
+            await ApiService.applyAutoSchedule(
+              validPlan,
+              Number(latestBreakMinutes || 15),
+              latestTimezone || 'Asia/Ho_Chi_Minh'
+            );
+          }
+          await AppStore.syncFromServer();
+        } else {
+          AppStore.applyProposedSchedule(latestProposedPlan, Number(latestBreakMinutes || 15));
+        }
+
+        const nav = await Swal.fire({
+          title: 'Thành công!',
+          text: 'Lịch trình đã được ghi nhận vào Thời khóa biểu của bạn.',
+          icon: 'success',
+          showCancelButton: true,
+          confirmButtonText: 'Mở Thời khóa biểu xem ngay',
+          cancelButtonText: 'Ở lại đây',
+          confirmButtonColor: '#0d7480'
+        });
+
+        if (nav.isConfirmed) {
+          window.location.href = 'timetable.html';
+        } else {
+          renderUnassignedTasks();
+        }
+      } catch (err) {
+        console.error('Lỗi áp dụng lịch tự động:', err);
+        Swal.fire('Lỗi', err.message || 'Không thể lưu lịch trình tự động vào hệ thống.', 'error');
+      }
     }
   </script>
 </body>

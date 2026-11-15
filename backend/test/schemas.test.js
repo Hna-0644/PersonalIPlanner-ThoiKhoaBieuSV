@@ -5,7 +5,9 @@ const {
   classSchema,
   taskSchema,
   taskUpdateSchema,
-  scheduleRequestSchema
+  scheduleRequestSchema,
+  workScheduleSchema,
+  workScheduleUpdateSchema
 } = require('../src/schemas');
 
 test('registration normalizes email and requires a strong minimum password length', () => {
@@ -68,4 +70,111 @@ test('schedule requests reject duplicate task ids', () => {
     }).success, false);
   });
   assert.equal(result.success, false);
+});
+
+test('work schedule validation requires dayOfWeek or workDate, validates time and date ordering', () => {
+  // Valid recurring shift
+  const validRecurring = workScheduleSchema.safeParse({
+    title: 'Part-time barista',
+    workplace: 'Coffee House',
+    dayOfWeek: 2,
+    startTime: '18:00',
+    endTime: '22:00',
+    startDate: '2026-09-01',
+    endDate: '2026-12-31',
+    color: '#0d7480'
+  });
+  assert.equal(validRecurring.success, true);
+
+  // Valid date-specific shift
+  const validSpecific = workScheduleSchema.safeParse({
+    title: 'Weekend event staff',
+    workDate: '2026-11-20',
+    startTime: '08:00',
+    endTime: '16:00'
+  });
+  assert.equal(validSpecific.success, true);
+
+  // Rejects when neither dayOfWeek nor workDate is provided
+  const noDayOrDate = workScheduleSchema.safeParse({
+    title: 'Missing date info',
+    startTime: '08:00',
+    endTime: '12:00'
+  });
+  assert.equal(noDayOrDate.success, false);
+
+  // Rejects invalid dayOfWeek
+  const invalidDay = workScheduleSchema.safeParse({
+    title: 'Invalid day',
+    dayOfWeek: 7,
+    startTime: '08:00',
+    endTime: '12:00'
+  });
+  assert.equal(invalidDay.success, false);
+
+  // Rejects startTime >= endTime
+  const reversedTime = workScheduleSchema.safeParse({
+    title: 'Reversed time',
+    dayOfWeek: 1,
+    startTime: '17:00',
+    endTime: '09:00'
+  });
+  assert.equal(reversedTime.success, false);
+
+  const equalTime = workScheduleSchema.safeParse({
+    title: 'Equal time',
+    dayOfWeek: 1,
+    startTime: '09:00',
+    endTime: '09:00'
+  });
+  assert.equal(equalTime.success, false);
+
+  // Rejects startDate > endDate
+  const reversedDates = workScheduleSchema.safeParse({
+    title: 'Reversed dates',
+    dayOfWeek: 1,
+    startTime: '08:00',
+    endTime: '12:00',
+    startDate: '2026-12-01',
+    endDate: '2026-11-01'
+  });
+  assert.equal(reversedDates.success, false);
+
+  // Rejects invalid color
+  const badColor = workScheduleSchema.safeParse({
+    title: 'Bad color',
+    dayOfWeek: 1,
+    startTime: '08:00',
+    endTime: '12:00',
+    color: 'invalid-hex'
+  });
+  assert.equal(badColor.success, false);
+});
+
+test('work schedule update validation accepts partial fields and enforces constraints', () => {
+  // Valid partial update
+  const validPartial = workScheduleUpdateSchema.safeParse({
+    title: 'Updated title',
+    startTime: '10:00',
+    endTime: '14:00'
+  });
+  assert.equal(validPartial.success, true);
+
+  // Rejects empty update
+  const emptyUpdate = workScheduleUpdateSchema.safeParse({});
+  assert.equal(emptyUpdate.success, false);
+
+  // Rejects update with startTime >= endTime
+  const invalidTimeUpdate = workScheduleUpdateSchema.safeParse({
+    startTime: '15:00',
+    endTime: '10:00'
+  });
+  assert.equal(invalidTimeUpdate.success, false);
+
+  // Rejects update with startDate > endDate
+  const invalidDateUpdate = workScheduleUpdateSchema.safeParse({
+    startDate: '2026-12-01',
+    endDate: '2026-10-01'
+  });
+  assert.equal(invalidDateUpdate.success, false);
 });

@@ -5,7 +5,8 @@ const ID_PREFIXES = {
   class: 'cls',
   task: 'tsk',
   schedule: 'sch',
-  notification: 'ntf'
+  notification: 'ntf',
+  work: 'wrk'
 };
 
 function toPublicId(type, databaseId) {

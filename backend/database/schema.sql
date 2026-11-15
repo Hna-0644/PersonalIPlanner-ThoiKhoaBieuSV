@@ -177,3 +177,31 @@ CREATE TABLE `refresh_tokens` (
   CONSTRAINT `fk_refresh_user` FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================================
+-- 8. BẢNG WORK_SCHEDULES (Lịch làm việc / ca làm bán thời gian)
+-- =====================================================================
+CREATE TABLE `work_schedules` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `title` VARCHAR(200) NOT NULL,
+  `workplace` VARCHAR(500) DEFAULT NULL,
+  `day_of_week` TINYINT UNSIGNED DEFAULT NULL,
+  `work_date` DATE DEFAULT NULL,
+  `start_time` TIME NOT NULL,
+  `end_time` TIME NOT NULL,
+  `start_date` DATE DEFAULT NULL,
+  `end_date` DATE DEFAULT NULL,
+  `color` VARCHAR(20) DEFAULT '#0d7480',
+  `notes` TEXT DEFAULT NULL,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `ix_work_schedules_user_day` (`user_id`, `day_of_week`, `start_time`),
+  KEY `ix_work_schedules_user_date` (`user_id`, `work_date`, `start_time`),
+  CONSTRAINT `fk_work_schedules_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_work_schedules_day_or_date` CHECK (`day_of_week` IS NOT NULL OR `work_date` IS NOT NULL),
+  CONSTRAINT `chk_work_schedules_day_of_week` CHECK (`day_of_week` IS NULL OR `day_of_week` BETWEEN 0 AND 6),
+  CONSTRAINT `chk_work_schedules_time_order` CHECK (`start_time` < `end_time`),
+  CONSTRAINT `chk_work_schedules_date_order` CHECK (`start_date` IS NULL OR `end_date` IS NULL OR `start_date` <= `end_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

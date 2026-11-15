@@ -341,6 +341,7 @@ test('schedule generation respects selected tasks and returns a partial-plan sha
       }
       if (sql.includes('SELECT DISTINCT task_id')) return [[], []];
       if (sql.includes('FROM classes')) return [[], []];
+      if (sql.includes('FROM work_schedules')) return [[], []];
       if (sql.includes('FROM scheduled_events')) return [[], []];
       throw new Error(`Unexpected SQL in test: ${sql}`);
     }
@@ -392,6 +393,7 @@ test('schedule application validates and persists events in one transaction', as
       }
       if (sql.includes('SELECT task_id FROM scheduled_events')) return [[], []];
       if (sql.includes('FROM classes')) return [[], []];
+      if (sql.includes('FROM work_schedules')) return [[], []];
       if (sql.includes('SELECT id, start_at, end_at FROM scheduled_events')) return [[], []];
       if (sql.includes('INSERT INTO scheduled_events')) return [{ insertId: 82 }, []];
       if (sql.includes('INSERT INTO notifications')) return [{ insertId: 1 }, []];
@@ -482,6 +484,7 @@ test('schedule generation distinguishes an infeasible future deadline from an ex
       }
       if (sql.includes('SELECT DISTINCT task_id')) return [[], []];
       if (sql.includes('FROM classes')) return [[], []];
+      if (sql.includes('FROM work_schedules')) return [[], []];
       if (sql.includes('FROM scheduled_events')) return [[], []];
       throw new Error(`Unexpected SQL in test: ${sql}`);
     }
@@ -494,4 +497,169 @@ test('schedule generation distinguishes an infeasible future deadline from an ex
   assert.equal(result.unscheduled[0].reason, 'DEADLINE_INFEASIBLE');
   assert.equal(result.breakMinutes, 0);
   assert.equal(result.timezone, 'Asia/Ho_Chi_Minh');
+});
+
+test('busy calendar includes recurring work shifts and date-specific work shifts', () => {
+  const today = DateTime.fromISO('2026-10-26', { zone: 'Asia/Ho_Chi_Minh' }); // Monday (weekday: 1)
+  const calendar = makeBusyCalendar(
+    today,
+    2,
+    [],
+    [],
+    [
+      {
+        title: 'Barista shift',
+        dayOfWeek: 1,
+        workDate: null,
+        startTime: '18:00',
+        endTime: '22:00',
+        startDate: null,
+        endDate: null
+      },
+      {
+        title: 'Tuesday one-off shift',
+        dayOfWeek: null,
+        workDate: '2026-10-27',
+        startTime: '13:00',
+        endTime: '17:00',
+        startDate: null,
+        endDate: null
+      }
+    ],
+    'Asia/Ho_Chi_Minh'
+  );
+
+  assert.deepEqual(calendar.get('2026-10-26'), [
+    { start: 1080, end: 1320 } // 18:00 - 22:00
+  ]);
+  assert.deepEqual(calendar.get('2026-10-27'), [
+    { start: 780, end: 1020 } // 13:00 - 17:00
+  ]);
+});
+
+test('schedule generation avoids work shifts and respects break time', async () => {
+  const tomorrow = DateTime.now().setZone('Asia/Ho_Chi_Minh').plus({ days: 1 });
+  const tomorrowDate = tomorrow.toISODate();
+  const tomorrowWeekday = tomorrow.weekday % 7;
+
+  const pool = {
+    async execute(sql, params) {
+      if (sql.includes('FROM study_preferences')) {
+        return [[{
+          preferred_hours: {
+            morning: { start: '08:00', end: '12:00', active: true },
+            afternoon: { start: '00:00', end: '00:00', active: false },
+            evening: { start: '00:00', end: '00:00', active: false }
+          },
+          break_minutes: 15,
+          timezone: 'Asia/Ho_Chi_Minh'
+        }], []];
+      }
+      if (sql.includes('FROM tasks WHERE user_id')) {
+        return [[{
+          id: '18',
+          title: 'Study task',
+          subject: null,
+          priority: 'high',
+          status: 'todo',
+          estimated_hours: 1,
+          deadline: null
+        }], []];
+      }
+      if (sql.includes('SELECT DISTINCT task_id')) return [[], []];
+      if (sql.includes('FROM classes')) return [[], []];
+      if (sql.includes('FROM work_schedules')) {
+        return [[{
+          id: 1,
+          title: 'Morning shift',
+          workplace: 'Library',
+          day_of_week: tomorrowWeekday,
+          work_date: null,
+          start_time: '08:00',
+          end_time: '10:00',
+          start_date: null,
+          end_date: null,
+          color: '#0d7480',
+          notes: null
+        }], []];
+      }
+      if (sql.includes('FROM scheduled_events')) return [[], []];
+      throw new Error(`Unexpected SQL in test: ${sql}`);
+    }
+  };
+  const service = createScheduleService({ pool });
+
+  const result = await service.generate('5', { taskIds: ['tsk_18'], days: 2 });
+
+  assert.equal(result.plan.length, 1);
+  const scheduledItem = result.plan[0];
+  // Since 08:00 - 10:00 is work shift, with 15m break, the earliest slot starts at 10:15 or later
+  assert.equal(scheduledItem.taskId, 'tsk_18');
+  assert.ok(scheduledItem.startTime >= '10:15', `Expected startTime >= 10:15, got ${scheduledItem.startTime}`);
+});
+
+test('schedule application rejects plan that overlaps with active work shifts', async () => {
+  const connection = {
+    async beginTransaction() {},
+    async commit() {},
+    async rollback() {},
+    release() {},
+    async execute(sql) {
+      if (sql.includes('SELECT id FROM users')) return [[{ id: '5' }], []];
+      if (sql.includes('FROM study_preferences')) {
+        return [[{
+          preferred_hours: {
+            morning: { start: '08:00', end: '18:00', active: true },
+            afternoon: { start: '00:00', end: '00:00', active: false },
+            evening: { start: '00:00', end: '00:00', active: false }
+          },
+          break_minutes: 15,
+          timezone: 'Asia/Ho_Chi_Minh'
+        }], []];
+      }
+      if (sql.includes('FROM tasks') && sql.includes('FOR UPDATE')) {
+        return [[{
+          id: '18',
+          title: 'Study task',
+          subject: 'Study',
+          status: 'todo',
+          deadline: null
+        }], []];
+      }
+      if (sql.includes('SELECT task_id FROM scheduled_events')) return [[], []];
+      if (sql.includes('FROM classes')) return [[], []];
+      if (sql.includes('FROM work_schedules')) {
+        return [[{
+          id: 1,
+          title: 'Afternoon work shift',
+          workplace: 'Cafe',
+          day_of_week: null,
+          work_date: '2026-11-20',
+          start_time: '13:00',
+          end_time: '17:00',
+          start_date: null,
+          end_date: null,
+          color: '#0d7480',
+          notes: null
+        }], []];
+      }
+      if (sql.includes('SELECT id, start_at, end_at FROM scheduled_events')) return [[], []];
+      throw new Error(`Unexpected SQL in test: ${sql}`);
+    }
+  };
+
+  const service = createScheduleService({
+    pool: { getConnection: async () => connection }
+  });
+
+  await assert.rejects(
+    service.apply('5', [{
+      taskId: 'tsk_18',
+      date: '2026-11-20',
+      startTime: '14:00',
+      endTime: '15:00',
+      durationMinutes: 60
+    }], 15, 'Asia/Ho_Chi_Minh'),
+    error => error.code === 'CONFLICT' && error.message.includes('lịch làm việc')
+  );
 });

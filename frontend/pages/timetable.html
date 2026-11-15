@@ -115,6 +115,11 @@
           <span class="d-none d-sm-inline">Kiểm tra trùng lịch</span>
         </button>
 
+        <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-2" style="color: #b45309; border-color: #b45309;" onclick="openCreateShiftModal()" title="Thêm ca làm việc mới">
+          <i class="bi bi-briefcase"></i>
+          <span>Thêm ca làm việc</span>
+        </button>
+
         <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" onclick="openCreateClassModal()">
           <i class="bi bi-plus-lg"></i>
           <span>Thêm lịch học</span>
@@ -167,6 +172,7 @@
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <span class="small fw-bold text-muted me-2">Ghi chú loại lịch:</span>
           <span class="badge" style="background-color: #0d7480;"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i> Lịch học cố định</span>
+          <span class="badge" style="background-color: #b45309;"><i class="bi bi-briefcase me-1"></i> Ca làm việc</span>
           <span class="badge" style="background-color: #1f3038;"><i class="bi bi-sliders me-1"></i> Tự động sắp xếp AI</span>
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -275,6 +281,108 @@
           <div class="d-flex gap-2 ms-auto">
             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
             <button type="submit" class="btn btn-primary fw-semibold">Lưu thời khóa biểu</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Thêm / Chỉnh Sửa Ca Làm Việc -->
+<div class="modal fade" id="shiftModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="shiftModalTitle">
+          <i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Thêm ca làm việc mới
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="shiftForm">
+        <input type="hidden" id="shiftIdInput">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tên ca làm / Công việc <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="shiftTitleInput" placeholder="VD: Phục vụ The Coffee House, Trực Lab, Gia sư..." required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nơi làm việc / Địa điểm</label>
+            <input type="text" class="form-control" id="shiftWorkplaceInput" placeholder="VD: 123 Nguyễn Huệ, Q.1 hoặc Phòng Lab A3">
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Lặp lại theo Thứ</label>
+              <select class="form-select" id="shiftDayOfWeekInput" onchange="handleShiftTimingTypeChange(); checkLiveShiftConflictInModal();">
+                <option value="">-- Không lặp lại --</option>
+                <option value="1">Thứ Hai</option>
+                <option value="2">Thứ Ba</option>
+                <option value="3">Thứ Tư</option>
+                <option value="4">Thứ Năm</option>
+                <option value="5">Thứ Sáu</option>
+                <option value="6">Thứ Bảy</option>
+                <option value="0">Chủ Nhật</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Ngày làm cụ thể</label>
+              <input type="date" class="form-control" id="shiftWorkDateInput" onchange="handleShiftTimingTypeChange(); checkLiveShiftConflictInModal();">
+            </div>
+            <div class="col-12">
+              <small class="text-muted" style="font-size: 0.76rem;">* Chọn lặp lại theo Thứ cho ca làm cố định hàng tuần, hoặc chọn Ngày làm cụ thể cho ca linh hoạt.</small>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Giờ bắt đầu <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="shiftStartTimeInput" value="18:00" required onchange="checkLiveShiftConflictInModal()">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Giờ kết thúc <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="shiftEndTimeInput" value="22:00" required onchange="checkLiveShiftConflictInModal()">
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3" id="shiftRecurringDateRangeBlock">
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Ngày áp dụng từ</label>
+              <input type="date" class="form-control form-control-sm" id="shiftStartDateInput" onchange="checkLiveShiftConflictInModal()">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Đến ngày</label>
+              <input type="date" class="form-control form-control-sm" id="shiftEndDateInput" onchange="checkLiveShiftConflictInModal()">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Màu hiển thị</label>
+            <div class="d-flex align-items-center gap-2">
+              <input type="color" class="form-control form-control-color" id="shiftColorInput" value="#b45309" title="Chọn màu sắc cho ca làm">
+              <span class="small text-muted">Màu đặc trưng cho ca làm việc (Mặc định: Hổ phách/Đồng)</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Ghi chú thêm</label>
+            <textarea class="form-control" id="shiftNotesInput" rows="2" placeholder="Lưu ý công việc, phân công, đồng phục..."></textarea>
+          </div>
+
+          <!-- Live Conflict Warning Preview inside shift modal -->
+          <div id="modalShiftConflictAlert" class="alert alert-warning d-none small py-2 mb-0">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <span id="modalShiftConflictText"></span>
+          </div>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteShift" style="display: none;" onclick="deleteCurrentShift()">
+            <i class="bi bi-trash"></i> Xóa ca này
+          </button>
+          <div class="d-flex gap-2 ms-auto">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+            <button type="submit" class="btn fw-semibold text-white" style="background-color: #b45309;">Lưu ca làm việc</button>
           </div>
         </div>
       </form>
@@ -538,6 +646,50 @@
       });
     });
 
+    // Ca làm việc (Định kỳ hàng tuần hoặc theo ngày cụ thể)
+    const shifts = typeof AppStore.getWorkSchedules === 'function' ? AppStore.getWorkSchedules() : [];
+    shifts.forEach(s => {
+      const workplaceSuffix = s.workplace ? ` (${s.workplace})` : '';
+      if (s.workDate) {
+        events.push({
+          id: s.id,
+          title: `[Ca làm] ${s.title}${workplaceSuffix}`,
+          start: `${s.workDate}T${s.startTime}:00`,
+          end: `${s.workDate}T${s.endTime}:00`,
+          backgroundColor: s.color || '#b45309',
+          borderColor: s.color || '#b45309',
+          extendedProps: {
+            type: 'work_shift',
+            data: s
+          }
+        });
+      } else if (s.dayOfWeek !== null && s.dayOfWeek !== undefined && s.dayOfWeek !== '') {
+        const ev = {
+          id: s.id,
+          title: `[Ca làm] ${s.title}${workplaceSuffix}`,
+          startTime: s.startTime + ':00',
+          endTime: s.endTime + ':00',
+          daysOfWeek: [parseInt(s.dayOfWeek)],
+          backgroundColor: s.color || '#b45309',
+          borderColor: s.color || '#b45309',
+          extendedProps: {
+            type: 'work_shift',
+            data: s
+          }
+        };
+        if (s.startDate) ev.startRecur = s.startDate;
+        if (s.endDate) {
+          const endD = new Date(`${s.endDate}T00:00:00`);
+          endD.setDate(endD.getDate() + 1);
+          const yyyy = endD.getFullYear();
+          const mm = String(endD.getMonth() + 1).padStart(2, '0');
+          const dd = String(endD.getDate()).padStart(2, '0');
+          ev.endRecur = `${yyyy}-${mm}-${dd}`;
+        }
+        events.push(ev);
+      }
+    });
+
     // Các task được AI Auto-Schedule lên lịch
     scheduledEvents.forEach(sch => {
       events.push({
@@ -595,6 +747,40 @@
       document.getElementById('btnDetailDelete').onclick = () => {
         bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
         deleteClassConfirm(c.id);
+      };
+
+      const detailModal = new bootstrap.Modal(document.getElementById('classDetailModal'));
+      detailModal.show();
+    } else if (props.type === 'work_shift') {
+      const s = props.data;
+      const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const timeInfo = s.workDate
+        ? `Ngày ${s.workDate} (${s.startTime} - ${s.endTime})`
+        : `${dayNames[s.dayOfWeek]} hàng tuần (${s.startTime} - ${s.endTime})`;
+
+      document.getElementById('detailClassTitle').innerHTML = `<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>${escapeHtml(s.title)}`;
+      document.getElementById('detailClassBody').innerHTML = `
+        <div class="mb-3">
+          <span class="badge" style="background-color: ${s.color || '#b45309'}"><i class="bi bi-briefcase me-1"></i>Ca làm việc</span>
+          ${s.workDate ? `<span class="badge bg-secondary ms-1">Ngày: ${s.workDate}</span>` : `<span class="badge bg-secondary ms-1">${dayNames[s.dayOfWeek]}</span>`}
+        </div>
+        <div class="d-flex flex-column gap-2 small">
+          <div><i class="bi bi-clock me-2 text-warning"></i><strong>Thời gian:</strong> <span class="font-monospace">${timeInfo}</span></div>
+          <div><i class="bi bi-geo-alt me-2 text-danger"></i><strong>Nơi làm việc:</strong> ${escapeHtml(s.workplace || 'Chưa cập nhật')}</div>
+          ${s.startDate || s.endDate ? `<div><i class="bi bi-calendar-range me-2 text-info"></i><strong>Khoảng thời gian:</strong> ${s.startDate || '...'} đến ${s.endDate || '...'}</div>` : ''}
+          ${s.notes ? `<div class="p-2 bg-light rounded mt-2"><i class="bi bi-sticky me-1 text-warning"></i>${escapeHtml(s.notes)}</div>` : ''}
+          ${s.warning ? `<div class="alert alert-danger py-2 mt-2 mb-0 small"><i class="bi bi-shield-alert me-1"></i>${s.warning}</div>` : ''}
+        </div>
+      `;
+
+      document.getElementById('btnDetailEdit').onclick = () => {
+        bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
+        openEditShiftModal(s.id);
+      };
+
+      document.getElementById('btnDetailDelete').onclick = () => {
+        bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
+        deleteShiftConfirm(s.id);
       };
 
       const detailModal = new bootstrap.Modal(document.getElementById('classDetailModal'));
@@ -751,6 +937,187 @@
       }
     });
   }
+
+  // === QUẢN LÝ CA LÀM VIỆC (WORK SHIFTS) ===
+  function openCreateShiftModal(defaults = {}) {
+    document.getElementById('shiftForm').reset();
+    document.getElementById('shiftIdInput').value = '';
+    document.getElementById('shiftModalTitle').innerHTML = '<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Thêm ca làm việc mới';
+    document.getElementById('btnDeleteShift').style.display = 'none';
+    document.getElementById('modalShiftConflictAlert').classList.add('d-none');
+    document.getElementById('shiftColorInput').value = '#b45309';
+
+    if (defaults.dayOfWeek !== undefined) {
+      document.getElementById('shiftDayOfWeekInput').value = defaults.dayOfWeek;
+    }
+    if (defaults.workDate) {
+      document.getElementById('shiftWorkDateInput').value = defaults.workDate;
+    }
+    if (defaults.startTime) {
+      document.getElementById('shiftStartTimeInput').value = defaults.startTime;
+    }
+    if (defaults.endTime) {
+      document.getElementById('shiftEndTimeInput').value = defaults.endTime;
+    }
+
+    handleShiftTimingTypeChange();
+    const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
+    modal.show();
+  }
+
+  function openEditShiftModal(id) {
+    const s = AppStore.getWorkScheduleById(id);
+    if (!s) return;
+
+    document.getElementById('shiftIdInput').value = s.id;
+    document.getElementById('shiftTitleInput').value = s.title || '';
+    document.getElementById('shiftWorkplaceInput').value = s.workplace || '';
+    document.getElementById('shiftDayOfWeekInput').value = (s.dayOfWeek !== null && s.dayOfWeek !== undefined) ? s.dayOfWeek : '';
+    document.getElementById('shiftWorkDateInput').value = s.workDate || '';
+    document.getElementById('shiftStartTimeInput').value = s.startTime || '18:00';
+    document.getElementById('shiftEndTimeInput').value = s.endTime || '22:00';
+    document.getElementById('shiftStartDateInput').value = s.startDate || '';
+    document.getElementById('shiftEndDateInput').value = s.endDate || '';
+    document.getElementById('shiftColorInput').value = s.color || '#b45309';
+    document.getElementById('shiftNotesInput').value = s.notes || '';
+
+    document.getElementById('shiftModalTitle').innerHTML = '<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Chỉnh sửa ca làm việc';
+    document.getElementById('btnDeleteShift').style.display = 'inline-block';
+    document.getElementById('modalShiftConflictAlert').classList.add('d-none');
+
+    handleShiftTimingTypeChange();
+    const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
+    modal.show();
+  }
+
+  function checkLiveShiftConflictInModal() {
+    const shiftId = document.getElementById('shiftIdInput').value || null;
+    const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
+    const workDateVal = document.getElementById('shiftWorkDateInput').value;
+    const startTime = document.getElementById('shiftStartTimeInput').value;
+    const endTime = document.getElementById('shiftEndTimeInput').value;
+    const startDate = document.getElementById('shiftStartDateInput').value || null;
+    const endDate = document.getElementById('shiftEndDateInput').value || null;
+
+    if (!startTime || !endTime) return;
+    if (dayOfWeekVal === '' && !workDateVal) return;
+
+    const candidate = {
+      dayOfWeek: dayOfWeekVal !== '' ? parseInt(dayOfWeekVal) : null,
+      workDate: workDateVal || null,
+      startTime,
+      endTime,
+      startDate,
+      endDate
+    };
+
+    const res = AppStore.checkWorkShiftConflict(candidate, shiftId);
+    const alertEl = document.getElementById('modalShiftConflictAlert');
+    const alertText = document.getElementById('modalShiftConflictText');
+
+    if (res && res.hasConflict) {
+      alertEl.classList.remove('d-none');
+      const conflictName = res.conflictingEvent ? res.conflictingEvent.title : 'Sự kiện khác';
+      const conflictTypeLabel = res.conflictType === 'class' ? 'môn học' : 'ca làm khác';
+      alertText.textContent = `Trùng giờ với ${conflictTypeLabel} "${conflictName}" (${res.conflictingEvent.startTime} - ${res.conflictingEvent.endTime})`;
+    } else {
+      alertEl.classList.add('d-none');
+    }
+  }
+
+  function handleShiftTimingTypeChange() {
+    const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
+    const dateRangeBlock = document.getElementById('shiftRecurringDateRangeBlock');
+    if (dateRangeBlock) {
+      if (dayOfWeekVal !== '') {
+        dateRangeBlock.classList.remove('d-none');
+      } else {
+        dateRangeBlock.classList.add('d-none');
+      }
+    }
+  }
+
+  function deleteCurrentShift() {
+    const id = document.getElementById('shiftIdInput').value;
+    if (id) {
+      bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
+      deleteShiftConfirm(id);
+    }
+  }
+
+  function deleteShiftConfirm(id) {
+    Swal.fire({
+      title: 'Xác nhận xóa ca làm việc?',
+      text: 'Ca làm này sẽ bị xóa khỏi lịch làm và thời khóa biểu!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#b45309',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Đồng ý xóa',
+      cancelButtonText: 'Hủy'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        AppStore.deleteWorkSchedule(id);
+        showToast('Đã xóa', 'Ca làm việc đã được xóa khỏi hệ thống.', 'info');
+        calendar.refetchEvents();
+      }
+    });
+  }
+
+  document.getElementById('shiftForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('shiftIdInput').value;
+    const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
+    const workDateVal = document.getElementById('shiftWorkDateInput').value;
+
+    if (dayOfWeekVal === '' && !workDateVal) {
+      Swal.fire('Lỗi cấu hình', 'Vui lòng chọn Thứ trong tuần (lặp lại) hoặc chọn Ngày làm việc cụ thể!', 'error');
+      return;
+    }
+
+    const shiftData = {
+      title: document.getElementById('shiftTitleInput').value.trim(),
+      workplace: document.getElementById('shiftWorkplaceInput').value.trim(),
+      dayOfWeek: dayOfWeekVal !== '' ? parseInt(dayOfWeekVal) : null,
+      workDate: workDateVal || null,
+      startTime: document.getElementById('shiftStartTimeInput').value,
+      endTime: document.getElementById('shiftEndTimeInput').value,
+      startDate: document.getElementById('shiftStartDateInput').value || null,
+      endDate: document.getElementById('shiftEndDateInput').value || null,
+      color: document.getElementById('shiftColorInput').value,
+      notes: document.getElementById('shiftNotesInput').value.trim()
+    };
+
+    if (shiftData.startTime >= shiftData.endTime) {
+      Swal.fire('Lỗi thời gian', 'Giờ bắt đầu phải nhỏ hơn giờ kết thúc!', 'error');
+      return;
+    }
+
+    if (shiftData.startDate && shiftData.endDate && shiftData.startDate > shiftData.endDate) {
+      Swal.fire('Lỗi khoảng ngày', 'Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc!', 'error');
+      return;
+    }
+
+    let result;
+    if (id) {
+      result = AppStore.updateWorkSchedule(id, shiftData);
+      showToast('Cập nhật thành công', 'Đã lưu thay đổi ca làm việc!', 'success');
+    } else {
+      result = AppStore.addWorkSchedule(shiftData);
+      showToast('Thêm thành công', 'Đã thêm ca làm việc vào lịch trình!', 'success');
+    }
+
+    if (result && result.conflict && result.conflict.hasConflict) {
+      Swal.fire({
+        title: 'Cảnh báo trùng lịch!',
+        text: `Ca làm này đang bị trùng giờ với: ${result.conflict.conflictingEvent.title}. Bạn vẫn có thể lưu nhưng hãy chú ý thời gian!`,
+        icon: 'warning'
+      });
+    }
+
+    bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
+    calendar.refetchEvents();
+  });
 
   // Quét toàn bộ lịch để phát hiện tất cả các xung đột
   function scanAllConflicts() {

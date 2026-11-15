@@ -93,7 +93,7 @@ function createScheduleService({ pool, redisClient }) {
 
     const today = DateTime.now().setZone(preferences.timezone).startOf('day');
     const lastDate = today.plus({ days: input.days });
-    const [classRows, eventRows] = await Promise.all([
+    const [classRows, eventRows, workRows] = await Promise.all([
       pool.execute(
         `SELECT id, title, day_of_week, start_time, end_time, semester_start, semester_end
          FROM classes WHERE user_id = ?`,
@@ -105,10 +105,17 @@ function createScheduleService({ pool, redisClient }) {
          WHERE user_id = ? AND start_at < ? AND end_at > ?`,
         [userId, lastDate.toUTC().toFormat('yyyy-LL-dd HH:mm:ss.SSS'),
           today.toUTC().toFormat('yyyy-LL-dd HH:mm:ss.SSS')]
+      ),
+      pool.execute(
+        `SELECT id, title, workplace, day_of_week, work_date, start_time, end_time,
+                start_date, end_date, color, notes
+         FROM work_schedules WHERE user_id = ?`,
+        [userId]
       )
     ]);
 
     const classes = classRows[0].map(mapClass);
+    const workSchedules = (workRows ? workRows[0] : []).map(mapWorkSchedule);
     const events = eventRows[0].map(row => ({
       id: String(row.id),
       taskId: String(row.task_id),
@@ -116,7 +123,7 @@ function createScheduleService({ pool, redisClient }) {
       start: fromDatabaseUtc(row.start_at),
       end: fromDatabaseUtc(row.end_at)
     }));
-    const busyByDate = makeBusyCalendar(today, input.days, classes, events, preferences.timezone);
+    const busyByDate = makeBusyCalendar(today, input.days, classes, events, workSchedules, preferences.timezone);
     const studyWindows = getStudyWindows(preferences.preferredHours);
     const sortedTasks = [...tasks].sort(compareTasks);
     const plan = [];
@@ -262,7 +269,14 @@ function createScheduleService({ pool, redisClient }) {
          FROM classes WHERE user_id = ?`,
         [userId]
       );
+      const [workRows] = await connection.execute(
+        `SELECT id, title, workplace, day_of_week, work_date, start_time, end_time,
+                start_date, end_date, color, notes
+         FROM work_schedules WHERE user_id = ?`,
+        [userId]
+      );
       const classes = classRows.map(mapClass);
+      const workSchedules = workRows.map(mapWorkSchedule);
       const utcStarts = plan.map(item => localDateTime(
         item.date,
         timeToMinutes(item.startTime),
@@ -326,6 +340,14 @@ function createScheduleService({ pool, redisClient }) {
         );
         if (classConflict) {
           throw new AppError(409, 'CONFLICT', 'Phương án bị trùng với thời khóa biểu.');
+        }
+        const workConflict = workSchedules.some(shift =>
+          isShiftActiveOnDate(shift, item.date, weekday) &&
+          timeToMinutes(item.startTime) < timeToMinutes(shift.endTime) + breakMinutes &&
+          timeToMinutes(item.endTime) > timeToMinutes(shift.startTime) - breakMinutes
+        );
+        if (workConflict) {
+          throw new AppError(409, 'CONFLICT', 'Phương án bị trùng với lịch làm việc.');
         }
         const sameDaySlots = proposedSlots.get(item.date) || [];
         if (sameDaySlots.some(slot =>
@@ -425,19 +447,68 @@ function mapClass(row) {
   };
 }
 
-function makeBusyCalendar(today, days, classes, events, timezone) {
+function mapWorkSchedule(row) {
+  return {
+    title: row.title,
+    workplace: row.workplace || null,
+    dayOfWeek: row.day_of_week === null || row.day_of_week === undefined ? null : Number(row.day_of_week),
+    workDate: formatDateOnly(row.work_date),
+    startTime: normalizeTime(row.start_time),
+    endTime: normalizeTime(row.end_time),
+    startDate: formatDateOnly(row.start_date),
+    endDate: formatDateOnly(row.end_date),
+    color: row.color,
+    notes: row.notes
+  };
+}
+
+function formatDateOnly(val) {
+  if (!val) return null;
+  if (typeof val === 'string') return val.slice(0, 10);
+  if (val instanceof Date) return DateTime.fromJSDate(val).toISODate();
+  return String(val).slice(0, 10);
+}
+
+function isShiftActiveOnDate(shift, date, weekday) {
+  const workDate = formatDateOnly(shift.workDate);
+  if (workDate && workDate === date) {
+    return true;
+  }
+  if (shift.dayOfWeek !== null && shift.dayOfWeek !== undefined) {
+    if (Number(shift.dayOfWeek) === weekday) {
+      const startDate = formatDateOnly(shift.startDate);
+      const endDate = formatDateOnly(shift.endDate);
+      if ((!startDate || startDate <= date) && (!endDate || endDate >= date)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function makeBusyCalendar(today, days, classes, events, workSchedules = [], timezone = 'Asia/Ho_Chi_Minh') {
+  if (typeof workSchedules === 'string') {
+    timezone = workSchedules;
+    workSchedules = [];
+  }
   const result = new Map();
   for (let offset = 0; offset < days; offset += 1) {
     const dateTime = today.plus({ days: offset });
     const date = dateTime.toISODate();
     const weekday = dateTime.weekday % 7;
-    const busy = classes
+    const classBusy = classes
       .filter(entry => entry.dayOfWeek === weekday && isClassActiveOnDate(entry, date))
       .map(entry => ({
         start: timeToMinutes(entry.startTime),
         end: timeToMinutes(entry.endTime)
       }));
-    result.set(date, busy);
+    const workBusy = (workSchedules || [])
+      .filter(shift => isShiftActiveOnDate(shift, date, weekday))
+      .map(shift => ({
+        start: timeToMinutes(shift.startTime),
+        end: timeToMinutes(shift.endTime)
+      }));
+    result.set(date, [...classBusy, ...workBusy]);
   }
   for (const event of events) {
     const start = DateTime.fromJSDate(event.start).setZone(timezone);
@@ -541,5 +612,7 @@ module.exports = {
   createScheduleService,
   compareTasks,
   makeBusyCalendar,
-  timeToMinutes
+  timeToMinutes,
+  isShiftActiveOnDate,
+  mapWorkSchedule
 };

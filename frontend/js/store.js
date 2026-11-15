@@ -331,12 +331,13 @@ const AppStore = {
       return true;
     }
     try {
-      const [profile, classes, tasks, events, notifications] = await Promise.all([
+      const [profile, classes, tasks, events, notifications, workSchedules] = await Promise.all([
         ApiService.getProfile({ silent: true }).catch(() => null),
         ApiService.getClasses({ silent: true }).catch(() => null),
         ApiService.getTasks({ silent: true }).catch(() => null),
         ApiService.getScheduledEvents({ silent: true }).catch(() => null),
-        ApiService.getNotifications({ silent: true }).catch(() => null)
+        ApiService.getNotifications({ silent: true }).catch(() => null),
+        (ApiService.getWorkSchedules ? ApiService.getWorkSchedules({ silent: true }) : Promise.resolve(null)).catch(() => null)
       ]);
 
       const scope = (profile && profile.id) || getCurrentUserScope();
@@ -431,6 +432,23 @@ const AppStore = {
           time: formatRelativeNotificationTime(n.createdAt)
         }));
         writeScopedJson('notifications', mappedNotifs, scope);
+      }
+
+      if (Array.isArray(workSchedules)) {
+        const mappedShifts = workSchedules.map(w => ({
+          id: w.id,
+          title: w.title,
+          workplace: w.workplace || '',
+          dayOfWeek: w.dayOfWeek !== null && w.dayOfWeek !== undefined ? Number(w.dayOfWeek) : null,
+          workDate: w.workDate || null,
+          startTime: String(w.startTime || '08:00').slice(0, 5),
+          endTime: String(w.endTime || '12:00').slice(0, 5),
+          startDate: w.startDate || null,
+          endDate: w.endDate || null,
+          color: sanitizeColor(w.color || '#b45309'),
+          notes: w.notes || ''
+        }));
+        writeScopedJson('work_schedules', mappedShifts, scope);
       }
 
       triggerPageRefresh();
@@ -620,6 +638,161 @@ const AppStore = {
     return { hasConflict: false };
   },
 
+  // === WORK SCHEDULES (LỊCH LÀM VIỆC / CA LÀM) ===
+  getWorkSchedules() {
+    return readScopedJson('work_schedules', []);
+  },
+  getWorkScheduleById(id) {
+    return this.getWorkSchedules().find(s => s.id === id);
+  },
+  addWorkSchedule(shiftData) {
+    const list = this.getWorkSchedules();
+    const tempId = 'wrk_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const newShift = {
+      id: tempId,
+      title: shiftData.title,
+      workplace: shiftData.workplace || '',
+      dayOfWeek: shiftData.dayOfWeek !== null && shiftData.dayOfWeek !== undefined && shiftData.dayOfWeek !== ''
+        ? Number(shiftData.dayOfWeek)
+        : null,
+      workDate: shiftData.workDate || null,
+      startTime: String(shiftData.startTime || '08:00').slice(0, 5),
+      endTime: String(shiftData.endTime || '12:00').slice(0, 5),
+      startDate: shiftData.startDate || null,
+      endDate: shiftData.endDate || null,
+      color: sanitizeColor(shiftData.color || '#b45309'),
+      notes: shiftData.notes || ''
+    };
+
+    const conflict = this.checkWorkShiftConflict(newShift);
+    if (conflict.hasConflict) {
+      newShift.warning = `Trùng lịch với: ${conflict.conflictingEvent.title} (${conflict.conflictingEvent.startTime} - ${conflict.conflictingEvent.endTime})`;
+    }
+
+    list.push(newShift);
+    writeScopedJson('work_schedules', list);
+
+    if (isBackendOnlineSession()) {
+      ApiService.createWorkSchedule({
+        title: newShift.title,
+        workplace: newShift.workplace || null,
+        dayOfWeek: newShift.dayOfWeek !== null ? Number(newShift.dayOfWeek) : null,
+        workDate: newShift.workDate || null,
+        startTime: newShift.startTime,
+        endTime: newShift.endTime,
+        startDate: newShift.startDate || null,
+        endDate: newShift.endDate || null,
+        color: newShift.color,
+        notes: newShift.notes || null
+      }, { silent: true })
+        .then(serverShift => {
+          if (serverShift && serverShift.id) {
+            const currentList = this.getWorkSchedules().map(item =>
+              item.id === tempId ? { ...item, id: serverShift.id } : item
+            );
+            writeScopedJson('work_schedules', currentList);
+            if (window.calendar && typeof window.calendar.refetchEvents === 'function') {
+              window.calendar.refetchEvents();
+            }
+          }
+        })
+        .catch(err => console.warn('Không thể lưu ca làm việc lên server:', err));
+    }
+
+    return { shift: newShift, conflict };
+  },
+
+  updateWorkSchedule(id, updatedData) {
+    const list = this.getWorkSchedules();
+    const index = list.findIndex(s => s.id === id);
+    if (index === -1) return null;
+
+    const merged = {
+      ...list[index],
+      ...updatedData,
+      dayOfWeek: updatedData.dayOfWeek !== undefined
+        ? (updatedData.dayOfWeek !== null && updatedData.dayOfWeek !== '' ? Number(updatedData.dayOfWeek) : null)
+        : list[index].dayOfWeek,
+      workDate: updatedData.workDate !== undefined ? (updatedData.workDate || null) : list[index].workDate,
+      startTime: String(updatedData.startTime || list[index].startTime).slice(0, 5),
+      endTime: String(updatedData.endTime || list[index].endTime).slice(0, 5),
+      startDate: updatedData.startDate !== undefined ? (updatedData.startDate || null) : list[index].startDate,
+      endDate: updatedData.endDate !== undefined ? (updatedData.endDate || null) : list[index].endDate,
+      color: sanitizeColor(updatedData.color || list[index].color)
+    };
+
+    const conflict = this.checkWorkShiftConflict(merged, id);
+    if (conflict.hasConflict) {
+      merged.warning = `Trùng lịch với: ${conflict.conflictingEvent.title} (${conflict.conflictingEvent.startTime} - ${conflict.conflictingEvent.endTime})`;
+    } else {
+      delete merged.warning;
+    }
+
+    list[index] = merged;
+    writeScopedJson('work_schedules', list);
+
+    if (isBackendOnlineSession() && /^wrk_[1-9]\d*$/.test(id)) {
+      ApiService.updateWorkSchedule(id, {
+        title: merged.title,
+        workplace: merged.workplace || null,
+        dayOfWeek: merged.dayOfWeek !== null ? Number(merged.dayOfWeek) : null,
+        workDate: merged.workDate || null,
+        startTime: merged.startTime,
+        endTime: merged.endTime,
+        startDate: merged.startDate || null,
+        endDate: merged.endDate || null,
+        color: merged.color,
+        notes: merged.notes || null
+      }, { silent: true }).catch(err => console.warn('Không thể cập nhật ca làm việc trên server:', err));
+    }
+
+    return { shift: merged, conflict };
+  },
+
+  deleteWorkSchedule(id) {
+    const list = this.getWorkSchedules().filter(s => s.id !== id);
+    writeScopedJson('work_schedules', list);
+
+    if (isBackendOnlineSession() && /^wrk_[1-9]\d*$/.test(id)) {
+      ApiService.deleteWorkSchedule(id, { silent: true }).catch(err =>
+        console.warn('Không thể xóa ca làm việc trên server:', err)
+      );
+    }
+    return true;
+  },
+
+  checkWorkShiftConflict(shiftToCheck, excludeId = null) {
+    const list = this.getWorkSchedules().filter(s => s.id !== excludeId);
+    for (const s of list) {
+      if (checkShiftsOverlap(shiftToCheck, s)) {
+        return {
+          hasConflict: true,
+          conflictingEvent: s,
+          conflictType: 'shift'
+        };
+      }
+    }
+
+    const classes = this.getClasses();
+    for (const c of classes) {
+      const classAsShift = {
+        title: c.title,
+        dayOfWeek: Number(c.dayOfWeek),
+        startTime: c.startTime,
+        endTime: c.endTime
+      };
+      if (checkShiftsOverlap(shiftToCheck, classAsShift)) {
+        return {
+          hasConflict: true,
+          conflictingEvent: c,
+          conflictType: 'class'
+        };
+      }
+    }
+
+    return { hasConflict: false };
+  },
+
   // === TASKS (KẾ HOẠCH & CÔNG VIỆC) ===
   getTasks() {
     return readScopedJson('tasks', []);
@@ -778,8 +951,12 @@ const AppStore = {
     const breakMinutes = options.breakMinutes || 15;
     const user = this.getUser();
     const classes = this.getClasses();
+    const workSchedules = this.getWorkSchedules();
     const existingEvents = this.getScheduledEvents();
-    const tasks = this.getTasks().filter(t => t.status !== 'done' && !t.scheduled);
+    let tasks = this.getTasks().filter(t => t.status !== 'done' && !t.scheduled);
+    if (Array.isArray(options.taskIds) && options.taskIds.length > 0) {
+      tasks = tasks.filter(t => options.taskIds.includes(t.id));
+    }
 
     const priorityWeight = { urgent: 4, high: 3, medium: 2, low: 1 };
 
@@ -811,6 +988,27 @@ const AppStore = {
             end: timeStringToMinutes(cls.endTime),
             title: cls.title,
             type: 'class'
+          });
+        }
+      });
+
+      workSchedules.forEach(ws => {
+        let activeOnDate = false;
+        if (ws.workDate) {
+          activeOnDate = (String(ws.workDate).slice(0, 10) === dateStr);
+        } else if (ws.dayOfWeek !== null && ws.dayOfWeek !== undefined && ws.dayOfWeek !== '') {
+          if (parseInt(ws.dayOfWeek) === dayOfWeek) {
+            const startOk = !ws.startDate || String(ws.startDate).slice(0, 10) <= dateStr;
+            const endOk = !ws.endDate || String(ws.endDate).slice(0, 10) >= dateStr;
+            activeOnDate = startOk && endOk;
+          }
+        }
+        if (activeOnDate) {
+          occupiedSlotsByDate[dateStr].push({
+            start: timeStringToMinutes(ws.startTime),
+            end: timeStringToMinutes(ws.endTime),
+            title: ws.title,
+            type: 'work_shift'
           });
         }
       });
@@ -850,9 +1048,21 @@ const AppStore = {
       });
     }
 
+    const maxWindowDuration = studyWindows.reduce((max, w) => Math.max(max, w.end - w.start), 0);
+    const unscheduled = [];
+    const reasonMessages = {
+      NO_AVAILABLE_SLOT: 'Không còn khoảng thời gian trống phù hợp.',
+      DEADLINE_PASSED: 'Deadline của công việc đã qua.',
+      DEADLINE_INFEASIBLE: 'Không còn đủ khung giờ để hoàn thành trước deadline.',
+      DURATION_EXCEEDS_WINDOW: 'Thời lượng công việc dài hơn mọi khung giờ học.',
+      NO_ACTIVE_STUDY_WINDOW: 'Bạn chưa bật khung giờ học phù hợp.'
+    };
+
     for (const task of sortedTasks) {
       const taskDurationMinutes = Math.round((task.estimatedHours || 1.5) * 60);
       let scheduled = false;
+      let hadCandidateBeforeDeadline = false;
+      const taskDeadlineTime = task.deadline ? new Date(task.deadline).getTime() : null;
 
       for (let i = 0; i < daysToSchedule; i++) {
         if (scheduled) break;
@@ -863,14 +1073,6 @@ const AppStore = {
         const mm = String(curDate.getMonth() + 1).padStart(2, '0');
         const dd = String(curDate.getDate()).padStart(2, '0');
         const dateStr = `${yyyy}-${mm}-${dd}`;
-
-        if (task.deadline) {
-          const taskDeadlineDate = new Date(task.deadline);
-          const startOfDay = new Date(`${dateStr}T00:00:00`);
-          if (startOfDay > taskDeadlineDate) {
-            continue;
-          }
-        }
 
         const busyList = occupiedSlotsByDate[dateStr] || [];
 
@@ -887,14 +1089,22 @@ const AppStore = {
 
           while (pointer + taskDurationMinutes <= window.end) {
             const candidateEnd = pointer + taskDurationMinutes;
+            const startTimeStr = minutesToTimeString(pointer);
+            const endTimeStr = minutesToTimeString(candidateEnd);
+            const candidateEndMillis = new Date(`${dateStr}T${endTimeStr}:00`).getTime();
+
+            if (taskDeadlineTime && candidateEndMillis > taskDeadlineTime) {
+              pointer += 30;
+              continue;
+            }
+
+            hadCandidateBeforeDeadline = true;
+
             const isOverlap = busyList.some(busy => {
               return pointer < busy.end + breakMinutes && candidateEnd > busy.start - breakMinutes;
             });
 
             if (!isOverlap) {
-              const startTimeStr = minutesToTimeString(pointer);
-              const endTimeStr = minutesToTimeString(candidateEnd);
-
               proposedPlan.push({
                 taskId: task.id,
                 taskTitle: task.title,
@@ -923,9 +1133,33 @@ const AppStore = {
           }
         }
       }
+
+      if (!scheduled) {
+        let reason = 'NO_AVAILABLE_SLOT';
+        if (taskDeadlineTime && taskDeadlineTime <= now.getTime()) {
+          reason = 'DEADLINE_PASSED';
+        } else if (studyWindows.length === 0) {
+          reason = 'NO_ACTIVE_STUDY_WINDOW';
+        } else if (taskDurationMinutes > maxWindowDuration) {
+          reason = 'DURATION_EXCEEDS_WINDOW';
+        } else if (!hadCandidateBeforeDeadline && taskDeadlineTime) {
+          reason = 'DEADLINE_INFEASIBLE';
+        }
+        unscheduled.push({
+          taskId: task.id,
+          taskTitle: task.title,
+          reason,
+          message: reasonMessages[reason] || 'Không thể xếp lịch.'
+        });
+      }
     }
 
-    return proposedPlan;
+    const result = [...proposedPlan];
+    result.plan = proposedPlan;
+    result.unscheduled = unscheduled;
+    result.breakMinutes = breakMinutes;
+    result.timezone = user.timezone || 'Asia/Ho_Chi_Minh';
+    return result;
   },
 
   applyProposedSchedule(proposedPlan, breakMinutes = 15) {
@@ -1124,6 +1358,53 @@ function minutesToTimeString(minutes) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function checkShiftsOverlap(shiftA, shiftB) {
+  const dateA = shiftA.workDate ? String(shiftA.workDate).slice(0, 10) : null;
+  const dateB = shiftB.workDate ? String(shiftB.workDate).slice(0, 10) : null;
+  const dayA = shiftA.dayOfWeek !== null && shiftA.dayOfWeek !== undefined && shiftA.dayOfWeek !== '' ? Number(shiftA.dayOfWeek) : null;
+  const dayB = shiftB.dayOfWeek !== null && shiftB.dayOfWeek !== undefined && shiftB.dayOfWeek !== '' ? Number(shiftB.dayOfWeek) : null;
+
+  let sameDayPossible = false;
+
+  const formatDateOnly = (val) => {
+    if (!val) return null;
+    return String(val).slice(0, 10);
+  };
+
+  const startA = formatDateOnly(shiftA.startDate);
+  const endA = formatDateOnly(shiftA.endDate);
+  const startB = formatDateOnly(shiftB.startDate);
+  const endB = formatDateOnly(shiftB.endDate);
+
+  if (dateA && dateB) {
+    sameDayPossible = dateA === dateB;
+  } else if (dayA !== null && dayB !== null) {
+    if (dayA === dayB) {
+      const dateOverlap = (!startA || !endB || startA <= endB) && (!endA || !startB || endA >= startB);
+      sameDayPossible = dateOverlap;
+    }
+  } else if (dateA && dayB !== null) {
+    const dt = new Date(`${dateA}T00:00:00`);
+    if (!isNaN(dt.getTime()) && dt.getDay() === dayB) {
+      sameDayPossible = (!startB || startB <= dateA) && (!endB || endB >= dateA);
+    }
+  } else if (dateB && dayA !== null) {
+    const dt = new Date(`${dateB}T00:00:00`);
+    if (!isNaN(dt.getTime()) && dt.getDay() === dayA) {
+      sameDayPossible = (!startA || startA <= dateB) && (!endA || endA >= dateB);
+    }
+  }
+
+  if (!sameDayPossible) return false;
+
+  const startAMin = timeStringToMinutes(String(shiftA.startTime).slice(0, 5));
+  const endAMin = timeStringToMinutes(String(shiftA.endTime).slice(0, 5));
+  const startBMin = timeStringToMinutes(String(shiftB.startTime).slice(0, 5));
+  const endBMin = timeStringToMinutes(String(shiftB.endTime).slice(0, 5));
+
+  return startAMin < endBMin && endAMin > startBMin;
 }
 
 window.AppStore = AppStore;
