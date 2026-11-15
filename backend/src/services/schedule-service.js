@@ -510,9 +510,14 @@ function makeBusyCalendar(today, days, classes, events, workSchedules = [], time
       }));
     result.set(date, [...classBusy, ...workBusy]);
   }
+  const toDateTime = (val) => {
+    if (val?.isLuxonDateTime) return val;
+    if (val instanceof Date) return DateTime.fromJSDate(val);
+    return DateTime.fromISO(String(val));
+  };
   for (const event of events) {
-    const start = DateTime.fromJSDate(event.start).setZone(timezone);
-    const end = DateTime.fromJSDate(event.end).setZone(timezone);
+    const start = toDateTime(event.start).setZone(timezone);
+    const end = toDateTime(event.end).setZone(timezone);
     let day = start.startOf('day');
     while (day < end) {
       const date = day.toISODate();
@@ -541,11 +546,12 @@ function getStudyWindows(preferredHours) {
 function compareTasks(a, b) {
   const priority = PRIORITY_WEIGHT[b.priority] - PRIORITY_WEIGHT[a.priority];
   if (priority) return priority;
-  if (!a.deadline && !b.deadline) return 0;
-  if (!a.deadline) return 1;
-  if (!b.deadline) return -1;
-  const deadlineOrder = a.deadline.toMillis() - b.deadline.toMillis();
-  if (deadlineOrder) return deadlineOrder;
+  if (!a.deadline && b.deadline) return 1;
+  if (a.deadline && !b.deadline) return -1;
+  if (a.deadline && b.deadline) {
+    const deadlineOrder = a.deadline.toMillis() - b.deadline.toMillis();
+    if (deadlineOrder) return deadlineOrder;
+  }
   return String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
 }
 

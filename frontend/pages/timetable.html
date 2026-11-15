@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="vi" data-type="software" data-radius="soft">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="page-type" content="software">
   <meta name="site-kind" content="software">
   <title>PersonalPlanner — Quản lý thời khóa biểu</title>
-  
+
   <!-- Dealt Google Fonts: Host Grotesk + JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap"
+    rel="stylesheet">
+
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
@@ -21,711 +24,853 @@
   <!-- Design Taste Custom CSS -->
   <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
 
-<div class="app-container">
-  <div class="sidebar-backdrop"></div>
+  <div class="app-container">
+    <div class="sidebar-backdrop"></div>
 
-  <!-- Sidebar -->
-  <aside class="app-sidebar">
-    <a href="../index.html" class="sidebar-brand">
-      <div class="brand-icon">
-        <i class="bi bi-calendar-check-fill"></i>
-      </div>
-      <div class="brand-text">Personal<span class="text-primary">Planner</span></div>
-    </a>
-
-    <ul class="sidebar-menu">
-      <li class="menu-label">Menu Chính</li>
-      <li class="nav-item">
-        <a href="../index.html" class="nav-link">
-          <i class="bi bi-grid-1x2-fill"></i>
-          <span>Tổng quan</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="timetable.html" class="nav-link active">
-          <i class="bi bi-calendar3"></i>
-          <span>Thời khóa biểu</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="tasks.html" class="nav-link">
-          <i class="bi bi-check2-square"></i>
-          <span>Công việc & Kế hoạch</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="auto-schedule.html" class="nav-link">
-          <i class="bi bi-magic text-warning"></i>
-          <span>Tự động xếp lịch</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="statistics.html" class="nav-link">
-          <i class="bi bi-bar-chart-line-fill"></i>
-          <span>Thống kê & Báo cáo</span>
-        </a>
-      </li>
-
-      <li class="menu-label mt-3">Hệ thống</li>
-      <li class="nav-item">
-        <a href="profile.html" class="nav-link">
-          <i class="bi bi-person-gear"></i>
-          <span>Tài khoản & Thiết lập</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="login.html" class="nav-link text-danger">
-          <i class="bi bi-box-arrow-right"></i>
-          <span>Đăng xuất</span>
-        </a>
-      </li>
-    </ul>
-
-    <div class="sidebar-footer">
-      <a href="profile.html" class="user-snippet">
-        <img src="" alt="Avatar" class="user-avatar user-avatar-target">
-        <div class="overflow-hidden">
-          <div class="fw-bold small text-truncate user-name-target">Đang tải...</div>
-          <div class="text-muted" style="font-size: 0.75rem;">Sinh viên</div>
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+      <a href="../index.html" class="sidebar-brand">
+        <div class="brand-icon">
+          <i class="bi bi-calendar-check-fill"></i>
         </div>
+        <div class="brand-text">Personal<span class="text-primary">Planner</span></div>
       </a>
-    </div>
-  </aside>
 
-  <!-- Main Content -->
-  <main class="app-main">
-    <header class="app-header">
-      <div class="d-flex align-items-center gap-3">
-        <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn" aria-label="Toggle Navigation">
-          <i class="bi bi-list fs-5"></i>
-        </button>
-        <h4 class="fw-bold mb-0">Quản lý Thời khóa biểu</h4>
+      <ul class="sidebar-menu">
+        <li class="menu-label">Menu Chính</li>
+        <li class="nav-item">
+          <a href="../index.html" class="nav-link">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Tổng quan</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="timetable.html" class="nav-link active">
+            <i class="bi bi-calendar3"></i>
+            <span>Thời khóa biểu</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="tasks.html" class="nav-link">
+            <i class="bi bi-check2-square"></i>
+            <span>Công việc & Kế hoạch</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="auto-schedule.html" class="nav-link">
+            <i class="bi bi-magic text-warning"></i>
+            <span>Tự động xếp lịch</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="statistics.html" class="nav-link">
+            <i class="bi bi-bar-chart-line-fill"></i>
+            <span>Thống kê & Báo cáo</span>
+          </a>
+        </li>
+
+        <li class="menu-label mt-3">Hệ thống</li>
+        <li class="nav-item">
+          <a href="profile.html" class="nav-link">
+            <i class="bi bi-person-gear"></i>
+            <span>Tài khoản & Thiết lập</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="login.html" class="nav-link text-danger">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Đăng xuất</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="user-snippet">
+          <img src="" alt="Avatar" class="user-avatar user-avatar-target">
+          <div class="overflow-hidden">
+            <div class="fw-bold small text-truncate user-name-target">Đang tải...</div>
+            <div class="text-muted" style="font-size: 0.75rem;">Sinh viên</div>
+          </div>
+        </a>
       </div>
+    </aside>
 
-      <div class="header-actions">
-        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" onclick="openAIScanModal()" title="Chụp hoặc tải ảnh thời khóa biểu để AI tự động trích xuất">
-          <i class="bi bi-camera"></i>
-          <span>Quét TKB bằng AI</span>
-        </button>
-
-        <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onclick="scanAllConflicts()">
-          <i class="bi bi-shield-exclamation"></i>
-          <span class="d-none d-sm-inline">Kiểm tra trùng lịch</span>
-        </button>
-
-        <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-2" style="color: #b45309; border-color: #b45309;" onclick="openCreateShiftModal()" title="Thêm ca làm việc mới">
-          <i class="bi bi-briefcase"></i>
-          <span>Thêm ca làm việc</span>
-        </button>
-
-        <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" onclick="openCreateClassModal()">
-          <i class="bi bi-plus-lg"></i>
-          <span>Thêm lịch học</span>
-        </button>
-
-        <!-- Notification Dropdown -->
-        <div class="dropdown">
-          <button class="icon-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
-            <i class="bi bi-bell"></i>
-            <span class="badge-dot" id="notificationBadge" style="display: none;"></span>
+    <!-- Main Content -->
+    <main class="app-main">
+      <header class="app-header">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn" aria-label="Toggle Navigation">
+            <i class="bi bi-list fs-5"></i>
           </button>
-          <div class="dropdown-menu dropdown-menu-end notification-dropdown">
-            <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
-              <span class="fw-bold small">Thông báo nhắc lịch</span>
-              <button class="btn btn-link btn-sm text-decoration-none p-0" onclick="markAllNotificationsRead()">Đã đọc hết</button>
-            </div>
-            <div id="notificationList"></div>
-          </div>
+          <h4 class="fw-bold mb-0">Quản lý Thời khóa biểu</h4>
         </div>
 
-        <!-- User Menu -->
-        <div class="dropdown">
-          <button class="btn p-0 border-0" data-bs-toggle="dropdown">
-            <img src="" alt="Avatar" class="user-avatar user-avatar-target">
+        <div class="header-actions">
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" onclick="openAIScanModal()"
+            title="Chụp hoặc tải ảnh thời khóa biểu để AI tự động trích xuất">
+            <i class="bi bi-camera"></i>
+            <span>Quét TKB bằng AI</span>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-            <li><a class="dropdown-item" href="profile.html"><i class="bi bi-person me-2"></i> Hồ sơ cá nhân</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="login.html"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
-          </ul>
-        </div>
-      </div>
-    </header>
 
-    <div class="content-body">
-      <!-- Conflict Warning Alert Box (Nếu phát hiện trùng lịch) -->
-      <div id="conflictAlertBanner" class="alert alert-danger d-none align-items-center justify-content-between shadow-sm" role="alert">
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-          <div>
-            <strong>Cảnh báo trùng lịch học!</strong>
-            <span id="conflictAlertMessage" class="ms-1">Phát hiện buổi học bị xung đột khung giờ.</span>
+          <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onclick="scanAllConflicts()">
+            <i class="bi bi-shield-exclamation"></i>
+            <span class="d-none d-sm-inline">Kiểm tra trùng lịch</span>
+          </button>
+
+          <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-2"
+            style="color: #b45309; border-color: #b45309;" onclick="openCreateShiftModal()"
+            title="Thêm ca làm việc mới">
+            <i class="bi bi-briefcase"></i>
+            <span>Thêm ca làm việc</span>
+          </button>
+
+          <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" onclick="openCreateClassModal()">
+            <i class="bi bi-plus-lg"></i>
+            <span>Thêm lịch học</span>
+          </button>
+
+          <!-- Notification Dropdown -->
+          <div class="dropdown">
+            <button class="icon-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
+              <i class="bi bi-bell"></i>
+              <span class="badge-dot" id="notificationBadge" style="display: none;"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+              <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                <span class="fw-bold small">Thông báo nhắc lịch</span>
+                <button class="btn btn-link btn-sm text-decoration-none p-0" onclick="markAllNotificationsRead()">Đã đọc
+                  hết</button>
+              </div>
+              <div id="notificationList"></div>
+            </div>
+          </div>
+
+          <!-- User Menu -->
+          <div class="dropdown">
+            <button class="btn p-0 border-0" data-bs-toggle="dropdown">
+              <img src="" alt="Avatar" class="user-avatar user-avatar-target">
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+              <li><a class="dropdown-item" href="profile.html"><i class="bi bi-person me-2"></i> Hồ sơ cá nhân</a></li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              <li><a class="dropdown-item text-danger" href="login.html"><i class="bi bi-box-arrow-right me-2"></i> Đăng
+                  xuất</a></li>
+            </ul>
           </div>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-danger" onclick="scanAllConflicts()">Xem chi tiết</button>
-      </div>
+      </header>
 
-      <!-- Quick Class Pills Filter / Legend -->
-      <div class="card-custom mb-3 py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <span class="small fw-bold text-muted me-2">Ghi chú loại lịch:</span>
-          <span class="badge" style="background-color: #0d7480;"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i> Lịch học cố định</span>
-          <span class="badge" style="background-color: #b45309;"><i class="bi bi-briefcase me-1"></i> Ca làm việc</span>
-          <span class="badge" style="background-color: #1f3038;"><i class="bi bi-sliders me-1"></i> Tự động sắp xếp AI</span>
+      <div class="content-body">
+        <!-- Conflict Warning Alert Box (Nếu phát hiện trùng lịch) -->
+        <div id="conflictAlertBanner"
+          class="alert alert-danger d-none align-items-center justify-content-between shadow-sm" role="alert">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+            <div>
+              <strong>Cảnh báo trùng lịch học!</strong>
+              <span id="conflictAlertMessage" class="ms-1">Phát hiện buổi học bị xung đột khung giờ.</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="scanAllConflicts()">Xem chi tiết</button>
         </div>
-        <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-sm btn-light border" onclick="calendar.changeView('timeGridDay')">Ngày</button>
-          <button class="btn btn-sm btn-light border" onclick="calendar.changeView('timeGridWeek')">Tuần</button>
-          <button class="btn btn-sm btn-light border" onclick="calendar.changeView('dayGridMonth')">Tháng</button>
-          <button class="btn btn-sm btn-light border" onclick="calendar.today()">Hôm nay</button>
+
+        <!-- Quick Class Pills Filter / Legend -->
+        <div class="card-custom mb-3 py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small fw-bold text-muted me-2">Ghi chú loại lịch:</span>
+            <span class="badge" style="background-color: #0d7480;"><i class="bi bi-circle-fill me-1"
+                style="font-size: 8px;"></i> Lịch học cố định</span>
+            <span class="badge" style="background-color: #b45309;"><i class="bi bi-briefcase me-1"></i> Ca làm
+              việc</span>
+            <span class="badge" style="background-color: #1f3038;"><i class="bi bi-sliders me-1"></i> Tự động sắp xếp
+              AI</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-light border" onclick="calendar.changeView('timeGridDay')">Ngày</button>
+            <button class="btn btn-sm btn-light border" onclick="calendar.changeView('timeGridWeek')">Tuần</button>
+            <button class="btn btn-sm btn-light border" onclick="calendar.changeView('dayGridMonth')">Tháng</button>
+            <button class="btn btn-sm btn-light border" onclick="calendar.today()">Hôm nay</button>
+          </div>
+        </div>
+
+        <!-- Calendar Container Card -->
+        <div class="card-custom p-3">
+          <div id="calendarLoadingState"></div>
+          <div id="calendar" style="min-height: 680px;"></div>
+          <div id="calendarEmptyState" class="d-none"></div>
         </div>
       </div>
+    </main>
+  </div>
 
-      <!-- Calendar Container Card -->
-      <div class="card-custom p-3">
-        <div id="calendarLoadingState"></div>
-        <div id="calendar" style="min-height: 680px;"></div>
-        <div id="calendarEmptyState" class="d-none"></div>
+  <!-- Modal Thêm / Chỉnh Sửa Lịch Học -->
+  <div class="modal fade" id="classModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="classModalTitle">Thêm môn học mới</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="classForm">
+          <input type="hidden" id="classIdInput">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Tên môn học <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="classNameInput" placeholder="Ví dụ: Lập trình Web" required>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold">Mã môn học</label>
+                <input type="text" class="form-control" id="classCodeInput" placeholder="Ví dụ: IT3020">
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold">Phòng học</label>
+                <input type="text" class="form-control" id="classRoomInput" placeholder="Ví dụ: A2-301">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Giảng viên phụ trách</label>
+              <input type="text" class="form-control" id="classLecturerInput" placeholder="Ví dụ: TS. Nguyễn Văn A">
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold">Thứ trong tuần <span class="text-danger">*</span></label>
+                <select class="form-select" id="classDayOfWeekInput" required>
+                  <option value="1">Thứ Hai</option>
+                  <option value="2">Thứ Ba</option>
+                  <option value="3">Thứ Tư</option>
+                  <option value="4">Thứ Năm</option>
+                  <option value="5">Thứ Sáu</option>
+                  <option value="6">Thứ Bảy</option>
+                  <option value="0">Chủ Nhật</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold">Bắt đầu <span class="text-danger">*</span></label>
+                <input type="time" class="form-control" id="classStartTimeInput" value="07:30" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold">Kết thúc <span class="text-danger">*</span></label>
+                <input type="time" class="form-control" id="classEndTimeInput" value="10:00" required>
+              </div>
+            </div>
+
+            <!-- Color & Notes -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold">Màu hiển thị</label>
+                <div class="d-flex align-items-center gap-2">
+                  <input type="color" class="form-control form-control-color" id="classColorInput" value="#0d7480"
+                    title="Chọn màu sắc cho môn">
+                  <span class="small text-muted">Nhận diện môn</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Ghi chú thêm</label>
+              <textarea class="form-control" id="classNotesInput" rows="2"
+                placeholder="Tài liệu, link MS Teams, lưu ý..."></textarea>
+            </div>
+
+            <!-- Live Conflict Warning Preview inside modal -->
+            <div id="modalConflictAlert" class="alert alert-warning d-none small py-2 mb-0">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <span id="modalConflictText"></span>
+            </div>
+          </div>
+
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteClass" style="display: none;"
+              onclick="deleteCurrentClass()">
+              <i class="bi bi-trash"></i> Xóa môn này
+            </button>
+            <div class="d-flex gap-2 ms-auto">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+              <button type="submit" class="btn btn-primary fw-semibold">Lưu thời khóa biểu</button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
-  </main>
-</div>
+  </div>
 
-<!-- Modal Thêm / Chỉnh Sửa Lịch Học -->
-<div class="modal fade" id="classModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="classModalTitle">Thêm môn học mới</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <form id="classForm">
-        <input type="hidden" id="classIdInput">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Tên môn học <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="classNameInput" placeholder="Ví dụ: Lập trình Web" required>
-          </div>
-
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label fw-semibold">Mã môn học</label>
-              <input type="text" class="form-control" id="classCodeInput" placeholder="Ví dụ: IT3020">
+  <!-- Modal Thêm / Chỉnh Sửa Ca Làm Việc -->
+  <div class="modal fade" id="shiftModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="shiftModalTitle">
+            <i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Thêm ca làm việc mới
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="shiftForm">
+          <input type="hidden" id="shiftIdInput">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Tên ca làm / Công việc <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="shiftTitleInput"
+                placeholder="VD: Phục vụ The Coffee House, Trực Lab, Gia sư..." required>
             </div>
-            <div class="col-6">
-              <label class="form-label fw-semibold">Phòng học</label>
-              <input type="text" class="form-control" id="classRoomInput" placeholder="Ví dụ: A2-301">
-            </div>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Giảng viên phụ trách</label>
-            <input type="text" class="form-control" id="classLecturerInput" placeholder="Ví dụ: TS. Nguyễn Văn A">
-          </div>
-
-          <div class="row g-2 mb-3">
-            <div class="col-12">
-              <label class="form-label fw-semibold">Thứ trong tuần <span class="text-danger">*</span></label>
-              <select class="form-select" id="classDayOfWeekInput" required>
-                <option value="1">Thứ Hai</option>
-                <option value="2">Thứ Ba</option>
-                <option value="3">Thứ Tư</option>
-                <option value="4">Thứ Năm</option>
-                <option value="5">Thứ Sáu</option>
-                <option value="6">Thứ Bảy</option>
-                <option value="0">Chủ Nhật</option>
-              </select>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Nơi làm việc / Địa điểm</label>
+              <input type="text" class="form-control" id="shiftWorkplaceInput"
+                placeholder="VD: 123 Nguyễn Huệ, Q.1 hoặc Phòng Lab A3">
             </div>
-          </div>
 
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label fw-semibold">Bắt đầu <span class="text-danger">*</span></label>
-              <input type="time" class="form-control" id="classStartTimeInput" value="07:30" required>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold">Lặp lại theo Thứ</label>
+                <select class="form-select" id="shiftDayOfWeekInput"
+                  onchange="handleShiftTimingTypeChange(); checkLiveShiftConflictInModal();">
+                  <option value="">-- Không lặp lại --</option>
+                  <option value="1">Thứ Hai</option>
+                  <option value="2">Thứ Ba</option>
+                  <option value="3">Thứ Tư</option>
+                  <option value="4">Thứ Năm</option>
+                  <option value="5">Thứ Sáu</option>
+                  <option value="6">Thứ Bảy</option>
+                  <option value="0">Chủ Nhật</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold">Ngày làm cụ thể</label>
+                <input type="date" class="form-control" id="shiftWorkDateInput"
+                  onchange="handleShiftTimingTypeChange(); checkLiveShiftConflictInModal();">
+              </div>
+              <div class="col-12">
+                <small class="text-muted" style="font-size: 0.76rem;">* Chọn lặp lại theo Thứ cho ca làm cố định hàng
+                  tuần, hoặc chọn Ngày làm cụ thể cho ca linh hoạt.</small>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label fw-semibold">Kết thúc <span class="text-danger">*</span></label>
-              <input type="time" class="form-control" id="classEndTimeInput" value="10:00" required>
-            </div>
-          </div>
 
-          <!-- Color & Notes -->
-          <div class="row g-2 mb-3">
-            <div class="col-6">
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold">Giờ bắt đầu <span class="text-danger">*</span></label>
+                <input type="time" class="form-control" id="shiftStartTimeInput" value="18:00" required
+                  onchange="checkLiveShiftConflictInModal()">
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold">Giờ kết thúc <span class="text-danger">*</span></label>
+                <input type="time" class="form-control" id="shiftEndTimeInput" value="22:00" required
+                  onchange="checkLiveShiftConflictInModal()">
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3" id="shiftRecurringDateRangeBlock">
+              <div class="col-6">
+                <label class="form-label fw-semibold small">Ngày áp dụng từ</label>
+                <input type="date" class="form-control form-control-sm" id="shiftStartDateInput"
+                  onchange="checkLiveShiftConflictInModal()">
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold small">Đến ngày</label>
+                <input type="date" class="form-control form-control-sm" id="shiftEndDateInput"
+                  onchange="checkLiveShiftConflictInModal()">
+              </div>
+            </div>
+
+            <div class="mb-3">
               <label class="form-label fw-semibold">Màu hiển thị</label>
               <div class="d-flex align-items-center gap-2">
-                <input type="color" class="form-control form-control-color" id="classColorInput" value="#0d7480" title="Chọn màu sắc cho môn">
-                <span class="small text-muted">Nhận diện môn</span>
+                <input type="color" class="form-control form-control-color" id="shiftColorInput" value="#b45309"
+                  title="Chọn màu sắc cho ca làm">
+                <span class="small text-muted">Màu đặc trưng cho ca làm việc (Mặc định: Hổ phách/Đồng)</span>
               </div>
             </div>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Ghi chú thêm</label>
-            <textarea class="form-control" id="classNotesInput" rows="2" placeholder="Tài liệu, link MS Teams, lưu ý..."></textarea>
-          </div>
-
-          <!-- Live Conflict Warning Preview inside modal -->
-          <div id="modalConflictAlert" class="alert alert-warning d-none small py-2 mb-0">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-            <span id="modalConflictText"></span>
-          </div>
-        </div>
-
-        <div class="modal-footer d-flex justify-content-between">
-          <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteClass" style="display: none;" onclick="deleteCurrentClass()">
-            <i class="bi bi-trash"></i> Xóa môn này
-          </button>
-          <div class="d-flex gap-2 ms-auto">
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-            <button type="submit" class="btn btn-primary fw-semibold">Lưu thời khóa biểu</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Thêm / Chỉnh Sửa Ca Làm Việc -->
-<div class="modal fade" id="shiftModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="shiftModalTitle">
-          <i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Thêm ca làm việc mới
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <form id="shiftForm">
-        <input type="hidden" id="shiftIdInput">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Tên ca làm / Công việc <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="shiftTitleInput" placeholder="VD: Phục vụ The Coffee House, Trực Lab, Gia sư..." required>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Nơi làm việc / Địa điểm</label>
-            <input type="text" class="form-control" id="shiftWorkplaceInput" placeholder="VD: 123 Nguyễn Huệ, Q.1 hoặc Phòng Lab A3">
-          </div>
-
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label fw-semibold">Lặp lại theo Thứ</label>
-              <select class="form-select" id="shiftDayOfWeekInput" onchange="handleShiftTimingTypeChange(); checkLiveShiftConflictInModal();">
-                <option value="">-- Không lặp lại --</option>
-                <option value="1">Thứ Hai</option>
-                <option value="2">Thứ Ba</option>
-                <option value="3">Thứ Tư</option>
-                <option value="4">Thứ Năm</option>
-                <option value="5">Thứ Sáu</option>
-                <option value="6">Thứ Bảy</option>
-                <option value="0">Chủ Nhật</option>
-              </select>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Ghi chú thêm</label>
+              <textarea class="form-control" id="shiftNotesInput" rows="2"
+                placeholder="Lưu ý công việc, phân công, đồng phục..."></textarea>
             </div>
-            <div class="col-6">
-              <label class="form-label fw-semibold">Ngày làm cụ thể</label>
-              <input type="date" class="form-control" id="shiftWorkDateInput" onchange="handleShiftTimingTypeChange(); checkLiveShiftConflictInModal();">
-            </div>
-            <div class="col-12">
-              <small class="text-muted" style="font-size: 0.76rem;">* Chọn lặp lại theo Thứ cho ca làm cố định hàng tuần, hoặc chọn Ngày làm cụ thể cho ca linh hoạt.</small>
+
+            <!-- Live Conflict Warning Preview inside shift modal -->
+            <div id="modalShiftConflictAlert" class="alert alert-warning d-none small py-2 mb-0">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <span id="modalShiftConflictText"></span>
             </div>
           </div>
 
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label fw-semibold">Giờ bắt đầu <span class="text-danger">*</span></label>
-              <input type="time" class="form-control" id="shiftStartTimeInput" value="18:00" required onchange="checkLiveShiftConflictInModal()">
-            </div>
-            <div class="col-6">
-              <label class="form-label fw-semibold">Giờ kết thúc <span class="text-danger">*</span></label>
-              <input type="time" class="form-control" id="shiftEndTimeInput" value="22:00" required onchange="checkLiveShiftConflictInModal()">
-            </div>
-          </div>
-
-          <div class="row g-2 mb-3" id="shiftRecurringDateRangeBlock">
-            <div class="col-6">
-              <label class="form-label fw-semibold small">Ngày áp dụng từ</label>
-              <input type="date" class="form-control form-control-sm" id="shiftStartDateInput" onchange="checkLiveShiftConflictInModal()">
-            </div>
-            <div class="col-6">
-              <label class="form-label fw-semibold small">Đến ngày</label>
-              <input type="date" class="form-control form-control-sm" id="shiftEndDateInput" onchange="checkLiveShiftConflictInModal()">
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteShift" style="display: none;"
+              onclick="deleteCurrentShift()">
+              <i class="bi bi-trash"></i> Xóa ca này
+            </button>
+            <div class="d-flex gap-2 ms-auto">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+              <button type="submit" class="btn fw-semibold text-white" style="background-color: #b45309;">Lưu ca làm
+                việc</button>
             </div>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Màu hiển thị</label>
-            <div class="d-flex align-items-center gap-2">
-              <input type="color" class="form-control form-control-color" id="shiftColorInput" value="#b45309" title="Chọn màu sắc cho ca làm">
-              <span class="small text-muted">Màu đặc trưng cho ca làm việc (Mặc định: Hổ phách/Đồng)</span>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Ghi chú thêm</label>
-            <textarea class="form-control" id="shiftNotesInput" rows="2" placeholder="Lưu ý công việc, phân công, đồng phục..."></textarea>
-          </div>
-
-          <!-- Live Conflict Warning Preview inside shift modal -->
-          <div id="modalShiftConflictAlert" class="alert alert-warning d-none small py-2 mb-0">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-            <span id="modalShiftConflictText"></span>
-          </div>
-        </div>
-
-        <div class="modal-footer d-flex justify-content-between">
-          <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteShift" style="display: none;" onclick="deleteCurrentShift()">
-            <i class="bi bi-trash"></i> Xóa ca này
-          </button>
-          <div class="d-flex gap-2 ms-auto">
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-            <button type="submit" class="btn fw-semibold text-white" style="background-color: #b45309;">Lưu ca làm việc</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Chi Tiết Buổi Học -->
-<div class="modal fade" id="classDetailModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header bg-light">
-        <h5 class="modal-title fw-bold" id="detailClassTitle">Chi tiết buổi học</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="detailClassBody">
-        <!-- Injected via JS -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-danger btn-sm" id="btnDetailDelete">Xóa</button>
-        <button type="button" class="btn btn-primary btn-sm" id="btnDetailEdit">Chỉnh sửa</button>
+        </form>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Modal Quét Thời Khóa Biểu Bằng AI Vision -->
-<div class="modal fade" id="aiScanModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header bg-light">
-        <div class="d-flex align-items-center gap-2">
-          <div class="brand-icon" style="width: 36px; height: 36px; font-size: 1.1rem;">
-            <i class="bi bi-camera-fill text-warning"></i>
-          </div>
-          <div>
-            <h5 class="modal-title fw-bold mb-0">Quét & Nhận diện Thời khóa biểu bằng AI</h5>
-            <span class="text-muted small">Tự động nhận diện môn học, phòng, giảng viên và khung giờ từ ảnh chụp</span>
-          </div>
+  <!-- Modal Chi Tiết Buổi Học -->
+  <div class="modal fade" id="classDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold" id="detailClassTitle">Chi tiết buổi học</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-body" id="detailClassBody">
+          <!-- Injected via JS -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger btn-sm" id="btnDetailDelete">Xóa</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnDetailEdit">Chỉnh sửa</button>
+        </div>
       </div>
+    </div>
+  </div>
 
-      <div class="modal-body p-4">
-        <!-- Step 1: Chọn hoặc tải ảnh -->
-        <div id="aiUploadSection">
-          <div class="row g-4">
-            <div class="col-12 col-lg-6">
-              <div class="ai-dropzone mb-3" id="aiDropzone" onclick="document.getElementById('aiFileInput').click()">
-                <input type="file" id="aiFileInput" accept="image/*" class="d-none" onchange="handleFileSelected(event)">
-                <i class="bi bi-cloud-arrow-up-fill text-primary" style="font-size: 2.8rem;"></i>
-                <h6 class="fw-bold mt-2">Kéo thả ảnh thời khóa biểu vào đây</h6>
-                <p class="text-muted small mb-2">Hỗ trợ định dạng JPG, PNG, WEBP hoặc bấm Ctrl+V để dán ảnh chụp màn hình</p>
-                <button type="button" class="btn btn-outline-primary btn-sm mt-1" onclick="event.stopPropagation(); document.getElementById('aiFileInput').click()">
-                  <i class="bi bi-folder2-open me-1"></i> Chọn ảnh từ máy tính
-                </button>
-              </div>
-
-              <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light btn-sm border text-primary fw-semibold" onclick="pasteImageFromClipboard()">
-                  <i class="bi bi-clipboard-check me-1"></i> Dán từ Clipboard (Ctrl+V)
-                </button>
-                <button type="button" class="btn btn-warning btn-sm text-dark fw-semibold" onclick="loadSampleTimetableImage()">
-                  <i class="bi bi-magic me-1"></i> Thử ngay bằng ảnh mẫu TKB
-                </button>
-              </div>
+  <!-- Modal Quét Thời Khóa Biểu Bằng AI Vision -->
+  <div class="modal fade" id="aiScanModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <div class="d-flex align-items-center gap-2">
+            <div class="brand-icon" style="width: 36px; height: 36px; font-size: 1.1rem;">
+              <i class="bi bi-magic text-warning"></i>
             </div>
-
-            <div class="col-12 col-lg-6">
-              <!-- Preview Box with Scanner Laser -->
-              <div class="scanner-preview-box mb-3" id="aiPreviewBox">
-                <div class="text-center p-4 text-white-50" id="aiPreviewPlaceholder">
-                  <i class="bi bi-image fs-1 mb-2"></i>
-                  <div>Chưa có ảnh được chọn</div>
-                </div>
-                <img id="aiPreviewImg" src="" alt="Preview" class="d-none">
-                <div class="scanner-laser d-none" id="scannerLaser"></div>
-              </div>
-
-              <!-- Options -->
-              <div class="card p-3 bg-light border-0 mb-3">
-                <div class="row g-2 align-items-center">
-                  <div class="col-12 col-sm-6">
-                    <label class="form-label small fw-semibold mb-1">Hệ thống tiết học:</label>
-                    <select class="form-select form-select-sm" id="periodFormatSelect">
-                      <option value="standard" selected>Quy chuẩn 15 Tiết (Tiết 1: 06:45, 45p/tiết)</option>
-                      <option value="direct">Trực tiếp theo giờ ghi trên ảnh</option>
-                    </select>
-                  </div>
-                  <div class="col-12 col-sm-6">
-                    <label class="form-label small fw-semibold mb-1">Màu mặc định cho môn:</label>
-                    <input type="color" class="form-control form-control-sm form-control-color w-100" id="aiClassDefaultColor" value="#0d7480">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Big Scan Button -->
-              <button type="button" class="btn btn-primary w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow" id="btnRunAIScan" onclick="startAIScanProcess()" disabled>
-                <i class="bi bi-stars fs-5 text-warning"></i>
-                <span id="btnScanText">Bắt đầu phân tích bằng AI Vision</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 2: Bảng kết quả nhận diện (Hiển thị sau khi AI quét xong) -->
-        <div id="aiResultSection" class="d-none mt-4 border-top pt-4">
-          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
             <div>
-              <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-check-circle-fill text-success"></i>
-                <span>Kết quả AI trích xuất (<span id="recognizedCount">0</span> môn học)</span>
-              </h5>
-              <p class="text-muted small mb-0">Bạn có thể sửa trực tiếp thông tin từng môn trước khi lưu vào Thời khóa biểu.</p>
+              <h5 class="modal-title fw-bold mb-0">Quét & Nhận diện Thời khóa biểu</h5>
+              <span class="text-muted small">Tự động phát hiện & trích xuất môn học từ Hình ảnh, Tin nhắn văn bản
+                (Zalo/SMS) hoặc File Excel ngẫu nhiên</span>
             </div>
-            <div class="d-flex gap-2">
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleSelectAllRecognized(true)">Chọn hết</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleSelectAllRecognized(false)">Bỏ chọn</button>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <!-- HỘP NHẬN DIỆN THỜI KHÓA BIỂU THÔNG MINH (3 TRONG 1 DUY NHẤT) -->
+          <div id="aiUploadSection">
+            <div class="row g-4">
+              <!-- Cột 1: Vùng Nạp Dữ Liệu Thông Minh (Drag & Drop + Dán văn bản / Ảnh) -->
+              <div class="col-12 col-lg-6">
+                <!-- Smart Omni Dropzone -->
+                <div class="ai-dropzone mb-3" id="omniDropzone"
+                  onclick="document.getElementById('omniFileInput').click()"
+                  style="cursor: pointer; min-height: 190px;">
+                  <input type="file" id="omniFileInput" accept="image/*, .xlsx, .xls, .csv, .txt" class="d-none"
+                    onchange="handleOmniFileSelected(event)">
+                  <div class="d-flex justify-content-center align-items-center gap-3 mb-2" style="font-size: 2.2rem;">
+                    <i class="bi bi-camera-fill text-primary" title="Hình ảnh / Ảnh chụp"></i>
+                    <i class="bi bi-chat-left-text-fill text-info" title="Tin nhắn văn bản (Zalo/SMS)"></i>
+                    <i class="bi bi-file-earmark-excel-fill text-success" title="File Excel / CSV"></i>
+                  </div>
+                  <h6 class="fw-bold mt-1 mb-1">Kéo thả Ảnh, File Excel hoặc Dán văn bản vào đây</h6>
+                  <p class="text-muted small mb-2">
+                    Tự động phát hiện: <strong>Ảnh chụp (.jpg, .png)</strong>, <strong>Bảng tính (.xlsx, .csv)</strong>
+                    hoặc <strong>Ctrl+V</strong> dán tin nhắn Zalo / ảnh màn hình
+                  </p>
+                  <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <button type="button" class="btn btn-outline-primary btn-sm px-3"
+                      onclick="event.stopPropagation(); document.getElementById('omniFileInput').click()">
+                      <i class="bi bi-folder2-open me-1"></i> Chọn File (Ảnh / Excel)
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm border text-primary fw-semibold px-3"
+                      onclick="event.stopPropagation(); pasteFromClipboard()">
+                      <i class="bi bi-clipboard-check me-1"></i> Dán Clipboard (Ctrl+V)
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Ô dán tin nhắn văn bản trực tiếp -->
+                <div class="mb-3">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label small fw-bold text-muted mb-0">
+                      <i class="bi bi-chat-quote-fill me-1 text-info"></i> Hoặc dán / nhập tin nhắn thời khóa biểu:
+                    </label>
+                    <span id="textCharCount" class="text-muted small" style="font-size: 0.78rem;"></span>
+                  </div>
+                  <textarea class="form-control font-monospace text-dark" id="omniTextInput" rows="4"
+                    style="font-size: 0.85rem;"
+                    placeholder="Dán tin nhắn Zalo, SMS hoặc copy trực tiếp từ portal trường vào đây...&#10;&#10;Ví dụ:&#10;Thứ 2: Tiết 10 - 12 Chuyên đề tốt nghiệp phòng L2.124 GV Trung Nguyên&#10;Thứ 3: Tiết 4 - 6 Lập trình Web phòng L.504 GV Bùi Duy Tân"
+                    oninput="handleOmniTextInput()"></textarea>
+                </div>
+
+                <!-- Nút Thử nhanh các nguồn thực tế -->
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                  <span class="small text-muted me-1 fw-semibold"><i
+                      class="bi bi-lightning-charge-fill text-warning"></i> Thử nhanh:</span>
+                  <button type="button" class="btn btn-light btn-sm border text-dark py-0 px-2 fw-semibold"
+                    onclick="loadNttuSampleImage()">
+                    <i class="bi bi-camera text-primary me-1"></i> Mẫu Ảnh Cổng NTTU
+                  </button>
+                  <button type="button" class="btn btn-light btn-sm border text-dark py-0 px-2 fw-semibold"
+                    onclick="loadNttuSampleText()">
+                    <i class="bi bi-chat-dots text-info me-1"></i> Mẫu Tin nhắn
+                  </button>
+                  <button type="button" class="btn btn-light btn-sm border text-dark py-0 px-2 fw-semibold"
+                    onclick="loadSampleExcelData()">
+                    <i class="bi bi-file-earmark-spreadsheet text-success me-1"></i> Mẫu File Excel
+                  </button>
+                  <button type="button" class="btn btn-light btn-sm border text-muted py-0 px-2"
+                    onclick="loadSampleTimetableImage()">
+                    <i class="bi bi-filetype-svg me-1"></i> Mẫu 15 Tiết
+                  </button>
+                </div>
+              </div>
+
+              <!-- Cột 2: Trạng thái Tự Động Nhận Diện & Xem Trước Thông Minh -->
+              <div class="col-12 col-lg-6">
+                <!-- Smart Detection Status Badge -->
+                <div id="smartDetectionBadge"
+                  class="alert alert-secondary py-2 px-3 small mb-2 d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-magic text-muted fs-5" id="smartBadgeIcon"></i>
+                    <div>
+                      <strong id="smartBadgeTitle">Chưa có dữ liệu</strong>
+                      <div class="text-muted" id="smartBadgeSub" style="font-size: 0.78rem;">Kéo thả ảnh, chọn file
+                        Excel hoặc dán văn bản để tự động phân tích</div>
+                    </div>
+                  </div>
+                  <span class="badge bg-secondary" id="smartTypeBadge">Chờ nạp</span>
+                </div>
+
+                <!-- Dynamic Preview Box (Ảnh / Excel / Text) -->
+                <div class="scanner-preview-box mb-3" id="omniPreviewBox"
+                  style="min-height: 190px; position: relative;">
+                  <!-- Placeholder trống -->
+                  <div class="text-center p-4 text-white-50" id="omniPreviewPlaceholder">
+                    <i class="bi bi-magic fs-1 mb-2 d-block text-warning"></i>
+                    <div class="fw-semibold">Xem trước dữ liệu sẽ xuất hiện tại đây</div>
+                    <div class="small text-white-50 mt-1">Hệ thống tự động phát hiện định dạng khi bạn tải lên hoặc dán
+                    </div>
+                  </div>
+
+                  <!-- Preview ảnh -->
+                  <img id="omniPreviewImg" src="" alt="Preview" class="d-none w-100 h-100" style="object-fit: contain;">
+                  <div class="scanner-laser d-none" id="scannerLaser"></div>
+
+                  <!-- Preview Excel -->
+                  <div id="omniPreviewExcel" class="d-none p-3 text-white h-100 w-100 overflow-auto text-start">
+                    <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom border-secondary">
+                      <i class="bi bi-file-earmark-excel-fill text-success fs-3"></i>
+                      <div>
+                        <strong id="excelFileName" class="d-block text-truncate"
+                          style="max-width: 260px;">bang_tinh.xlsx</strong>
+                        <span id="excelFileInfo" class="small text-white-50">7 dòng dữ liệu bảng tính</span>
+                      </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 120px;">
+                      <table class="table table-dark table-sm table-bordered small mb-0 opacity-75"
+                        id="excelPreviewMiniTable">
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Preview Text -->
+                  <div id="omniPreviewText"
+                    class="d-none p-3 text-white h-100 w-100 overflow-auto text-start small font-monospace">
+                    <div class="text-warning small mb-1 fw-bold"><i class="bi bi-chat-quote-fill me-1"></i> Đoạn tin
+                      nhắn thời khóa biểu đã sẵn sàng:</div>
+                    <div id="textPreviewContent" class="opacity-75"
+                      style="white-space: pre-wrap; max-height: 130px; overflow-y: auto;"></div>
+                  </div>
+                </div>
+
+                <!-- Cấu hình chung -->
+                <div class="card p-3 bg-light border-0 mb-3">
+                  <div class="row g-2 align-items-center">
+                    <div class="col-12 col-sm-6">
+                      <label class="form-label small fw-semibold mb-1">Hệ thống trường / quy đổi tiết:</label>
+                      <select class="form-select form-select-sm" id="periodFormatSelect">
+                        <option value="nttu" selected>ĐH Nguyễn Tất Thành (NTTU)</option>
+                        <option value="standard">Quy chuẩn 15 Tiết</option>
+                        <option value="direct">Trực tiếp theo giờ ghi trên TKB</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <label class="form-label small fw-semibold mb-1">Màu mặc định cho môn:</label>
+                      <input type="color" class="form-control form-control-sm form-control-color w-100"
+                        id="aiClassDefaultColor" value="#0d7480">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Nút hành động duy nhất -->
+                <div class="d-grid gap-2">
+                  <button type="button"
+                    class="btn btn-primary py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                    id="btnRunOmniScan" onclick="runOmniRecognitionAndSchedule()" disabled>
+                    <i class="bi bi-stars fs-5 text-warning"></i>
+                    <span id="btnOmniScanText">Tự động nhận diện & Sắp xếp TKB</span>
+                  </button>
+                  <div class="d-flex justify-content-between align-items-center small text-muted px-1">
+                    <span><i class="bi bi-shield-check text-success me-1"></i>Tự động nhận diện Ảnh, Excel hoặc Tin
+                      nhắn</span>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted"
+                      onclick="resetOmniInput()">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i> Làm lại
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle mb-0 bg-white">
-              <thead class="table-light small">
-                <tr>
-                  <th style="width: 40px;" class="text-center">#</th>
-                  <th>Tên môn học</th>
-                  <th style="width: 100px;">Mã môn</th>
-                  <th style="width: 110px;">Thứ</th>
-                  <th style="width: 95px;">Bắt đầu</th>
-                  <th style="width: 95px;">Kết thúc</th>
-                  <th style="width: 110px;">Phòng</th>
-                  <th style="width: 130px;">Giảng viên</th>
-                  <th style="width: 90px;" class="text-center">Độ tin cậy</th>
-                  <th style="width: 130px;">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody id="recognizedTableBody">
-                <!-- Injected via JS -->
-              </tbody>
-            </table>
+          <!-- Step 2: Bảng kết quả nhận diện (Hiển thị sau khi AI quét xong) -->
+          <div id="aiResultSection" class="d-none mt-4 border-top pt-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+              <div>
+                <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle-fill text-success"></i>
+                  <span>Kết quả trích xuất (<span id="recognizedCount">0</span> môn học)</span>
+                </h5>
+                <p class="text-muted small mb-0">Bạn có thể sửa trực tiếp thông tin từng môn trước khi lưu vào Thời khóa
+                  biểu.</p>
+              </div>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  onclick="toggleSelectAllRecognized(true)">Chọn hết</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  onclick="toggleSelectAllRecognized(false)">Bỏ chọn</button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover align-middle mb-0 bg-white">
+                <thead class="table-light small">
+                  <tr>
+                    <th style="width: 40px;" class="text-center">#</th>
+                    <th>Tên môn học</th>
+                    <th style="width: 100px;">Mã môn</th>
+                    <th style="width: 110px;">Thứ</th>
+                    <th style="width: 95px;">Bắt đầu</th>
+                    <th style="width: 95px;">Kết thúc</th>
+                    <th style="width: 110px;">Phòng</th>
+                    <th style="width: 130px;">Giảng viên</th>
+                    <th style="width: 90px;" class="text-center">Độ tin cậy</th>
+                    <th style="width: 130px;">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="recognizedTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="modal-footer d-flex justify-content-between">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
-        <div class="d-flex gap-2" id="aiFooterActions" style="display: none !important;">
-          <button type="button" class="btn btn-outline-primary fw-semibold" onclick="importRecognizedAndAutoSchedule()">
-            <i class="bi bi-magic me-1"></i> Thêm & Tự động xếp lịch
-          </button>
-          <button type="button" class="btn btn-success fw-bold shadow-sm" onclick="saveRecognizedClassesToCalendar()">
-            <i class="bi bi-calendar-plus me-1"></i> Lưu vào Thời khóa biểu
-          </button>
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+          <div class="d-flex gap-2" id="aiFooterActions" style="display: none !important;">
+            <button type="button" class="btn btn-outline-primary fw-semibold"
+              onclick="importRecognizedAndAutoSchedule()">
+              <i class="bi bi-magic me-1"></i> Thêm & Tự động xếp lịch
+            </button>
+            <button type="button" class="btn btn-success fw-bold shadow-sm" onclick="saveRecognizedClassesToCalendar()">
+              <i class="bi bi-calendar-plus me-1"></i> Lưu vào Thời khóa biểu
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="../js/store.js"></script>
-<script src="../js/api.js"></script>
-<script src="../js/auth.js"></script>
-<script src="../js/ui-states.js"></script>
-<script src="../js/main.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="../js/timetable-parser.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/ui-states.js"></script>
+  <script src="../js/main.js"></script>
 
-<script>
-  let calendar = null;
-  let activeSelectedClassId = null;
+  <script>
+    let calendar = null;
+    let activeSelectedClassId = null;
 
-  document.addEventListener('DOMContentLoaded', () => {
-    UIStates.loading(document.getElementById('calendarLoadingState'), 'Đang tải thời khóa biểu...');
-    initCalendar();
-    document.getElementById('calendarLoadingState').classList.add('d-none');
-    checkBannerConflict();
+    document.addEventListener('DOMContentLoaded', () => {
+      UIStates.loading(document.getElementById('calendarLoadingState'), 'Đang tải thời khóa biểu...');
+      initCalendar();
+      document.getElementById('calendarLoadingState').classList.add('d-none');
+      checkBannerConflict();
 
-    // Lắng nghe thay đổi giờ trong modal để kiểm tra trùng trực tiếp
-    ['classDayOfWeekInput', 'classStartTimeInput', 'classEndTimeInput'].forEach(id => {
-      document.getElementById(id).addEventListener('change', checkLiveConflictInModal);
-    });
-  });
-
-  function initCalendar() {
-    const calendarEl = document.getElementById('calendar');
-    
-    calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'timeGridWeek',
-      locale: 'vi',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'timeGridWeek,timeGridDay,dayGridMonth'
-      },
-      buttonText: {
-        today: 'Hôm nay',
-        month: 'Tháng',
-        week: 'Tuần',
-        day: 'Ngày'
-      },
-      slotMinTime: '06:00:00',
-      slotMaxTime: '23:00:00',
-      slotLabelFormat: {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      },
-      eventTimeFormat: {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      },
-      allDaySlot: false,
-      slotDuration: '00:30:00',
-      expandRows: true,
-      navLinks: true,
-      editable: false,
-      selectable: true,
-      selectMirror: true,
-      nowIndicator: true,
-      events: loadCalendarEvents,
-      eventClick: function(info) {
-        showEventDetail(info.event);
-      },
-      select: function(info) {
-        // Mở modal thêm lớp học vào khung giờ vừa chọn
-        openCreateClassModal({
-          dayOfWeek: info.start.getDay(),
-          startTime: info.start.toTimeString().substring(0, 5),
-          endTime: info.end.toTimeString().substring(0, 5)
-        });
-      }
-    });
-
-    calendar.render();
-  }
-
-  // Tải dữ liệu các lớp học và các task đã được tự động xếp vào calendar
-  function loadCalendarEvents(fetchInfo, successCallback) {
-    const classes = AppStore.getClasses();
-    const scheduledEvents = AppStore.getScheduledEvents();
-    const events = [];
-
-    // Lịch học cố định (Lặp lại hàng tuần theo dayOfWeek)
-    classes.forEach(c => {
-      events.push({
-        id: c.id,
-        title: `${c.title} (${c.room || 'Phòng học'})`,
-        startTime: c.startTime + ':00',
-        endTime: c.endTime + ':00',
-        daysOfWeek: [parseInt(c.dayOfWeek)], // 0: CN, 1: T2...
-        backgroundColor: c.color || '#0d7480',
-        borderColor: c.color || '#0d7480',
-        extendedProps: {
-          type: 'class',
-          data: c
-        }
+      // Lắng nghe thay đổi giờ trong modal để kiểm tra trùng trực tiếp
+      ['classDayOfWeekInput', 'classStartTimeInput', 'classEndTimeInput'].forEach(id => {
+        document.getElementById(id).addEventListener('change', checkLiveConflictInModal);
       });
     });
 
-    // Ca làm việc (Định kỳ hàng tuần hoặc theo ngày cụ thể)
-    const shifts = typeof AppStore.getWorkSchedules === 'function' ? AppStore.getWorkSchedules() : [];
-    shifts.forEach(s => {
-      const workplaceSuffix = s.workplace ? ` (${s.workplace})` : '';
-      if (s.workDate) {
-        events.push({
-          id: s.id,
-          title: `[Ca làm] ${s.title}${workplaceSuffix}`,
-          start: `${s.workDate}T${s.startTime}:00`,
-          end: `${s.workDate}T${s.endTime}:00`,
-          backgroundColor: s.color || '#b45309',
-          borderColor: s.color || '#b45309',
-          extendedProps: {
-            type: 'work_shift',
-            data: s
-          }
-        });
-      } else if (s.dayOfWeek !== null && s.dayOfWeek !== undefined && s.dayOfWeek !== '') {
-        const ev = {
-          id: s.id,
-          title: `[Ca làm] ${s.title}${workplaceSuffix}`,
-          startTime: s.startTime + ':00',
-          endTime: s.endTime + ':00',
-          daysOfWeek: [parseInt(s.dayOfWeek)],
-          backgroundColor: s.color || '#b45309',
-          borderColor: s.color || '#b45309',
-          extendedProps: {
-            type: 'work_shift',
-            data: s
-          }
-        };
-        if (s.startDate) ev.startRecur = s.startDate;
-        if (s.endDate) {
-          const endD = new Date(`${s.endDate}T00:00:00`);
-          endD.setDate(endD.getDate() + 1);
-          const yyyy = endD.getFullYear();
-          const mm = String(endD.getMonth() + 1).padStart(2, '0');
-          const dd = String(endD.getDate()).padStart(2, '0');
-          ev.endRecur = `${yyyy}-${mm}-${dd}`;
-        }
-        events.push(ev);
-      }
-    });
+    function initCalendar() {
+      const calendarEl = document.getElementById('calendar');
 
-    // Các task được AI Auto-Schedule lên lịch
-    scheduledEvents.forEach(sch => {
-      events.push({
-        id: sch.id,
-        title: `[Task AI] ${sch.title}`,
-        start: sch.start,
-        end: sch.end,
-        backgroundColor: sch.color || '#1f3038',
-        borderColor: sch.color || '#1f3038',
-        extendedProps: {
-          type: 'scheduled_task',
-          data: sch
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'vi',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'timeGridWeek,timeGridDay,dayGridMonth'
+        },
+        buttonText: {
+          today: 'Hôm nay',
+          month: 'Tháng',
+          week: 'Tuần',
+          day: 'Ngày'
+        },
+        slotMinTime: '06:00:00',
+        slotMaxTime: '23:00:00',
+        slotLabelFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        },
+        eventTimeFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        },
+        allDaySlot: false,
+        slotDuration: '00:30:00',
+        expandRows: true,
+        navLinks: true,
+        editable: false,
+        selectable: true,
+        selectMirror: true,
+        nowIndicator: true,
+        events: loadCalendarEvents,
+        eventClick: function (info) {
+          showEventDetail(info.event);
+        },
+        select: function (info) {
+          // Mở modal thêm lớp học vào khung giờ vừa chọn
+          openCreateClassModal({
+            dayOfWeek: info.start.getDay(),
+            startTime: info.start.toTimeString().substring(0, 5),
+            endTime: info.end.toTimeString().substring(0, 5)
+          });
         }
       });
-    });
 
-    const emptyState = document.getElementById('calendarEmptyState');
-    if (events.length === 0) {
-      emptyState.classList.remove('d-none');
-      UIStates.empty(emptyState, 'Chưa có lịch học', 'Hãy thêm môn học hoặc quét thời khóa biểu bằng AI để bắt đầu.');
-    } else {
-      emptyState.classList.add('d-none');
+      calendar.render();
     }
 
-    successCallback(events);
-  }
+    // Tải dữ liệu các lớp học và các task đã được tự động xếp vào calendar
+    function loadCalendarEvents(fetchInfo, successCallback) {
+      const classes = AppStore.getClasses();
+      const scheduledEvents = AppStore.getScheduledEvents();
+      const events = [];
 
-  function showEventDetail(eventObj) {
-    const props = eventObj.extendedProps;
-    if (props.type === 'class') {
-      const c = props.data;
-      activeSelectedClassId = c.id;
-      
-      const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-      document.getElementById('detailClassTitle').textContent = c.title;
-      document.getElementById('detailClassBody').innerHTML = `
+      // Lịch học cố định (Lặp lại hàng tuần theo dayOfWeek)
+      classes.forEach(c => {
+        events.push({
+          id: c.id,
+          title: `${c.title} (${c.room || 'Phòng học'})`,
+          startTime: c.startTime + ':00',
+          endTime: c.endTime + ':00',
+          daysOfWeek: [parseInt(c.dayOfWeek)], // 0: CN, 1: T2...
+          backgroundColor: c.color || '#0d7480',
+          borderColor: c.color || '#0d7480',
+          extendedProps: {
+            type: 'class',
+            data: c
+          }
+        });
+      });
+
+      // Ca làm việc (Định kỳ hàng tuần hoặc theo ngày cụ thể)
+      const shifts = typeof AppStore.getWorkSchedules === 'function' ? AppStore.getWorkSchedules() : [];
+      shifts.forEach(s => {
+        const workplaceSuffix = s.workplace ? ` (${s.workplace})` : '';
+        if (s.workDate) {
+          events.push({
+            id: s.id,
+            title: `[Ca làm] ${s.title}${workplaceSuffix}`,
+            start: `${s.workDate}T${s.startTime}:00`,
+            end: `${s.workDate}T${s.endTime}:00`,
+            backgroundColor: s.color || '#b45309',
+            borderColor: s.color || '#b45309',
+            extendedProps: {
+              type: 'work_shift',
+              data: s
+            }
+          });
+        } else if (s.dayOfWeek !== null && s.dayOfWeek !== undefined && s.dayOfWeek !== '') {
+          const ev = {
+            id: s.id,
+            title: `[Ca làm] ${s.title}${workplaceSuffix}`,
+            startTime: s.startTime + ':00',
+            endTime: s.endTime + ':00',
+            daysOfWeek: [parseInt(s.dayOfWeek)],
+            backgroundColor: s.color || '#b45309',
+            borderColor: s.color || '#b45309',
+            extendedProps: {
+              type: 'work_shift',
+              data: s
+            }
+          };
+          if (s.startDate) ev.startRecur = s.startDate;
+          if (s.endDate) {
+            const endD = new Date(`${s.endDate}T00:00:00`);
+            endD.setDate(endD.getDate() + 1);
+            const yyyy = endD.getFullYear();
+            const mm = String(endD.getMonth() + 1).padStart(2, '0');
+            const dd = String(endD.getDate()).padStart(2, '0');
+            ev.endRecur = `${yyyy}-${mm}-${dd}`;
+          }
+          events.push(ev);
+        }
+      });
+
+      // Các task được AI Auto-Schedule lên lịch
+      scheduledEvents.forEach(sch => {
+        events.push({
+          id: sch.id,
+          title: `[Task AI] ${sch.title}`,
+          start: sch.start,
+          end: sch.end,
+          backgroundColor: sch.color || '#1f3038',
+          borderColor: sch.color || '#1f3038',
+          extendedProps: {
+            type: 'scheduled_task',
+            data: sch
+          }
+        });
+      });
+
+      const emptyState = document.getElementById('calendarEmptyState');
+      if (events.length === 0) {
+        emptyState.classList.remove('d-none');
+        UIStates.empty(emptyState, 'Chưa có lịch học', 'Hãy thêm môn học hoặc quét thời khóa biểu để bắt đầu.');
+      } else {
+        emptyState.classList.add('d-none');
+      }
+
+      successCallback(events);
+    }
+
+    function showEventDetail(eventObj) {
+      const props = eventObj.extendedProps;
+      if (props.type === 'class') {
+        const c = props.data;
+        activeSelectedClassId = c.id;
+
+        const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        document.getElementById('detailClassTitle').textContent = c.title;
+        document.getElementById('detailClassBody').innerHTML = `
         <div class="mb-3">
           <span class="badge font-monospace" style="background-color: ${c.color || '#0d7480'}">${c.code || 'Môn học'}</span>
           <span class="badge bg-secondary ms-1">${dayNames[c.dayOfWeek]}</span>
@@ -739,27 +884,27 @@
         </div>
       `;
 
-      document.getElementById('btnDetailEdit').onclick = () => {
-        bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
-        openEditClassModal(c.id);
-      };
+        document.getElementById('btnDetailEdit').onclick = () => {
+          bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
+          openEditClassModal(c.id);
+        };
 
-      document.getElementById('btnDetailDelete').onclick = () => {
-        bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
-        deleteClassConfirm(c.id);
-      };
+        document.getElementById('btnDetailDelete').onclick = () => {
+          bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
+          deleteClassConfirm(c.id);
+        };
 
-      const detailModal = new bootstrap.Modal(document.getElementById('classDetailModal'));
-      detailModal.show();
-    } else if (props.type === 'work_shift') {
-      const s = props.data;
-      const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-      const timeInfo = s.workDate
-        ? `Ngày ${s.workDate} (${s.startTime} - ${s.endTime})`
-        : `${dayNames[s.dayOfWeek]} hàng tuần (${s.startTime} - ${s.endTime})`;
+        const detailModal = new bootstrap.Modal(document.getElementById('classDetailModal'));
+        detailModal.show();
+      } else if (props.type === 'work_shift') {
+        const s = props.data;
+        const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        const timeInfo = s.workDate
+          ? `Ngày ${s.workDate} (${s.startTime} - ${s.endTime})`
+          : `${dayNames[s.dayOfWeek]} hàng tuần (${s.startTime} - ${s.endTime})`;
 
-      document.getElementById('detailClassTitle').innerHTML = `<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>${escapeHtml(s.title)}`;
-      document.getElementById('detailClassBody').innerHTML = `
+        document.getElementById('detailClassTitle').innerHTML = `<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>${escapeHtml(s.title)}`;
+        document.getElementById('detailClassBody').innerHTML = `
         <div class="mb-3">
           <span class="badge" style="background-color: ${s.color || '#b45309'}"><i class="bi bi-briefcase me-1"></i>Ca làm việc</span>
           ${s.workDate ? `<span class="badge bg-secondary ms-1">Ngày: ${s.workDate}</span>` : `<span class="badge bg-secondary ms-1">${dayNames[s.dayOfWeek]}</span>`}
@@ -773,593 +918,1008 @@
         </div>
       `;
 
-      document.getElementById('btnDetailEdit').onclick = () => {
-        bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
-        openEditShiftModal(s.id);
-      };
+        document.getElementById('btnDetailEdit').onclick = () => {
+          bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
+          openEditShiftModal(s.id);
+        };
 
-      document.getElementById('btnDetailDelete').onclick = () => {
-        bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
-        deleteShiftConfirm(s.id);
-      };
+        document.getElementById('btnDetailDelete').onclick = () => {
+          bootstrap.Modal.getInstance(document.getElementById('classDetailModal')).hide();
+          deleteShiftConfirm(s.id);
+        };
 
-      const detailModal = new bootstrap.Modal(document.getElementById('classDetailModal'));
-      detailModal.show();
-    } else {
-      // Scheduled Task
-      const task = props.data;
-      Swal.fire({
-        title: task.title,
-        html: `
+        const detailModal = new bootstrap.Modal(document.getElementById('classDetailModal'));
+        detailModal.show();
+      } else {
+        // Scheduled Task
+        const task = props.data;
+        Swal.fire({
+          title: task.title,
+          html: `
           <div class="text-start">
             <p><strong>Môn liên quan:</strong> ${task.subject || 'Tự học'}</p>
             <p><strong>Thời gian học:</strong> ${task.start.replace('T', ' ')} đến ${task.end.split('T')[1]}</p>
-            <p class="text-muted small">Nhiệm vụ này đã được thuật toán AI tự động sắp xếp vào thời gian rảnh.</p>
+            <p class="text-muted small">Nhiệm vụ này đã được tự động sắp xếp vào thời gian rảnh.</p>
           </div>
         `,
-        icon: 'info',
-        confirmButtonText: 'Đóng'
-      });
-    }
-  }
-
-  function openCreateClassModal(defaults = {}) {
-    document.getElementById('classForm').reset();
-    document.getElementById('classIdInput').value = '';
-    document.getElementById('classModalTitle').textContent = 'Thêm môn học mới';
-    document.getElementById('btnDeleteClass').style.display = 'none';
-    document.getElementById('modalConflictAlert').classList.add('d-none');
-
-    if (defaults.dayOfWeek !== undefined) {
-      document.getElementById('classDayOfWeekInput').value = defaults.dayOfWeek;
-    }
-    if (defaults.startTime) {
-      document.getElementById('classStartTimeInput').value = defaults.startTime;
-    }
-    if (defaults.endTime) {
-      document.getElementById('classEndTimeInput').value = defaults.endTime;
-    }
-
-    const modal = new bootstrap.Modal(document.getElementById('classModal'));
-    modal.show();
-  }
-
-  function openEditClassModal(id) {
-    const c = AppStore.getClassById(id);
-    if (!c) return;
-
-    document.getElementById('classIdInput').value = c.id;
-    document.getElementById('classNameInput').value = c.title || '';
-    document.getElementById('classCodeInput').value = c.code || '';
-    document.getElementById('classRoomInput').value = c.room || '';
-    document.getElementById('classLecturerInput').value = c.lecturer || '';
-    document.getElementById('classDayOfWeekInput').value = c.dayOfWeek;
-    document.getElementById('classStartTimeInput').value = c.startTime;
-    document.getElementById('classEndTimeInput').value = c.endTime;
-    document.getElementById('classColorInput').value = c.color || '#0d7480';
-    document.getElementById('classNotesInput').value = c.notes || '';
-
-    document.getElementById('classModalTitle').textContent = 'Chỉnh sửa môn học';
-    document.getElementById('btnDeleteClass').style.display = 'inline-block';
-    document.getElementById('modalConflictAlert').classList.add('d-none');
-
-    const modal = new bootstrap.Modal(document.getElementById('classModal'));
-    modal.show();
-  }
-
-  function checkLiveConflictInModal() {
-    const classId = document.getElementById('classIdInput').value || null;
-    const dayOfWeek = parseInt(document.getElementById('classDayOfWeekInput').value);
-    const startTime = document.getElementById('classStartTimeInput').value;
-    const endTime = document.getElementById('classEndTimeInput').value;
-
-    if (!startTime || !endTime) return;
-
-    const res = AppStore.checkClassConflict({ dayOfWeek, startTime, endTime }, classId);
-    const alertEl = document.getElementById('modalConflictAlert');
-    const alertText = document.getElementById('modalConflictText');
-
-    if (res.hasConflict) {
-      alertEl.classList.remove('d-none');
-      alertText.textContent = `Trùng giờ với môn "${res.conflictingEvent.title}" (${res.conflictingEvent.startTime} - ${res.conflictingEvent.endTime})`;
-    } else {
-      alertEl.classList.add('d-none');
-    }
-  }
-
-  // Submit form
-  document.getElementById('classForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const id = document.getElementById('classIdInput').value;
-    const classData = {
-      title: document.getElementById('classNameInput').value.trim(),
-      code: document.getElementById('classCodeInput').value.trim(),
-      room: document.getElementById('classRoomInput').value.trim(),
-      lecturer: document.getElementById('classLecturerInput').value.trim(),
-      dayOfWeek: parseInt(document.getElementById('classDayOfWeekInput').value),
-      startTime: document.getElementById('classStartTimeInput').value,
-      endTime: document.getElementById('classEndTimeInput').value,
-      color: document.getElementById('classColorInput').value,
-      notes: document.getElementById('classNotesInput').value.trim()
-    };
-
-    if (classData.startTime >= classData.endTime) {
-      Swal.fire('Lỗi thời gian', 'Giờ bắt đầu phải nhỏ hơn giờ kết thúc!', 'error');
-      return;
-    }
-
-    let result;
-    if (id) {
-      result = AppStore.updateClass(id, classData);
-      showToast('Cập nhật thành công', 'Đã lưu thay đổi môn học!', 'success');
-    } else {
-      result = AppStore.addClass(classData);
-      showToast('Thêm thành công', 'Đã thêm môn học vào thời khóa biểu!', 'success');
-    }
-
-    if (result && result.conflict && result.conflict.hasConflict) {
-      Swal.fire({
-        title: 'Cảnh báo trùng lịch!',
-        text: `Môn này đang bị trùng giờ với môn: ${result.conflict.conflictingEvent.title}. Bạn vẫn có thể lưu nhưng hãy chú ý sắp xếp lại!`,
-        icon: 'warning'
-      });
-    }
-
-    bootstrap.Modal.getInstance(document.getElementById('classModal')).hide();
-    calendar.refetchEvents();
-    checkBannerConflict();
-  });
-
-  function deleteCurrentClass() {
-    const id = document.getElementById('classIdInput').value;
-    if (id) {
-      bootstrap.Modal.getInstance(document.getElementById('classModal')).hide();
-      deleteClassConfirm(id);
-    }
-  }
-
-  function deleteClassConfirm(id) {
-    Swal.fire({
-      title: 'Xác nhận xóa môn học?',
-      text: 'Lịch học này sẽ bị xóa khỏi thời khóa biểu vĩnh viễn!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Đồng ý xóa',
-      cancelButtonText: 'Hủy'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        AppStore.deleteClass(id);
-        showToast('Đã xóa', 'Lịch học đã được gỡ bỏ.', 'info');
-        calendar.refetchEvents();
-        checkBannerConflict();
+          icon: 'info',
+          confirmButtonText: 'Đóng'
+        });
       }
-    });
-  }
-
-  // === QUẢN LÝ CA LÀM VIỆC (WORK SHIFTS) ===
-  function openCreateShiftModal(defaults = {}) {
-    document.getElementById('shiftForm').reset();
-    document.getElementById('shiftIdInput').value = '';
-    document.getElementById('shiftModalTitle').innerHTML = '<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Thêm ca làm việc mới';
-    document.getElementById('btnDeleteShift').style.display = 'none';
-    document.getElementById('modalShiftConflictAlert').classList.add('d-none');
-    document.getElementById('shiftColorInput').value = '#b45309';
-
-    if (defaults.dayOfWeek !== undefined) {
-      document.getElementById('shiftDayOfWeekInput').value = defaults.dayOfWeek;
-    }
-    if (defaults.workDate) {
-      document.getElementById('shiftWorkDateInput').value = defaults.workDate;
-    }
-    if (defaults.startTime) {
-      document.getElementById('shiftStartTimeInput').value = defaults.startTime;
-    }
-    if (defaults.endTime) {
-      document.getElementById('shiftEndTimeInput').value = defaults.endTime;
     }
 
-    handleShiftTimingTypeChange();
-    const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
-    modal.show();
-  }
+    function openCreateClassModal(defaults = {}) {
+      document.getElementById('classForm').reset();
+      document.getElementById('classIdInput').value = '';
+      document.getElementById('classModalTitle').textContent = 'Thêm môn học mới';
+      document.getElementById('btnDeleteClass').style.display = 'none';
+      document.getElementById('modalConflictAlert').classList.add('d-none');
 
-  function openEditShiftModal(id) {
-    const s = AppStore.getWorkScheduleById(id);
-    if (!s) return;
+      if (defaults.dayOfWeek !== undefined) {
+        document.getElementById('classDayOfWeekInput').value = defaults.dayOfWeek;
+      }
+      if (defaults.startTime) {
+        document.getElementById('classStartTimeInput').value = defaults.startTime;
+      }
+      if (defaults.endTime) {
+        document.getElementById('classEndTimeInput').value = defaults.endTime;
+      }
 
-    document.getElementById('shiftIdInput').value = s.id;
-    document.getElementById('shiftTitleInput').value = s.title || '';
-    document.getElementById('shiftWorkplaceInput').value = s.workplace || '';
-    document.getElementById('shiftDayOfWeekInput').value = (s.dayOfWeek !== null && s.dayOfWeek !== undefined) ? s.dayOfWeek : '';
-    document.getElementById('shiftWorkDateInput').value = s.workDate || '';
-    document.getElementById('shiftStartTimeInput').value = s.startTime || '18:00';
-    document.getElementById('shiftEndTimeInput').value = s.endTime || '22:00';
-    document.getElementById('shiftStartDateInput').value = s.startDate || '';
-    document.getElementById('shiftEndDateInput').value = s.endDate || '';
-    document.getElementById('shiftColorInput').value = s.color || '#b45309';
-    document.getElementById('shiftNotesInput').value = s.notes || '';
-
-    document.getElementById('shiftModalTitle').innerHTML = '<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Chỉnh sửa ca làm việc';
-    document.getElementById('btnDeleteShift').style.display = 'inline-block';
-    document.getElementById('modalShiftConflictAlert').classList.add('d-none');
-
-    handleShiftTimingTypeChange();
-    const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
-    modal.show();
-  }
-
-  function checkLiveShiftConflictInModal() {
-    const shiftId = document.getElementById('shiftIdInput').value || null;
-    const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
-    const workDateVal = document.getElementById('shiftWorkDateInput').value;
-    const startTime = document.getElementById('shiftStartTimeInput').value;
-    const endTime = document.getElementById('shiftEndTimeInput').value;
-    const startDate = document.getElementById('shiftStartDateInput').value || null;
-    const endDate = document.getElementById('shiftEndDateInput').value || null;
-
-    if (!startTime || !endTime) return;
-    if (dayOfWeekVal === '' && !workDateVal) return;
-
-    const candidate = {
-      dayOfWeek: dayOfWeekVal !== '' ? parseInt(dayOfWeekVal) : null,
-      workDate: workDateVal || null,
-      startTime,
-      endTime,
-      startDate,
-      endDate
-    };
-
-    const res = AppStore.checkWorkShiftConflict(candidate, shiftId);
-    const alertEl = document.getElementById('modalShiftConflictAlert');
-    const alertText = document.getElementById('modalShiftConflictText');
-
-    if (res && res.hasConflict) {
-      alertEl.classList.remove('d-none');
-      const conflictName = res.conflictingEvent ? res.conflictingEvent.title : 'Sự kiện khác';
-      const conflictTypeLabel = res.conflictType === 'class' ? 'môn học' : 'ca làm khác';
-      alertText.textContent = `Trùng giờ với ${conflictTypeLabel} "${conflictName}" (${res.conflictingEvent.startTime} - ${res.conflictingEvent.endTime})`;
-    } else {
-      alertEl.classList.add('d-none');
+      const modal = new bootstrap.Modal(document.getElementById('classModal'));
+      modal.show();
     }
-  }
 
-  function handleShiftTimingTypeChange() {
-    const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
-    const dateRangeBlock = document.getElementById('shiftRecurringDateRangeBlock');
-    if (dateRangeBlock) {
-      if (dayOfWeekVal !== '') {
-        dateRangeBlock.classList.remove('d-none');
+    function openEditClassModal(id) {
+      const c = AppStore.getClassById(id);
+      if (!c) return;
+
+      document.getElementById('classIdInput').value = c.id;
+      document.getElementById('classNameInput').value = c.title || '';
+      document.getElementById('classCodeInput').value = c.code || '';
+      document.getElementById('classRoomInput').value = c.room || '';
+      document.getElementById('classLecturerInput').value = c.lecturer || '';
+      document.getElementById('classDayOfWeekInput').value = c.dayOfWeek;
+      document.getElementById('classStartTimeInput').value = c.startTime;
+      document.getElementById('classEndTimeInput').value = c.endTime;
+      document.getElementById('classColorInput').value = c.color || '#0d7480';
+      document.getElementById('classNotesInput').value = c.notes || '';
+
+      document.getElementById('classModalTitle').textContent = 'Chỉnh sửa môn học';
+      document.getElementById('btnDeleteClass').style.display = 'inline-block';
+      document.getElementById('modalConflictAlert').classList.add('d-none');
+
+      const modal = new bootstrap.Modal(document.getElementById('classModal'));
+      modal.show();
+    }
+
+    function checkLiveConflictInModal() {
+      const classId = document.getElementById('classIdInput').value || null;
+      const dayOfWeek = parseInt(document.getElementById('classDayOfWeekInput').value);
+      const startTime = document.getElementById('classStartTimeInput').value;
+      const endTime = document.getElementById('classEndTimeInput').value;
+
+      if (!startTime || !endTime) return;
+
+      const res = AppStore.checkClassConflict({ dayOfWeek, startTime, endTime }, classId);
+      const alertEl = document.getElementById('modalConflictAlert');
+      const alertText = document.getElementById('modalConflictText');
+
+      if (res.hasConflict) {
+        alertEl.classList.remove('d-none');
+        alertText.textContent = `Trùng giờ với môn "${res.conflictingEvent.title}" (${res.conflictingEvent.startTime} - ${res.conflictingEvent.endTime})`;
       } else {
-        dateRangeBlock.classList.add('d-none');
+        alertEl.classList.add('d-none');
       }
     }
-  }
 
-  function deleteCurrentShift() {
-    const id = document.getElementById('shiftIdInput').value;
-    if (id) {
+    // Submit form
+    document.getElementById('classForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('classIdInput').value;
+      const classData = {
+        title: document.getElementById('classNameInput').value.trim(),
+        code: document.getElementById('classCodeInput').value.trim(),
+        room: document.getElementById('classRoomInput').value.trim(),
+        lecturer: document.getElementById('classLecturerInput').value.trim(),
+        dayOfWeek: parseInt(document.getElementById('classDayOfWeekInput').value),
+        startTime: document.getElementById('classStartTimeInput').value,
+        endTime: document.getElementById('classEndTimeInput').value,
+        color: document.getElementById('classColorInput').value,
+        notes: document.getElementById('classNotesInput').value.trim()
+      };
+
+      if (classData.startTime >= classData.endTime) {
+        Swal.fire('Lỗi thời gian', 'Giờ bắt đầu phải nhỏ hơn giờ kết thúc!', 'error');
+        return;
+      }
+
+      let result;
+      if (id) {
+        result = AppStore.updateClass(id, classData);
+        showToast('Cập nhật thành công', 'Đã lưu thay đổi môn học!', 'success');
+      } else {
+        result = AppStore.addClass(classData);
+        showToast('Thêm thành công', 'Đã thêm môn học vào thời khóa biểu!', 'success');
+      }
+
+      if (result && result.conflict && result.conflict.hasConflict) {
+        Swal.fire({
+          title: 'Cảnh báo trùng lịch!',
+          text: `Môn này đang bị trùng giờ với môn: ${result.conflict.conflictingEvent.title}. Bạn vẫn có thể lưu nhưng hãy chú ý sắp xếp lại!`,
+          icon: 'warning'
+        });
+      }
+
+      bootstrap.Modal.getInstance(document.getElementById('classModal')).hide();
+      calendar.refetchEvents();
+      checkBannerConflict();
+    });
+
+    function deleteCurrentClass() {
+      const id = document.getElementById('classIdInput').value;
+      if (id) {
+        bootstrap.Modal.getInstance(document.getElementById('classModal')).hide();
+        deleteClassConfirm(id);
+      }
+    }
+
+    function deleteClassConfirm(id) {
+      Swal.fire({
+        title: 'Xác nhận xóa môn học?',
+        text: 'Lịch học này sẽ bị xóa khỏi thời khóa biểu vĩnh viễn!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Đồng ý xóa',
+        cancelButtonText: 'Hủy'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          AppStore.deleteClass(id);
+          showToast('Đã xóa', 'Lịch học đã được gỡ bỏ.', 'info');
+          calendar.refetchEvents();
+          checkBannerConflict();
+        }
+      });
+    }
+
+    // === QUẢN LÝ CA LÀM VIỆC (WORK SHIFTS) ===
+    function openCreateShiftModal(defaults = {}) {
+      document.getElementById('shiftForm').reset();
+      document.getElementById('shiftIdInput').value = '';
+      document.getElementById('shiftModalTitle').innerHTML = '<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Thêm ca làm việc mới';
+      document.getElementById('btnDeleteShift').style.display = 'none';
+      document.getElementById('modalShiftConflictAlert').classList.add('d-none');
+      document.getElementById('shiftColorInput').value = '#b45309';
+
+      if (defaults.dayOfWeek !== undefined) {
+        document.getElementById('shiftDayOfWeekInput').value = defaults.dayOfWeek;
+      }
+      if (defaults.workDate) {
+        document.getElementById('shiftWorkDateInput').value = defaults.workDate;
+      }
+      if (defaults.startTime) {
+        document.getElementById('shiftStartTimeInput').value = defaults.startTime;
+      }
+      if (defaults.endTime) {
+        document.getElementById('shiftEndTimeInput').value = defaults.endTime;
+      }
+
+      handleShiftTimingTypeChange();
+      const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
+      modal.show();
+    }
+
+    function openEditShiftModal(id) {
+      const s = AppStore.getWorkScheduleById(id);
+      if (!s) return;
+
+      document.getElementById('shiftIdInput').value = s.id;
+      document.getElementById('shiftTitleInput').value = s.title || '';
+      document.getElementById('shiftWorkplaceInput').value = s.workplace || '';
+      document.getElementById('shiftDayOfWeekInput').value = (s.dayOfWeek !== null && s.dayOfWeek !== undefined) ? s.dayOfWeek : '';
+      document.getElementById('shiftWorkDateInput').value = s.workDate || '';
+      document.getElementById('shiftStartTimeInput').value = s.startTime || '18:00';
+      document.getElementById('shiftEndTimeInput').value = s.endTime || '22:00';
+      document.getElementById('shiftStartDateInput').value = s.startDate || '';
+      document.getElementById('shiftEndDateInput').value = s.endDate || '';
+      document.getElementById('shiftColorInput').value = s.color || '#b45309';
+      document.getElementById('shiftNotesInput').value = s.notes || '';
+
+      document.getElementById('shiftModalTitle').innerHTML = '<i class="bi bi-briefcase me-2" style="color: #b45309;"></i>Chỉnh sửa ca làm việc';
+      document.getElementById('btnDeleteShift').style.display = 'inline-block';
+      document.getElementById('modalShiftConflictAlert').classList.add('d-none');
+
+      handleShiftTimingTypeChange();
+      const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
+      modal.show();
+    }
+
+    function checkLiveShiftConflictInModal() {
+      const shiftId = document.getElementById('shiftIdInput').value || null;
+      const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
+      const workDateVal = document.getElementById('shiftWorkDateInput').value;
+      const startTime = document.getElementById('shiftStartTimeInput').value;
+      const endTime = document.getElementById('shiftEndTimeInput').value;
+      const startDate = document.getElementById('shiftStartDateInput').value || null;
+      const endDate = document.getElementById('shiftEndDateInput').value || null;
+
+      if (!startTime || !endTime) return;
+      if (dayOfWeekVal === '' && !workDateVal) return;
+
+      const candidate = {
+        dayOfWeek: dayOfWeekVal !== '' ? parseInt(dayOfWeekVal) : null,
+        workDate: workDateVal || null,
+        startTime,
+        endTime,
+        startDate,
+        endDate
+      };
+
+      const res = AppStore.checkWorkShiftConflict(candidate, shiftId);
+      const alertEl = document.getElementById('modalShiftConflictAlert');
+      const alertText = document.getElementById('modalShiftConflictText');
+
+      if (res && res.hasConflict) {
+        alertEl.classList.remove('d-none');
+        const conflictName = res.conflictingEvent ? res.conflictingEvent.title : 'Sự kiện khác';
+        const conflictTypeLabel = res.conflictType === 'class' ? 'môn học' : 'ca làm khác';
+        alertText.textContent = `Trùng giờ với ${conflictTypeLabel} "${conflictName}" (${res.conflictingEvent.startTime} - ${res.conflictingEvent.endTime})`;
+      } else {
+        alertEl.classList.add('d-none');
+      }
+    }
+
+    function handleShiftTimingTypeChange() {
+      const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
+      const dateRangeBlock = document.getElementById('shiftRecurringDateRangeBlock');
+      if (dateRangeBlock) {
+        if (dayOfWeekVal !== '') {
+          dateRangeBlock.classList.remove('d-none');
+        } else {
+          dateRangeBlock.classList.add('d-none');
+        }
+      }
+    }
+
+    function deleteCurrentShift() {
+      const id = document.getElementById('shiftIdInput').value;
+      if (id) {
+        bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
+        deleteShiftConfirm(id);
+      }
+    }
+
+    function deleteShiftConfirm(id) {
+      Swal.fire({
+        title: 'Xác nhận xóa ca làm việc?',
+        text: 'Ca làm này sẽ bị xóa khỏi lịch làm và thời khóa biểu!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#b45309',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Đồng ý xóa',
+        cancelButtonText: 'Hủy'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          AppStore.deleteWorkSchedule(id);
+          showToast('Đã xóa', 'Ca làm việc đã được xóa khỏi hệ thống.', 'info');
+          calendar.refetchEvents();
+        }
+      });
+    }
+
+    document.getElementById('shiftForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('shiftIdInput').value;
+      const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
+      const workDateVal = document.getElementById('shiftWorkDateInput').value;
+
+      if (dayOfWeekVal === '' && !workDateVal) {
+        Swal.fire('Lỗi cấu hình', 'Vui lòng chọn Thứ trong tuần (lặp lại) hoặc chọn Ngày làm việc cụ thể!', 'error');
+        return;
+      }
+
+      const shiftData = {
+        title: document.getElementById('shiftTitleInput').value.trim(),
+        workplace: document.getElementById('shiftWorkplaceInput').value.trim(),
+        dayOfWeek: dayOfWeekVal !== '' ? parseInt(dayOfWeekVal) : null,
+        workDate: workDateVal || null,
+        startTime: document.getElementById('shiftStartTimeInput').value,
+        endTime: document.getElementById('shiftEndTimeInput').value,
+        startDate: document.getElementById('shiftStartDateInput').value || null,
+        endDate: document.getElementById('shiftEndDateInput').value || null,
+        color: document.getElementById('shiftColorInput').value,
+        notes: document.getElementById('shiftNotesInput').value.trim()
+      };
+
+      if (shiftData.startTime >= shiftData.endTime) {
+        Swal.fire('Lỗi thời gian', 'Giờ bắt đầu phải nhỏ hơn giờ kết thúc!', 'error');
+        return;
+      }
+
+      if (shiftData.startDate && shiftData.endDate && shiftData.startDate > shiftData.endDate) {
+        Swal.fire('Lỗi khoảng ngày', 'Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc!', 'error');
+        return;
+      }
+
+      let result;
+      if (id) {
+        result = AppStore.updateWorkSchedule(id, shiftData);
+        showToast('Cập nhật thành công', 'Đã lưu thay đổi ca làm việc!', 'success');
+      } else {
+        result = AppStore.addWorkSchedule(shiftData);
+        showToast('Thêm thành công', 'Đã thêm ca làm việc vào lịch trình!', 'success');
+      }
+
+      if (result && result.conflict && result.conflict.hasConflict) {
+        Swal.fire({
+          title: 'Cảnh báo trùng lịch!',
+          text: `Ca làm này đang bị trùng giờ với: ${result.conflict.conflictingEvent.title}. Bạn vẫn có thể lưu nhưng hãy chú ý thời gian!`,
+          icon: 'warning'
+        });
+      }
+
       bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
-      deleteShiftConfirm(id);
-    }
-  }
-
-  function deleteShiftConfirm(id) {
-    Swal.fire({
-      title: 'Xác nhận xóa ca làm việc?',
-      text: 'Ca làm này sẽ bị xóa khỏi lịch làm và thời khóa biểu!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#b45309',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Đồng ý xóa',
-      cancelButtonText: 'Hủy'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        AppStore.deleteWorkSchedule(id);
-        showToast('Đã xóa', 'Ca làm việc đã được xóa khỏi hệ thống.', 'info');
-        calendar.refetchEvents();
-      }
+      calendar.refetchEvents();
     });
-  }
 
-  document.getElementById('shiftForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const id = document.getElementById('shiftIdInput').value;
-    const dayOfWeekVal = document.getElementById('shiftDayOfWeekInput').value;
-    const workDateVal = document.getElementById('shiftWorkDateInput').value;
+    // Quét toàn bộ lịch để phát hiện tất cả các xung đột
+    function scanAllConflicts() {
+      const classes = AppStore.getClasses();
+      const conflicts = [];
 
-    if (dayOfWeekVal === '' && !workDateVal) {
-      Swal.fire('Lỗi cấu hình', 'Vui lòng chọn Thứ trong tuần (lặp lại) hoặc chọn Ngày làm việc cụ thể!', 'error');
-      return;
-    }
-
-    const shiftData = {
-      title: document.getElementById('shiftTitleInput').value.trim(),
-      workplace: document.getElementById('shiftWorkplaceInput').value.trim(),
-      dayOfWeek: dayOfWeekVal !== '' ? parseInt(dayOfWeekVal) : null,
-      workDate: workDateVal || null,
-      startTime: document.getElementById('shiftStartTimeInput').value,
-      endTime: document.getElementById('shiftEndTimeInput').value,
-      startDate: document.getElementById('shiftStartDateInput').value || null,
-      endDate: document.getElementById('shiftEndDateInput').value || null,
-      color: document.getElementById('shiftColorInput').value,
-      notes: document.getElementById('shiftNotesInput').value.trim()
-    };
-
-    if (shiftData.startTime >= shiftData.endTime) {
-      Swal.fire('Lỗi thời gian', 'Giờ bắt đầu phải nhỏ hơn giờ kết thúc!', 'error');
-      return;
-    }
-
-    if (shiftData.startDate && shiftData.endDate && shiftData.startDate > shiftData.endDate) {
-      Swal.fire('Lỗi khoảng ngày', 'Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc!', 'error');
-      return;
-    }
-
-    let result;
-    if (id) {
-      result = AppStore.updateWorkSchedule(id, shiftData);
-      showToast('Cập nhật thành công', 'Đã lưu thay đổi ca làm việc!', 'success');
-    } else {
-      result = AppStore.addWorkSchedule(shiftData);
-      showToast('Thêm thành công', 'Đã thêm ca làm việc vào lịch trình!', 'success');
-    }
-
-    if (result && result.conflict && result.conflict.hasConflict) {
-      Swal.fire({
-        title: 'Cảnh báo trùng lịch!',
-        text: `Ca làm này đang bị trùng giờ với: ${result.conflict.conflictingEvent.title}. Bạn vẫn có thể lưu nhưng hãy chú ý thời gian!`,
-        icon: 'warning'
-      });
-    }
-
-    bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
-    calendar.refetchEvents();
-  });
-
-  // Quét toàn bộ lịch để phát hiện tất cả các xung đột
-  function scanAllConflicts() {
-    const classes = AppStore.getClasses();
-    const conflicts = [];
-
-    for (let i = 0; i < classes.length; i++) {
-      for (let j = i + 1; j < classes.length; j++) {
-        const c1 = classes[i];
-        const c2 = classes[j];
-        if (parseInt(c1.dayOfWeek) === parseInt(c2.dayOfWeek)) {
-          if (c1.startTime < c2.endTime && c1.endTime > c2.startTime) {
-            conflicts.push({ c1, c2 });
+      for (let i = 0; i < classes.length; i++) {
+        for (let j = i + 1; j < classes.length; j++) {
+          const c1 = classes[i];
+          const c2 = classes[j];
+          if (parseInt(c1.dayOfWeek) === parseInt(c2.dayOfWeek)) {
+            if (c1.startTime < c2.endTime && c1.endTime > c2.startTime) {
+              conflicts.push({ c1, c2 });
+            }
           }
         }
       }
-    }
 
-    if (conflicts.length > 0) {
-      const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-      let msg = `<p>Phát hiện <strong>${conflicts.length}</strong> cặp lịch học bị xung đột:</p><ul class="text-start">`;
-      conflicts.forEach(c => {
-        msg += `<li><strong>${dayNames[c.c1.dayOfWeek]}:</strong> "${c.c1.title}" (${c.c1.startTime}-${c.c1.endTime}) và "${c.c2.title}" (${c.c2.startTime}-${c.c2.endTime})</li>`;
-      });
-      msg += `</ul>`;
-
-      Swal.fire({
-        title: 'Phát hiện xung đột lịch!',
-        html: msg,
-        icon: 'error',
-        confirmButtonText: 'Đã hiểu'
-      });
-    } else {
-      Swal.fire({
-        title: 'Lịch học hoàn hảo!',
-        text: 'Không phát hiện bất kỳ xung đột hoặc trùng lặp thời gian nào trong thời khóa biểu.',
-        icon: 'success',
-        confirmButtonText: 'Tuyệt vời'
-      });
-    }
-  }
-
-  function checkBannerConflict() {
-    const classes = AppStore.getClasses();
-    const hasWarning = classes.some(c => c.warning);
-    const banner = document.getElementById('conflictAlertBanner');
-    if (hasWarning) {
-      banner.classList.remove('d-none');
-      banner.classList.add('d-flex');
-    } else {
-      banner.classList.add('d-none');
-      banner.classList.remove('d-flex');
-    }
-  }
-
-  // =========================================================================
-  // AI VISION SCHEDULE SCANNER CONTROLLER
-  // =========================================================================
-  let currentScanImageSrc = null;
-  let currentRecognizedClasses = [];
-
-  function openAIScanModal() {
-    // Reset modal state
-    currentScanImageSrc = null;
-    currentRecognizedClasses = [];
-    document.getElementById('aiFileInput').value = '';
-    document.getElementById('aiPreviewImg').classList.add('d-none');
-    document.getElementById('aiPreviewPlaceholder').classList.remove('d-none');
-    document.getElementById('scannerLaser').classList.add('d-none');
-    document.getElementById('btnRunAIScan').disabled = true;
-    document.getElementById('btnScanText').textContent = 'Bắt đầu phân tích bằng AI Vision';
-    document.getElementById('aiResultSection').classList.add('d-none');
-    document.getElementById('aiFooterActions').style.setProperty('display', 'none', 'important');
-
-    const modal = new bootstrap.Modal(document.getElementById('aiScanModal'));
-    modal.show();
-  }
-
-  // Khởi tạo kéo thả và clipboard paste
-  document.addEventListener('DOMContentLoaded', () => {
-    const dropzone = document.getElementById('aiDropzone');
-    if (dropzone) {
-      ['dragenter', 'dragover'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          dropzone.classList.add('dragover');
+      if (conflicts.length > 0) {
+        const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+        let msg = `<p>Phát hiện <strong>${conflicts.length}</strong> cặp lịch học bị xung đột:</p><ul class="text-start">`;
+        conflicts.forEach(c => {
+          msg += `<li><strong>${dayNames[c.c1.dayOfWeek]}:</strong> "${c.c1.title}" (${c.c1.startTime}-${c.c1.endTime}) và "${c.c2.title}" (${c.c2.startTime}-${c.c2.endTime})</li>`;
         });
-      });
+        msg += `</ul>`;
 
-      ['dragleave', 'drop'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          dropzone.classList.remove('dragover');
+        Swal.fire({
+          title: 'Phát hiện xung đột lịch!',
+          html: msg,
+          icon: 'error',
+          confirmButtonText: 'Đã hiểu'
         });
-      });
+      } else {
+        Swal.fire({
+          title: 'Lịch học hoàn hảo!',
+          text: 'Không phát hiện bất kỳ xung đột hoặc trùng lặp thời gian nào trong thời khóa biểu.',
+          icon: 'success',
+          confirmButtonText: 'Tuyệt vời'
+        });
+      }
+    }
 
-      dropzone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length > 0 && files[0].type.startsWith('image/')) {
-          readAndPreviewImageFile(files[0]);
+    function checkBannerConflict() {
+      const classes = AppStore.getClasses();
+      const hasWarning = classes.some(c => c.warning);
+      const banner = document.getElementById('conflictAlertBanner');
+      if (hasWarning) {
+        banner.classList.remove('d-none');
+        banner.classList.add('d-flex');
+      } else {
+        banner.classList.add('d-none');
+        banner.classList.remove('d-flex');
+      }
+    }
+
+    // =========================================================================
+    // UNIFIED 3-IN-1 SMART TIMETABLE INGESTION CONTROLLER (OMNI BOX)
+    // Tự động nhận diện từ: Ảnh chụp, File Excel hoặc Tin nhắn văn bản
+    // =========================================================================
+    let currentInputType = null; // 'image' | 'excel' | 'text' | null
+    let currentScanImageSrc = null;
+    let currentExcelRows = null;
+    let currentExcelFileName = '';
+    let currentTextContent = '';
+    let currentRecognizedClasses = [];
+
+    function openAIScanModal() {
+      resetOmniInput();
+      const modal = new bootstrap.Modal(document.getElementById('aiScanModal'));
+      modal.show();
+    }
+
+    function resetOmniInput() {
+      currentInputType = null;
+      currentScanImageSrc = null;
+      currentExcelRows = null;
+      currentExcelFileName = '';
+      currentTextContent = '';
+      currentRecognizedClasses = [];
+
+      const fileInput = document.getElementById('omniFileInput');
+      if (fileInput) fileInput.value = '';
+      const textInput = document.getElementById('omniTextInput');
+      if (textInput) textInput.value = '';
+      const charCount = document.getElementById('textCharCount');
+      if (charCount) charCount.textContent = '';
+
+      const previewPlaceholder = document.getElementById('omniPreviewPlaceholder');
+      if (previewPlaceholder) previewPlaceholder.classList.remove('d-none');
+      const previewImg = document.getElementById('omniPreviewImg');
+      if (previewImg) {
+        previewImg.src = '';
+        previewImg.classList.add('d-none');
+      }
+      const previewExcel = document.getElementById('omniPreviewExcel');
+      if (previewExcel) previewExcel.classList.add('d-none');
+      const previewText = document.getElementById('omniPreviewText');
+      if (previewText) previewText.classList.add('d-none');
+
+      const laser = document.getElementById('scannerLaser');
+      if (laser) laser.classList.add('d-none');
+
+      updateSmartBadge('empty', 'Chưa có dữ liệu', 'Kéo thả ảnh, chọn file Excel hoặc dán văn bản để tự động phân tích');
+
+      const btn = document.getElementById('btnRunOmniScan');
+      if (btn) btn.disabled = true;
+      const btnText = document.getElementById('btnOmniScanText');
+      if (btnText) btnText.textContent = 'Tự động nhận diện & Sắp xếp TKB';
+
+      const resultSection = document.getElementById('aiResultSection');
+      if (resultSection) resultSection.classList.add('d-none');
+      const footerActions = document.getElementById('aiFooterActions');
+      if (footerActions) footerActions.style.setProperty('display', 'none', 'important');
+    }
+
+    function updateSmartBadge(type, title, subtitle) {
+      const badgeEl = document.getElementById('smartDetectionBadge');
+      const iconEl = document.getElementById('smartBadgeIcon');
+      const titleEl = document.getElementById('smartBadgeTitle');
+      const subEl = document.getElementById('smartBadgeSub');
+      const typeBadge = document.getElementById('smartTypeBadge');
+      if (!badgeEl) return;
+
+      if (titleEl) titleEl.textContent = title;
+      if (subEl) subEl.textContent = subtitle;
+
+      if (type === 'image') {
+        badgeEl.className = 'alert alert-primary py-2 px-3 small mb-2 d-flex align-items-center justify-content-between border-primary';
+        if (iconEl) iconEl.className = 'bi bi-camera-fill text-primary fs-5';
+        if (typeBadge) {
+          typeBadge.className = 'badge bg-primary';
+          typeBadge.innerHTML = '<i class="bi bi-image me-1"></i> Ảnh TKB';
         }
-      });
+      } else if (type === 'excel') {
+        badgeEl.className = 'alert alert-success py-2 px-3 small mb-2 d-flex align-items-center justify-content-between border-success';
+        if (iconEl) iconEl.className = 'bi bi-file-earmark-excel-fill text-success fs-5';
+        if (typeBadge) {
+          typeBadge.className = 'badge bg-success';
+          typeBadge.innerHTML = '<i class="bi bi-file-earmark-spreadsheet me-1"></i> File Excel';
+        }
+      } else if (type === 'text') {
+        badgeEl.className = 'alert alert-info py-2 px-3 small mb-2 d-flex align-items-center justify-content-between border-info';
+        if (iconEl) iconEl.className = 'bi bi-chat-left-text-fill text-info fs-5';
+        if (typeBadge) {
+          typeBadge.className = 'badge bg-info text-dark';
+          typeBadge.innerHTML = '<i class="bi bi-chat-quote me-1"></i> Tin nhắn TKB';
+        }
+      } else {
+        badgeEl.className = 'alert alert-secondary py-2 px-3 small mb-2 d-flex align-items-center justify-content-between';
+        if (iconEl) iconEl.className = 'bi bi-magic text-muted fs-5';
+        if (typeBadge) {
+          typeBadge.className = 'badge bg-secondary';
+          typeBadge.textContent = 'Chờ nạp';
+        }
+      }
     }
 
-    // Lắng nghe phím Ctrl+V khi modal mở
-    window.addEventListener('paste', (e) => {
-      const modalEl = document.getElementById('aiScanModal');
-      if (modalEl && modalEl.classList.contains('show')) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    function enableOmniButton(label) {
+      const btn = document.getElementById('btnRunOmniScan');
+      if (btn) btn.disabled = false;
+      const btnText = document.getElementById('btnOmniScanText');
+      if (btnText) btnText.textContent = label || 'Tự động nhận diện & Sắp xếp TKB';
+    }
+
+    function setOmniImage(src, runImmediately = false) {
+      currentInputType = 'image';
+      currentScanImageSrc = src;
+
+      document.getElementById('omniPreviewPlaceholder')?.classList.add('d-none');
+      document.getElementById('omniPreviewExcel')?.classList.add('d-none');
+      document.getElementById('omniPreviewText')?.classList.add('d-none');
+
+      const img = document.getElementById('omniPreviewImg');
+      if (img) {
+        img.src = src;
+        img.classList.remove('d-none');
+      }
+
+      updateSmartBadge('image', 'Đã nhận diện: Ảnh chụp Thời khóa biểu', 'Định dạng hình ảnh sẵn sàng trích xuất');
+      enableOmniButton('Trích xuất từ Ảnh & Sắp xếp TKB');
+
+      if (runImmediately) {
+        runOmniRecognitionAndSchedule();
+      }
+    }
+
+    function setOmniExcel(rows, fileName, runImmediately = false) {
+      currentInputType = 'excel';
+      currentExcelRows = rows;
+      currentExcelFileName = fileName || 'bang_tinh.xlsx';
+
+      document.getElementById('omniPreviewPlaceholder')?.classList.add('d-none');
+      document.getElementById('omniPreviewImg')?.classList.add('d-none');
+      document.getElementById('omniPreviewText')?.classList.add('d-none');
+
+      const excelBox = document.getElementById('omniPreviewExcel');
+      if (excelBox) excelBox.classList.remove('d-none');
+      const nameEl = document.getElementById('excelFileName');
+      if (nameEl) nameEl.textContent = currentExcelFileName;
+      const infoEl = document.getElementById('excelFileInfo');
+      if (infoEl) infoEl.textContent = `${rows.length} dòng dữ liệu bảng tính`;
+
+      const tableEl = document.getElementById('excelPreviewMiniTable');
+      if (tableEl && rows && rows.length > 0) {
+        const previewRows = rows.slice(0, 4);
+        tableEl.innerHTML = previewRows.map(r => {
+          const cells = Array.isArray(r) ? r.slice(0, 4) : Object.values(r).slice(0, 4);
+          return `<tr>${cells.map(c => `<td class="text-truncate" style="max-width: 90px;">${escapeHtml(String(c || ''))}</td>`).join('')}</tr>`;
+        }).join('');
+      }
+
+      updateSmartBadge('excel', `Đã nhận diện: File Excel (${currentExcelFileName})`, `Đã đọc thành công ${rows.length} dòng dữ liệu bảng tính`);
+      enableOmniButton('Trích xuất từ File Excel & Sắp xếp TKB');
+
+      if (runImmediately) {
+        runOmniRecognitionAndSchedule();
+      }
+    }
+
+    function setOmniText(text, updateTextarea = true, runImmediately = false) {
+      if (!text || !text.trim()) {
+        resetOmniInput();
+        return;
+      }
+      currentInputType = 'text';
+      currentTextContent = text;
+
+      if (updateTextarea) {
+        const area = document.getElementById('omniTextInput');
+        if (area) area.value = text;
+      }
+
+      const lines = text.split('\n').filter(l => l.trim().length > 0).length;
+      const countEl = document.getElementById('textCharCount');
+      if (countEl) countEl.textContent = `${lines} dòng (${text.length} ký tự)`;
+
+      document.getElementById('omniPreviewPlaceholder')?.classList.add('d-none');
+      document.getElementById('omniPreviewImg')?.classList.add('d-none');
+      document.getElementById('omniPreviewExcel')?.classList.add('d-none');
+
+      const textBox = document.getElementById('omniPreviewText');
+      if (textBox) textBox.classList.remove('d-none');
+      const previewContent = document.getElementById('textPreviewContent');
+      if (previewContent) previewContent.textContent = text;
+
+      updateSmartBadge('text', 'Đã nhận diện: Tin nhắn văn bản TKB', `${lines} dòng nội dung văn bản sẵn sàng bóc tách`);
+      enableOmniButton('Trích xuất từ Tin nhắn & Sắp xếp TKB');
+
+      if (runImmediately) {
+        runOmniRecognitionAndSchedule();
+      }
+    }
+
+    function handleOmniTextInput() {
+      const val = document.getElementById('omniTextInput').value;
+      if (val && val.trim().length > 0) {
+        setOmniText(val, false, false);
+      } else if (currentInputType === 'text') {
+        resetOmniInput();
+      }
+    }
+
+    function handleOmniFileSelected(event) {
+      const file = event.target.files && event.target.files[0];
+      if (file) handleOmniFile(file);
+    }
+
+    function handleOmniFile(file) {
+      if (!file) return;
+      const name = (file.name || '').toLowerCase();
+
+      // 1. Image
+      if (file.type.startsWith('image/') || /\.(png|jpe?g|webp|svg)$/i.test(name)) {
+        readAndPreviewImageFile(file);
+        return;
+      }
+
+      // 2. Excel / CSV
+      if (/\.(xlsx|xls|csv)$/i.test(name) || (file.type && (file.type.includes('spreadsheet') || file.type.includes('excel')))) {
+        readAndPreviewExcelFile(file);
+        return;
+      }
+
+      // 3. Text file fallback
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setOmniText(e.target.result, true);
+        showToast('Đã đọc file văn bản', `Đã nạp nội dung từ file ${file.name}!`, 'info');
+      };
+      reader.readAsText(file);
+    }
+
+    function readAndPreviewImageFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setOmniImage(e.target.result);
+        showToast('Đã nhận diện Ảnh', `Đã nạp ảnh "${file.name || 'Ảnh chụp màn hình'}" thành công!`, 'info');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function readAndPreviewExcelFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          if (typeof XLSX === 'undefined') {
+            throw new Error('Thư viện XLSX chưa tải xong. Vui lòng kiểm tra kết nối mạng!');
+          }
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+          setOmniExcel(rows, file.name);
+          showToast('Đã nhận diện File Excel', `Đã nạp ${rows.length} dòng từ sheet "${sheetName}"!`, 'info');
+        } catch (err) {
+          Swal.fire('Lỗi đọc file Excel', err.message || 'Không thể đọc cấu trúc file Excel.', 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function pasteFromClipboard() {
+      if (!navigator.clipboard) {
+        showToast('Phím tắt', 'Hãy bấm Ctrl + V trên bàn phím để dán ảnh hoặc nội dung!', 'info');
+        return;
+      }
+
+      navigator.clipboard.read().then(items => {
         for (let item of items) {
-          if (item.type.indexOf('image') !== -1) {
-            const blob = item.getAsFile();
-            readAndPreviewImageFile(blob);
-            break;
+          for (let type of item.types) {
+            if (type.startsWith('image/')) {
+              item.getType(type).then(blob => {
+                readAndPreviewImageFile(blob);
+              });
+              return;
+            }
           }
         }
-      }
-    });
-  });
-
-  function handleFileSelected(event) {
-    const file = event.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-      readAndPreviewImageFile(file);
-    }
-  }
-
-  function readAndPreviewImageFile(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setScanPreviewImage(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function pasteImageFromClipboard() {
-    navigator.clipboard.read().then(items => {
-      for (let item of items) {
-        for (let type of item.types) {
-          if (type.startsWith('image/')) {
-            item.getType(type).then(blob => {
-              readAndPreviewImageFile(blob);
-            });
-            return;
+        return navigator.clipboard.readText().then(text => {
+          if (text && text.trim()) {
+            setOmniText(text, true);
+            showToast('Đã dán văn bản', 'Đã lấy nội dung tin nhắn từ bộ nhớ tạm!', 'info');
+          } else {
+            showToast('Clipboard', 'Bộ nhớ tạm không chứa ảnh hoặc văn bản hợp lệ.', 'warning');
           }
-        }
-      }
-      showToast('Clipboard', 'Không tìm thấy ảnh trong bộ nhớ tạm. Hãy chụp màn hình (Alt+PrtScn) rồi thử lại.', 'warning');
-    }).catch(err => {
-      showToast('Phím tắt', 'Hãy bấm Ctrl + V trực tiếp trên bàn phím để dán ảnh chụp màn hình!', 'info');
-    });
-  }
-
-  // Ảnh mẫu thời khóa biểu sinh viên demo (SVG data URL mô phỏng bảng điểm TKB chuẩn 15 tiết)
-  function loadSampleTimetableImage() {
-    const sampleSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340"><rect width="600" height="340" fill="%23ffffff"/><rect width="600" height="50" fill="%231f3038"/><text x="20" y="32" fill="%23ffffff" font-family="Arial" font-size="16" font-weight="bold">THỜI KHÓA BIỂU HỌC KỲ 1 - NĂM HỌC 2026-2027</text><rect x="15" y="65" width="570" height="30" fill="%23ecf0f2"/><text x="25" y="85" fill="%231f3038" font-family="Arial" font-size="12" font-weight="bold">Mã HP | Tên học phần | Thứ | Tiết | Phòng | Giảng viên</text><rect x="15" y="105" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="132" fill="%231f3038" font-family="Arial" font-size="12">IT4520 - Phát triển di động Flutter | Thứ 3 | Tiết: 1 - 3 (06:45-09:00) | B2-405 | TS. Hoàng M. Đức</text><rect x="15" y="160" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="187" fill="%231f3038" font-family="Arial" font-size="12">IT4220 - Học máy &amp; Khai phá DL | Thứ 5 | Tiết: 4 - 6 (09:15-11:30) | C1-302 | PGS. Trần V. Kiên</text><rect x="15" y="215" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="242" fill="%231f3038" font-family="Arial" font-size="12">IT3180 - HĐH Linux mã nguồn mở | Thứ 6 | Tiết: 7 - 9 (12:30-14:45) | Lab 5-PM | ThS. Đỗ Q. Linh</text><rect x="15" y="270" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="297" fill="%231f3038" font-family="Arial" font-size="12">IT3090 - Kỹ nghệ phần mềm ứng dụng | Thứ 7 | Tiết: 10 - 12 (15:00-17:15) | A3-102 | TS. Vũ T. Hà</text></svg>`;
-    setScanPreviewImage(sampleSVG);
-    showToast('Đã nạp ảnh mẫu', 'Đã tải ảnh Thời khóa biểu mẫu sinh viên CNTT để kiểm thử!', 'success');
-  }
-
-  function setScanPreviewImage(src) {
-    currentScanImageSrc = src;
-    const imgEl = document.getElementById('aiPreviewImg');
-    imgEl.src = src;
-    imgEl.classList.remove('d-none');
-    document.getElementById('aiPreviewPlaceholder').classList.add('d-none');
-    document.getElementById('btnRunAIScan').disabled = false;
-  }
-
-  // Bắt đầu quét AI
-  async function startAIScanProcess() {
-    if (!currentScanImageSrc) return;
-
-    const laser = document.getElementById('scannerLaser');
-    const btn = document.getElementById('btnRunAIScan');
-    const btnText = document.getElementById('btnScanText');
-
-    laser.classList.remove('d-none');
-    btn.disabled = true;
-    btnText.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> AI Vision đang phân tích bảng biểu & trích xuất môn...`;
-
-    try {
-      const response = await ApiService.scanScheduleFromImage(currentScanImageSrc);
-      
-      laser.classList.add('d-none');
-      btn.disabled = false;
-      btnText.textContent = 'Phân tích lại ảnh';
-
-      if (response && response.classes) {
-        currentRecognizedClasses = response.classes;
-        renderRecognizedTable(currentRecognizedClasses);
-      }
-    } catch (err) {
-      laser.classList.add('d-none');
-      btn.disabled = false;
-      btnText.textContent = 'Bắt đầu phân tích bằng AI Vision';
-      Swal.fire('Lỗi AI Scan', 'Không thể phân tích ảnh: ' + (err.message || 'Vui lòng thử lại.'), 'error');
-    }
-  }
-
-  function renderRecognizedTable(classes) {
-    const tbody = document.getElementById('recognizedTableBody');
-    const resultSection = document.getElementById('aiResultSection');
-    const footerActions = document.getElementById('aiFooterActions');
-    if (classes.length === 0) {
-      UIStates.empty(tbody, 'Chưa nhận diện được môn học', 'Hãy thử ảnh rõ hơn hoặc chọn ảnh thời khóa biểu khác.');
-      resultSection.classList.remove('d-none');
-      footerActions.style.setProperty('display', 'none', 'important');
-      return;
-    }
-    const countBadge = document.getElementById('recognizedCount');
-
-    resultSection.classList.remove('d-none');
-    footerActions.style.setProperty('display', 'flex', 'important');
-    countBadge.textContent = classes.length;
-
-    const dayOptions = [
-      { val: 1, label: 'Thứ Hai' },
-      { val: 2, label: 'Thứ Ba' },
-      { val: 3, label: 'Thứ Tư' },
-      { val: 4, label: 'Thứ Năm' },
-      { val: 5, label: 'Thứ Sáu' },
-      { val: 6, label: 'Thứ Bảy' },
-      { val: 0, label: 'Chủ Nhật' }
-    ];
-
-    tbody.innerHTML = classes.map((item, idx) => {
-      // Kiểm tra trùng lịch với TKB hiện tại
-      const conflict = AppStore.checkClassConflict({
-        dayOfWeek: item.dayOfWeek,
-        startTime: item.startTime,
-        endTime: item.endTime
+        });
+      }).catch(() => {
+        navigator.clipboard.readText().then(text => {
+          if (text && text.trim()) {
+            setOmniText(text, true);
+            showToast('Đã dán văn bản', 'Đã lấy nội dung tin nhắn từ bộ nhớ tạm!', 'info');
+          } else {
+            showToast('Phím tắt', 'Hãy bấm Ctrl + V trên bàn phím để dán ảnh hoặc nội dung!', 'info');
+          }
+        }).catch(() => {
+          showToast('Phím tắt', 'Hãy bấm Ctrl + V trên bàn phím để dán ảnh hoặc nội dung!', 'info');
+        });
       });
+    }
 
-      const daySelectHtml = dayOptions.map(d => 
-        `<option value="${d.val}" ${item.dayOfWeek === d.val ? 'selected' : ''}>${d.label}</option>`
-      ).join('');
+    // Khởi tạo kéo thả và clipboard paste toàn cục khi modal mở
+    document.addEventListener('DOMContentLoaded', () => {
+      const omniDrop = document.getElementById('omniDropzone');
+      if (omniDrop) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          omniDrop.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            omniDrop.classList.add('dragover');
+          });
+        });
 
-      return `
+        ['dragleave', 'drop'].forEach(eventName => {
+          omniDrop.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            omniDrop.classList.remove('dragover');
+          });
+        });
+
+        omniDrop.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          if (dt.files && dt.files.length > 0) {
+            handleOmniFile(dt.files[0]);
+          } else {
+            const textData = dt.getData('text');
+            if (textData && textData.trim()) {
+              setOmniText(textData, true);
+            }
+          }
+        });
+      }
+
+      // Lắng nghe phím Ctrl+V khi modal mở
+      window.addEventListener('paste', (e) => {
+        const modalEl = document.getElementById('aiScanModal');
+        if (modalEl && modalEl.classList.contains('show')) {
+          const clipboard = e.clipboardData || e.originalEvent?.clipboardData;
+          if (!clipboard) return;
+
+          // 1. Image in clipboard
+          let hasImage = false;
+          if (clipboard.items) {
+            for (let item of clipboard.items) {
+              if (item.type && item.type.startsWith('image/')) {
+                const blob = item.getAsFile();
+                if (blob) {
+                  readAndPreviewImageFile(blob);
+                  hasImage = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          // 2. Text in clipboard
+          if (!hasImage) {
+            const text = clipboard.getData('text');
+            if (text && text.trim().length > 0) {
+              if (document.activeElement !== document.getElementById('omniTextInput')) {
+                e.preventDefault();
+                setOmniText(text, true);
+                showToast('Đã dán tin nhắn', 'Đã tự động nhận diện tin nhắn từ Clipboard (Ctrl+V)!', 'info');
+              }
+            }
+          }
+        }
+      });
+    });
+
+    // Mẫu Ảnh Cổng NTTU (Ảnh 2 của sinh viên)
+    function loadNttuSampleImage() {
+      const nttuSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="700" height="420" viewBox="0 0 700 420"><rect width="700" height="420" fill="%23f8fafc"/><rect width="700" height="40" fill="%231d5bd6"/><text x="20" y="26" fill="%23ffffff" font-family="Arial" font-size="15" font-weight="bold">LỊCH HỌC, LỊCH THI THEO TUẦN - ĐẠI HỌC NGUYỄN TẤT THÀNH (NTTU)</text><rect x="15" y="55" width="670" height="50" rx="4" fill="%23ecfdf5" stroke="%2310b981"/><text x="25" y="75" fill="%23065f46" font-family="Arial" font-size="12" font-weight="bold">Thứ 2 09/11/2026: Chuyên đề tốt nghiệp phát triển phần mềm 1 (23DKTPM1A - 012307756001)</text><text x="25" y="93" fill="%23047857" font-family="Arial" font-size="11">Tiết: 10 - 12 (15:35-18:05) | Phòng: L2.124 | GV: Phạm Mạnh Trung Nguyên</text><rect x="15" y="115" width="670" height="50" rx="4" fill="%23eff6ff" stroke="%233b82f6"/><text x="25" y="135" fill="%231e40af" font-family="Arial" font-size="12" font-weight="bold">Thứ 3 10/11/2026: Lập trình Web (25DTH1C - 011007010803)</text><text x="25" y="153" fill="%231d4ed8" font-family="Arial" font-size="11">Tiết: 4 - 6 (09:35-12:05) | Phòng: L.504 | GV: Bùi Duy Tân</text><rect x="15" y="175" width="670" height="50" rx="4" fill="%23eff6ff" stroke="%233b82f6"/><text x="25" y="195" fill="%231e40af" font-family="Arial" font-size="12" font-weight="bold">Thứ 3 10/11/2026: Chuyên đề tốt nghiệp phát triển phần mềm 1</text><text x="25" y="213" fill="%231d4ed8" font-family="Arial" font-size="11">Tiết: 10 - 12 (15:35-18:05) | Phòng: L.407B.SOFTWARE | GV: Phạm Mạnh Trung Nguyên</text><rect x="15" y="235" width="670" height="50" rx="4" fill="%23ecfdf5" stroke="%2310b981"/><text x="25" y="255" fill="%23065f46" font-family="Arial" font-size="12" font-weight="bold">Thứ 3 10/11/2026: Thực tập tốt nghiệp (23DKTPM2A - 012307382617)</text><text x="25" y="273" fill="%23047857" font-family="Arial" font-size="11">Tiết: 14 - 14 (19:05-19:55) | Phòng: Thực hành tại Doanh nghiệp | GV: Châu Gia Hân</text><rect x="15" y="295" width="670" height="50" rx="4" fill="%23fdf4ff" stroke="%23d946ef"/><text x="25" y="315" fill="%2386198f" font-family="Arial" font-size="12" font-weight="bold">Thứ 4 11/11/2026: Khởi nghiệp (23DKTPM1A - 012307351309)</text><text x="25" y="333" fill="%23a21caf" font-family="Arial" font-size="11">Tiết: 7 - 11 (13:00-17:15) | Phòng: L2.212 | GV: Nguyễn Ngọc Hoàng Sơn</text><rect x="15" y="355" width="670" height="50" rx="4" fill="%23eff6ff" stroke="%233b82f6"/><text x="25" y="375" fill="%231e40af" font-family="Arial" font-size="12" font-weight="bold">Thứ 5 12/11/2026: Lập trình Web (25DTH1C - 011007010803)</text><text x="25" y="393" fill="%231d4ed8" font-family="Arial" font-size="11">Tiết: 1 - 3 (07:00-09:25) | Phòng: L.405B.TH | GV: Bùi Duy Tân</text></svg>`;
+      setOmniImage(nttuSVG, true);
+      showToast('Mẫu Cổng NTTU', 'Đã tải và tự động phân tích ảnh Thời khóa biểu Cổng NTTU (Ảnh 2)!', 'success');
+    }
+
+    // Mẫu Ảnh 15 Tiết chuẩn (SVG)
+    function loadSampleTimetableImage() {
+      const sampleSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340"><rect width="600" height="340" fill="%23ffffff"/><rect width="600" height="50" fill="%231f3038"/><text x="20" y="32" fill="%23ffffff" font-family="Arial" font-size="16" font-weight="bold">THỜI KHÓA BIỂU HỌC KỲ 1 - NĂM HỌC 2026-2027</text><rect x="15" y="65" width="570" height="30" fill="%23ecf0f2"/><text x="25" y="85" fill="%231f3038" font-family="Arial" font-size="12" font-weight="bold">Mã HP | Tên học phần | Thứ | Tiết | Phòng | Giảng viên</text><rect x="15" y="105" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="132" fill="%231f3038" font-family="Arial" font-size="12">IT4520 - Phát triển di động Flutter | Thứ 3 | Tiết: 1 - 3 (06:45-09:00) | B2-405 | TS. Hoàng M. Đức</text><rect x="15" y="160" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="187" fill="%231f3038" font-family="Arial" font-size="12">IT4220 - Học máy &amp; Khai phá DL | Thứ 5 | Tiết: 4 - 6 (09:15-11:30) | C1-302 | PGS. Trần V. Kiên</text><rect x="15" y="215" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="242" fill="%231f3038" font-family="Arial" font-size="12">IT3180 - HĐH Linux mã nguồn mở | Thứ 6 | Tiết: 7 - 9 (12:30-14:45) | Lab 5-PM | ThS. Đỗ Q. Linh</text><rect x="15" y="270" width="570" height="45" fill="%23f7f9fa" stroke="%23dce2e6"/><text x="25" y="297" fill="%231f3038" font-family="Arial" font-size="12">IT3090 - Kỹ nghệ phần mềm ứng dụng | Thứ 7 | Tiết: 10 - 12 (15:00-17:15) | A3-102 | TS. Vũ T. Hà</text></svg>`;
+      setOmniImage(sampleSVG, true);
+      showToast('Mẫu 15 Tiết chuẩn', 'Đã tải và tự động phân tích ảnh Thời khóa biểu !', 'success');
+    }
+
+    const NTTU_PORTAL_CLASSES_TEXT = `Thứ 2 09/11/2026
+Chuyên đề tốt nghiệp phát triển phần mềm 1
+23DKTPM1A - 012307756001
+Tiết: 10 - 12
+Phòng: L2.124
+GV: Phạm Mạnh Trung Nguyên
+
+Thứ 3 10/11/2026
+Lập trình Web
+25DTH1C - 011007010803
+Tiết: 4 - 6
+Phòng: L.504
+GV: Bùi Duy Tân
+
+Chuyên đề tốt nghiệp phát triển phần mềm 1
+23DKTPM1A - 012307756001
+Tiết: 10 - 12
+Phòng: L.407B.SOFTWARE
+GV: Phạm Mạnh Trung Nguyên
+
+Thực tập tốt nghiệp
+23DKTPM2A - 012307382617
+Tiết: 14 - 14
+Phòng: Thực hành tại Doanh nghiệp
+GV: Châu Gia Hân
+
+Thứ 4 11/11/2026
+Khởi nghiệp
+23DKTPM1A - 012307351309
+Tiết: 7 - 11
+Phòng: L2.212
+GV: Nguyễn Ngọc Hoàng Sơn
+
+Thứ 5 12/11/2026
+Lập trình Web
+25DTH1C - 011007010803
+Tiết: 1 - 3
+Phòng: L.405B.TH
+GV: Bùi Duy Tân`;
+
+    const STANDARD_SAMPLE_CLASSES_TEXT = `Thứ 3: IT4520 - Phát triển di động Flutter | Tiết 1 - 3 (06:45-09:15) | B2-405 | TS. Hoàng M. Đức
+Thứ 5: IT4220 - Học máy & Khai phá DL | Tiết 4 - 6 (09:25-11:50) | C1-302 | PGS. Trần V. Kiên
+Thứ 6: IT3180 - HĐH Linux mã nguồn mở | Tiết 7 - 9 (12:30-15:00) | Lab 5-PM | ThS. Đỗ Q. Linh
+Thứ 7: IT3090 - Kỹ nghệ phần mềm ứng dụng | Tiết 10 - 12 (15:10-17:35) | A3-102 | TS. Vũ T. Hà`;
+
+    function getLocalClassesForImage(scheduleKey, defaultColor) {
+      if (scheduleKey === 'standard') {
+        return TimetableParser.parseTextMessage(STANDARD_SAMPLE_CLASSES_TEXT, { scheduleKey: 'standard', defaultColor });
+      }
+      // Mặc định chuẩn NTTU (Khớp với giao diện Cổng NTTU trong Ảnh 2 của sinh viên)
+      return TimetableParser.parseTextMessage(NTTU_PORTAL_CLASSES_TEXT, { scheduleKey: 'nttu', defaultColor });
+    }
+
+    function loadNttuSampleText() {
+      setOmniText(NTTU_PORTAL_CLASSES_TEXT, true, true);
+      showToast('Mẫu Tin nhắn NTTU', 'Đã nạp văn bản Cổng NTTU và tự động trích xuất môn học!', 'success');
+    }
+
+    function loadZaloSampleText() {
+      const zaloText = `Lịch học tuần này của nhóm:
+- Thứ 2: 13h30 - 16h00 Lập trình Web phòng A1-203 GV Nguyễn Văn A
+- Thứ 3: Tiết 4-6 Kiến trúc máy tính P. B2-101 Thầy Bình
+- Thứ 4: 07:00 - 09:30 Cấu trúc dữ liệu phòng B2-101 Thầy Bình
+- Thứ 5: Tiết 1-3 Kỹ thuật lập trình P. L.504 Cô Hân
+- Thứ 6: Tiết 7-9 Hệ điều hành Linux P. Lab 5-PM ThS Linh`;
+      setOmniText(zaloText, true, true);
+      showToast('Mẫu Tin nhắn Zalo', 'Đã nạp văn bản Zalo và tự động trích xuất môn học!', 'success');
+    }
+
+    function loadSampleExcelData() {
+      const sampleRows = [
+        ['Mã môn', 'Tên môn học', 'Thứ', 'Tiết học', 'Phòng học', 'Giảng viên'],
+        ['23DKTPM1A', 'Chuyên đề tốt nghiệp phát triển phần mềm 1', 'Thứ 2', '10 - 12', 'L2.124', 'Phạm Mạnh Trung Nguyên'],
+        ['25DTH1C', 'Lập trình Web', 'Thứ 3', '4 - 6', 'L.504', 'Bùi Duy Tân'],
+        ['23DKTPM1A', 'Chuyên đề tốt nghiệp phát triển phần mềm 1', 'Thứ 3', '10 - 12', 'L.407B.SOFTWARE', 'Phạm Mạnh Trung Nguyên'],
+        ['23DKTPM2A', 'Thực tập tốt nghiệp', 'Thứ 3', '14 - 14', 'Thực hành tại Doanh nghiệp', 'Châu Gia Hân'],
+        ['23DKTPM1A', 'Khởi nghiệp', 'Thứ 4', '7 - 11', 'L2.212', 'Nguyễn Ngọc Hoàng Sơn'],
+        ['25DTH1C', 'Lập trình Web', 'Thứ 5', '1 - 3', 'L.405B.TH', 'Bùi Duy Tân']
+      ];
+      setOmniExcel(sampleRows, 'TKB_NTTU_Mau.xlsx', true);
+      showToast('Mẫu File Excel', 'Đã nạp bảng tính Excel mẫu và tự động bóc tách môn học!', 'success');
+    }
+
+    // =========================================================================
+    // CORE ENGINE RUNNER: TỰ ĐỘNG NHẬN DIỆN & TRÍCH XUẤT MÔN HỌC
+    // =========================================================================
+    async function runOmniRecognitionAndSchedule() {
+      if (!currentInputType) {
+        Swal.fire('Chưa có dữ liệu', 'Vui lòng kéo thả ảnh, chọn file Excel hoặc dán nội dung tin nhắn TKB trước!', 'warning');
+        return;
+      }
+
+      const periodFormat = document.getElementById('periodFormatSelect')?.value || 'nttu';
+      const scheduleKey = periodFormat === 'standard' ? 'standard' : 'nttu';
+      const defaultColor = document.getElementById('aiClassDefaultColor')?.value || '#0d7480';
+
+      const laser = document.getElementById('scannerLaser');
+      const btn = document.getElementById('btnRunOmniScan');
+      const btnText = document.getElementById('btnOmniScanText');
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Đang tự động nhận diện & trích xuất môn...`;
+      if (currentInputType === 'image' && laser) laser.classList.remove('d-none');
+
+      try {
+        let parsed = [];
+
+        // 1. Image recognition
+        if (currentInputType === 'image') {
+          try {
+            const response = await ApiService.scanScheduleFromImage(currentScanImageSrc);
+            if (response && response.classes && response.classes.length > 0) {
+              parsed = response.classes;
+            }
+          } catch (apiErr) {
+            // Fallback to local image parser
+          }
+
+          if (!parsed || parsed.length === 0) {
+            if (currentScanImageSrc && currentScanImageSrc.startsWith('data:image/svg+xml')) {
+              const decoded = decodeURIComponent(currentScanImageSrc.replace('data:image/svg+xml;utf8,', ''));
+              parsed = TimetableParser.parseSvgText(decoded, { scheduleKey, defaultColor });
+            }
+            if (!parsed || parsed.length === 0) {
+              parsed = getLocalClassesForImage(scheduleKey, defaultColor);
+            }
+          }
+        }
+        // 2. Excel recognition
+        else if (currentInputType === 'excel') {
+          parsed = TimetableParser.parseExcelSheet(currentExcelRows, { scheduleKey, defaultColor });
+        }
+        // 3. Text message recognition
+        else if (currentInputType === 'text') {
+          const textToParse = currentTextContent || document.getElementById('omniTextInput')?.value || '';
+          parsed = TimetableParser.parseTextMessage(textToParse, { scheduleKey, defaultColor });
+        }
+
+        if (laser) laser.classList.add('d-none');
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = 'Phân tích & Nhận diện lại';
+
+        if (!parsed || parsed.length === 0) {
+          Swal.fire('Chưa nhận diện được môn học', 'Không bóc tách được môn học từ dữ liệu đã nạp. Vui lòng kiểm tra lại định dạng thứ, tiết hoặc giờ học!', 'warning');
+          return;
+        }
+
+        currentRecognizedClasses = parsed;
+        renderRecognizedTable(currentRecognizedClasses);
+        showToast('Nhận diện thành công!', `Đã bóc tách thành công ${parsed.length} môn học vào bảng xem trước!`, 'success');
+
+        // Scroll to result table
+        const resSec = document.getElementById('aiResultSection');
+        if (resSec) {
+          resSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } catch (err) {
+        if (laser) laser.classList.add('d-none');
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = 'Tự động nhận diện & Sắp xếp TKB';
+        Swal.fire('Lỗi nhận diện', err.message || 'Có lỗi xảy ra trong quá trình bóc tách dữ liệu.', 'error');
+      }
+    }
+
+    // Backwards compatibility aliases
+    window.startAIScanProcess = runOmniRecognitionAndSchedule;
+    window.runLocalImageRecognition = runOmniRecognitionAndSchedule;
+    window.parseFromTextInput = runOmniRecognitionAndSchedule;
+    window.parseFromExcelInput = runOmniRecognitionAndSchedule;
+    window.setScanPreviewImage = setOmniImage;
+    window.pasteImageFromClipboard = pasteFromClipboard;
+
+    function renderRecognizedTable(classes) {
+      const tbody = document.getElementById('recognizedTableBody');
+      const resultSection = document.getElementById('aiResultSection');
+      const footerActions = document.getElementById('aiFooterActions');
+      if (classes.length === 0) {
+        UIStates.empty(tbody, 'Chưa nhận diện được môn học', 'Hãy thử ảnh rõ hơn hoặc chọn ảnh thời khóa biểu khác.');
+        resultSection.classList.remove('d-none');
+        footerActions.style.setProperty('display', 'none', 'important');
+        return;
+      }
+      const countBadge = document.getElementById('recognizedCount');
+
+      resultSection.classList.remove('d-none');
+      footerActions.style.setProperty('display', 'flex', 'important');
+      countBadge.textContent = classes.length;
+
+      const dayOptions = [
+        { val: 1, label: 'Thứ Hai' },
+        { val: 2, label: 'Thứ Ba' },
+        { val: 3, label: 'Thứ Tư' },
+        { val: 4, label: 'Thứ Năm' },
+        { val: 5, label: 'Thứ Sáu' },
+        { val: 6, label: 'Thứ Bảy' },
+        { val: 0, label: 'Chủ Nhật' }
+      ];
+
+      tbody.innerHTML = classes.map((item, idx) => {
+        // Kiểm tra trùng lịch với TKB hiện tại
+        const conflict = AppStore.checkClassConflict({
+          dayOfWeek: item.dayOfWeek,
+          startTime: item.startTime,
+          endTime: item.endTime
+        });
+
+        const daySelectHtml = dayOptions.map(d =>
+          `<option value="${d.val}" ${item.dayOfWeek === d.val ? 'selected' : ''}>${d.label}</option>`
+        ).join('');
+
+        return `
         <tr id="row_${item.tempId}">
           <td class="text-center">
             <input type="checkbox" class="form-check-input custom-check recognized-row-check" data-id="${item.tempId}" ${item.selected ? 'checked' : ''}>
@@ -1393,113 +1953,114 @@
             </span>
           </td>
           <td>
-            ${conflict.hasConflict ? 
-              `<span class="badge bg-danger-subtle text-danger border border-danger-subtle small" title="Trùng với ${conflict.conflictingEvent.title}">
+            ${conflict.hasConflict ?
+            `<span class="badge bg-danger-subtle text-danger border border-danger-subtle small" title="Trùng với ${conflict.conflictingEvent.title}">
                 <i class="bi bi-exclamation-triangle-fill me-1"></i> Trùng lịch
-               </span>` : 
-              `<span class="badge bg-success-subtle text-success border border-success-subtle small">
+               </span>` :
+            `<span class="badge bg-success-subtle text-success border border-success-subtle small">
                 <i class="bi bi-check2 me-1"></i> Hợp lệ
                </span>`
-            }
+          }
           </td>
         </tr>
       `;
-    }).join('');
+      }).join('');
 
-    // Cuộn mượt xuống kết quả
-    resultSection.scrollIntoView({ behavior: 'smooth' });
-  }
+      // Cuộn mượt xuống kết quả
+      resultSection.scrollIntoView({ behavior: 'smooth' });
+    }
 
-  function toggleSelectAllRecognized(check) {
-    document.querySelectorAll('.recognized-row-check').forEach(cb => {
-      cb.checked = check;
-    });
-  }
+    function toggleSelectAllRecognized(check) {
+      document.querySelectorAll('.recognized-row-check').forEach(cb => {
+        cb.checked = check;
+      });
+    }
 
-  // Thu thập danh sách môn được chọn và các giá trị đã chỉnh sửa
-  function getSelectedRecognizedClasses() {
-    const selected = [];
-    const checks = document.querySelectorAll('.recognized-row-check:checked');
+    // Thu thập danh sách môn được chọn và các giá trị đã chỉnh sửa
+    function getSelectedRecognizedClasses() {
+      const selected = [];
+      const checks = document.querySelectorAll('.recognized-row-check:checked');
 
-    checks.forEach(cb => {
-      const id = cb.getAttribute('data-id');
-      const title = document.getElementById(`title_${id}`).value.trim();
-      const code = document.getElementById(`code_${id}`).value.trim();
-      const dayOfWeek = parseInt(document.getElementById(`day_${id}`).value);
-      const startTime = document.getElementById(`start_${id}`).value;
-      const endTime = document.getElementById(`end_${id}`).value;
-      const room = document.getElementById(`room_${id}`).value.trim();
-      const lecturer = document.getElementById(`lecturer_${id}`).value.trim();
-      const defaultColor = document.getElementById('aiClassDefaultColor').value || '#0d7480';
+      checks.forEach(cb => {
+        const id = cb.getAttribute('data-id');
+        const title = document.getElementById(`title_${id}`).value.trim();
+        const code = document.getElementById(`code_${id}`).value.trim();
+        const dayOfWeek = parseInt(document.getElementById(`day_${id}`).value);
+        const startTime = document.getElementById(`start_${id}`).value;
+        const endTime = document.getElementById(`end_${id}`).value;
+        const room = document.getElementById(`room_${id}`).value.trim();
+        const lecturer = document.getElementById(`lecturer_${id}`).value.trim();
+        const defaultColor = document.getElementById('aiClassDefaultColor').value || '#0d7480';
 
-      if (title && startTime && endTime) {
-        selected.push({
-          title,
-          code,
-          dayOfWeek,
-          startTime,
-          endTime,
-          room,
-          lecturer,
-          color: defaultColor,
-          notes: 'Nhập tự động qua AI Vision Schedule Scanner'
+        if (title && startTime && endTime) {
+          selected.push({
+            title,
+            code,
+            dayOfWeek,
+            startTime,
+            endTime,
+            room,
+            lecturer,
+            color: defaultColor,
+            notes: 'Nhập tự động'
+          });
+        }
+      });
+
+      return selected;
+    }
+
+    // Lưu các môn vào thời khóa biểu
+    function saveRecognizedClassesToCalendar() {
+      const selected = getSelectedRecognizedClasses();
+      if (selected.length === 0) {
+        Swal.fire('Chưa chọn môn', 'Vui lòng tích chọn ít nhất 1 môn học để nhập vào lịch!', 'warning');
+        return;
+      }
+
+      const res = AppStore.batchAddClasses(selected);
+
+      bootstrap.Modal.getInstance(document.getElementById('aiScanModal')).hide();
+      calendar.refetchEvents();
+      checkBannerConflict();
+
+      if (res.conflicts.length > 0) {
+        Swal.fire({
+          title: 'Nhập hoàn tất có cảnh báo',
+          html: `Đã thêm <strong>${res.added.length}</strong> môn học. Có <strong>${res.conflicts.length}</strong> môn bị trùng giờ với lịch đã có. Vui lòng kiểm tra lại!`,
+          icon: 'warning'
+        });
+      } else {
+        Swal.fire({
+          title: 'Thành công tuyệt đối!',
+          text: `Đã thêm thành công ${res.added.length} môn học từ ảnh vào Thời khóa biểu. Không có xung đột nào!`,
+          icon: 'success'
         });
       }
-    });
-
-    return selected;
-  }
-
-  // Lưu các môn vào thời khóa biểu
-  function saveRecognizedClassesToCalendar() {
-    const selected = getSelectedRecognizedClasses();
-    if (selected.length === 0) {
-      Swal.fire('Chưa chọn môn', 'Vui lòng tích chọn ít nhất 1 môn học để nhập vào lịch!', 'warning');
-      return;
     }
 
-    const res = AppStore.batchAddClasses(selected);
+    // Lưu và chuyển ngay sang trang Tự động xếp lịch
+    function importRecognizedAndAutoSchedule() {
+      const selected = getSelectedRecognizedClasses();
+      if (selected.length === 0) {
+        Swal.fire('Chưa chọn môn', 'Vui lòng tích chọn ít nhất 1 môn học để nhập vào lịch!', 'warning');
+        return;
+      }
 
-    bootstrap.Modal.getInstance(document.getElementById('aiScanModal')).hide();
-    calendar.refetchEvents();
-    checkBannerConflict();
+      AppStore.batchAddClasses(selected);
+      bootstrap.Modal.getInstance(document.getElementById('aiScanModal')).hide();
 
-    if (res.conflicts.length > 0) {
       Swal.fire({
-        title: 'Nhập hoàn tất có cảnh báo',
-        html: `Đã thêm <strong>${res.added.length}</strong> môn học. Có <strong>${res.conflicts.length}</strong> môn bị trùng giờ với lịch đã có. Vui lòng kiểm tra lại!`,
-        icon: 'warning'
-      });
-    } else {
-      Swal.fire({
-        title: 'Thành công tuyệt đối!',
-        text: `Đã thêm thành công ${res.added.length} môn học từ ảnh vào Thời khóa biểu. Không có xung đột nào!`,
-        icon: 'success'
+        title: 'Đã nhập Thời khóa biểu!',
+        text: 'Đang chuyển hướng sang trang Tự động sắp xếp lịch trình để phân bổ công việc của bạn...',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => {
+        window.location.href = 'auto-schedule.html';
       });
     }
-  }
-
-  // Lưu và chuyển ngay sang trang Tự động xếp lịch
-  function importRecognizedAndAutoSchedule() {
-    const selected = getSelectedRecognizedClasses();
-    if (selected.length === 0) {
-      Swal.fire('Chưa chọn môn', 'Vui lòng tích chọn ít nhất 1 môn học để nhập vào lịch!', 'warning');
-      return;
-    }
-
-    AppStore.batchAddClasses(selected);
-    bootstrap.Modal.getInstance(document.getElementById('aiScanModal')).hide();
-
-    Swal.fire({
-      title: 'Đã nhập Thời khóa biểu!',
-      text: 'Đang chuyển hướng sang trang Tự động sắp xếp lịch trình để phân bổ công việc của bạn...',
-      icon: 'success',
-      timer: 1500,
-      showConfirmButton: false
-    }).then(() => {
-      window.location.href = 'auto-schedule.html';
-    });
-  }
-</script>
+  </script>
 </body>
+
 </html>

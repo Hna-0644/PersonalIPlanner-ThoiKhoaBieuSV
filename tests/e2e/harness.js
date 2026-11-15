@@ -15,15 +15,6 @@ module.paths.push(path.resolve(__dirname, '../../backend/node_modules'));
 const jwt = require('jsonwebtoken');
 const { DateTime } = require('luxon');
 
-// Safe polyfill for DateTime.fromJSDate when passed a Luxon DateTime
-const originalFromJSDate = DateTime.fromJSDate;
-DateTime.fromJSDate = function(date, options) {
-  if (date && typeof date.toJSDate === 'function') {
-    return originalFromJSDate.call(DateTime, date.toJSDate(), options);
-  }
-  return originalFromJSDate.call(DateTime, date, options);
-};
-
 const DEFAULT_JWT_SECRET = 'test-e2e-jwt-secret-at-least-thirty-two-chars-long';
 
 // -----------------------------------------------------------------------------

@@ -663,3 +663,79 @@ test('schedule application rejects plan that overlaps with active work shifts', 
     error => error.code === 'CONFLICT' && error.message.includes('lịch làm việc')
   );
 });
+
+test('makeBusyCalendar handles Luxon DateTime, JS Date, and ISO string events without dropping any', () => {
+  const today = DateTime.fromISO('2026-11-16', { zone: 'Asia/Ho_Chi_Minh' });
+  const events = [
+    {
+      id: 'ev_luxon',
+      taskId: 'tsk_1',
+      title: 'Luxon DateTime event',
+      start: DateTime.fromISO('2026-11-16T01:00:00.000Z', { zone: 'utc' }),
+      end: DateTime.fromISO('2026-11-16T02:00:00.000Z', { zone: 'utc' })
+    },
+    {
+      id: 'ev_date',
+      taskId: 'tsk_2',
+      title: 'JS Date event',
+      start: new Date('2026-11-16T03:00:00.000Z'),
+      end: new Date('2026-11-16T04:30:00.000Z')
+    },
+    {
+      id: 'ev_iso',
+      taskId: 'tsk_3',
+      title: 'ISO string event',
+      start: '2026-11-16T06:00:00.000Z',
+      end: '2026-11-16T07:00:00.000Z'
+    }
+  ];
+
+  const calendar = makeBusyCalendar(
+    today,
+    1,
+    [],
+    events,
+    [],
+    'Asia/Ho_Chi_Minh'
+  );
+
+  const busySlots = calendar.get('2026-11-16');
+  assert.ok(busySlots, 'Busy slots must exist for the date');
+  assert.equal(busySlots.length, 3, 'All 3 events must be ingested without dropping any');
+  assert.deepEqual(busySlots, [
+    { start: 480, end: 540 },
+    { start: 600, end: 690 },
+    { start: 780, end: 840 }
+  ]);
+});
+
+test('compareTasks deterministically sorts tasks without deadlines by numeric ID', () => {
+  const t1 = { id: 'tsk_20', priority: 'medium', deadline: null };
+  const t2 = { id: 'tsk_10', priority: 'medium', deadline: null };
+  const t3 = { id: 'tsk_2', priority: 'medium', deadline: null };
+  const t4 = { id: 'tsk_100', priority: 'medium', deadline: null };
+
+  const sortedAscending = [t1, t2, t3, t4].sort(compareTasks);
+  assert.deepEqual(
+    sortedAscending.map(t => t.id),
+    ['tsk_2', 'tsk_10', 'tsk_20', 'tsk_100'],
+    'Equal priority tasks without deadlines must be deterministically sorted by numeric ID'
+  );
+
+  const sortedFromInverted = [t4, t3, t2, t1].sort(compareTasks);
+  assert.deepEqual(
+    sortedFromInverted.map(t => t.id),
+    ['tsk_2', 'tsk_10', 'tsk_20', 'tsk_100'],
+    'Sorting must be stable and deterministic regardless of input order'
+  );
+
+  const deadline = DateTime.fromISO('2026-11-20T10:00:00Z');
+  const tWithDeadline1 = { id: 'tsk_30', priority: 'high', deadline };
+  const tWithDeadline2 = { id: 'tsk_5', priority: 'high', deadline };
+  const sortedDeadline = [tWithDeadline1, tWithDeadline2].sort(compareTasks);
+  assert.deepEqual(
+    sortedDeadline.map(t => t.id),
+    ['tsk_5', 'tsk_30'],
+    'Equal priority and equal deadline tasks must be tie-broken by numeric ID'
+  );
+});
