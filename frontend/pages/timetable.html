@@ -23,6 +23,36 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
   <!-- Design Taste Custom CSS -->
   <link rel="stylesheet" href="../css/style.css">
+
+  <style>
+    /* Styling cho thẻ hạn chót trên thời khóa biểu */
+    .fc-deadline-event {
+      font-weight: 600 !important;
+      border-radius: 4px !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+      padding: 1px 4px !important;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer !important;
+      border-left: 3px solid rgba(0, 0, 0, 0.3) !important;
+    }
+    .fc-deadline-event:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25) !important;
+      filter: brightness(1.08);
+    }
+    .form-check-label.badge {
+      user-select: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      cursor: pointer;
+    }
+    .form-check-input:not(:checked) + .form-check-label.badge {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+    .fc-timegrid-slot-label, .fc-col-header-cell-cushion {
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
 
 <body>
@@ -182,13 +212,31 @@
         <!-- Quick Class Pills Filter / Legend -->
         <div class="card-custom mb-3 py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="small fw-bold text-muted me-2">Ghi chú loại lịch:</span>
-            <span class="badge" style="background-color: #0d7480;"><i class="bi bi-circle-fill me-1"
-                style="font-size: 8px;"></i> Lịch học cố định</span>
-            <span class="badge" style="background-color: #b45309;"><i class="bi bi-briefcase me-1"></i> Ca làm
-              việc</span>
-            <span class="badge" style="background-color: #1f3038;"><i class="bi bi-sliders me-1"></i> Tự động sắp xếp
-              AI</span>
+            <span class="small fw-bold text-muted me-1"><i class="bi bi-funnel me-1"></i>Hiển thị:</span>
+            <div class="form-check form-check-inline m-0 d-flex align-items-center gap-1">
+              <input class="form-check-input mt-0" type="checkbox" id="filterClass" checked onchange="if(calendar) calendar.refetchEvents()">
+              <label class="form-check-label badge" style="background-color: #0d7480;" for="filterClass">
+                <i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i> Lịch học cố định
+              </label>
+            </div>
+            <div class="form-check form-check-inline m-0 d-flex align-items-center gap-1">
+              <input class="form-check-input mt-0" type="checkbox" id="filterShift" checked onchange="if(calendar) calendar.refetchEvents()">
+              <label class="form-check-label badge" style="background-color: #b45309;" for="filterShift">
+                <i class="bi bi-briefcase me-1"></i> Ca làm việc
+              </label>
+            </div>
+            <div class="form-check form-check-inline m-0 d-flex align-items-center gap-1">
+              <input class="form-check-input mt-0" type="checkbox" id="filterAiSchedule" checked onchange="if(calendar) calendar.refetchEvents()">
+              <label class="form-check-label badge" style="background-color: #1f3038;" for="filterAiSchedule">
+                <i class="bi bi-sliders me-1"></i> Kế hoạch tự học AI
+              </label>
+            </div>
+            <div class="form-check form-check-inline m-0 d-flex align-items-center gap-1">
+              <input class="form-check-input mt-0" type="checkbox" id="filterDeadline" checked onchange="if(calendar) calendar.refetchEvents()">
+              <label class="form-check-label badge bg-danger" for="filterDeadline" title="Hạn chót của công việc & kế hoạch cần hoàn thành">
+                <i class="bi bi-alarm-fill me-1"></i> Hạn chót công việc & kế hoạch
+              </label>
+            </div>
           </div>
           <div class="d-flex align-items-center gap-2">
             <button class="btn btn-sm btn-light border" onclick="calendar.changeView('timeGridDay')">Ngày</button>
@@ -732,7 +780,7 @@
           day: 'Ngày'
         },
         slotMinTime: '06:00:00',
-        slotMaxTime: '23:00:00',
+        slotMaxTime: '24:00:00',
         slotLabelFormat: {
           hour: '2-digit',
           minute: '2-digit',
@@ -743,7 +791,8 @@
           minute: '2-digit',
           hour12: false
         },
-        allDaySlot: false,
+        allDaySlot: true,
+        allDayText: 'Hạn chót / Cả ngày',
         slotDuration: '00:30:00',
         expandRows: true,
         navLinks: true,
@@ -768,93 +817,180 @@
       calendar.render();
     }
 
-    // Tải dữ liệu các lớp học và các task đã được tự động xếp vào calendar
+    // Tải dữ liệu các lớp học, ca làm, task tự xếp và hạn chót công việc vào calendar
     function loadCalendarEvents(fetchInfo, successCallback) {
+      const showClasses = document.getElementById('filterClass') ? document.getElementById('filterClass').checked : true;
+      const showShifts = document.getElementById('filterShift') ? document.getElementById('filterShift').checked : true;
+      const showAiSchedule = document.getElementById('filterAiSchedule') ? document.getElementById('filterAiSchedule').checked : true;
+      const showDeadlines = document.getElementById('filterDeadline') ? document.getElementById('filterDeadline').checked : true;
+
       const classes = AppStore.getClasses();
       const scheduledEvents = AppStore.getScheduledEvents();
       const events = [];
 
       // Lịch học cố định (Lặp lại hàng tuần theo dayOfWeek)
-      classes.forEach(c => {
-        events.push({
-          id: c.id,
-          title: `${c.title} (${c.room || 'Phòng học'})`,
-          startTime: c.startTime + ':00',
-          endTime: c.endTime + ':00',
-          daysOfWeek: [parseInt(c.dayOfWeek)], // 0: CN, 1: T2...
-          backgroundColor: c.color || '#0d7480',
-          borderColor: c.color || '#0d7480',
-          extendedProps: {
-            type: 'class',
-            data: c
-          }
-        });
-      });
-
-      // Ca làm việc (Định kỳ hàng tuần hoặc theo ngày cụ thể)
-      const shifts = typeof AppStore.getWorkSchedules === 'function' ? AppStore.getWorkSchedules() : [];
-      shifts.forEach(s => {
-        const workplaceSuffix = s.workplace ? ` (${s.workplace})` : '';
-        if (s.workDate) {
+      if (showClasses) {
+        classes.forEach(c => {
           events.push({
-            id: s.id,
-            title: `[Ca làm] ${s.title}${workplaceSuffix}`,
-            start: `${s.workDate}T${s.startTime}:00`,
-            end: `${s.workDate}T${s.endTime}:00`,
-            backgroundColor: s.color || '#b45309',
-            borderColor: s.color || '#b45309',
+            id: c.id,
+            title: `${c.title} (${c.room || 'Phòng học'})`,
+            startTime: c.startTime + ':00',
+            endTime: c.endTime + ':00',
+            daysOfWeek: [parseInt(c.dayOfWeek)], // 0: CN, 1: T2...
+            backgroundColor: c.color || '#0d7480',
+            borderColor: c.color || '#0d7480',
             extendedProps: {
-              type: 'work_shift',
-              data: s
+              type: 'class',
+              data: c
             }
           });
-        } else if (s.dayOfWeek !== null && s.dayOfWeek !== undefined && s.dayOfWeek !== '') {
-          const ev = {
-            id: s.id,
-            title: `[Ca làm] ${s.title}${workplaceSuffix}`,
-            startTime: s.startTime + ':00',
-            endTime: s.endTime + ':00',
-            daysOfWeek: [parseInt(s.dayOfWeek)],
-            backgroundColor: s.color || '#b45309',
-            borderColor: s.color || '#b45309',
-            extendedProps: {
-              type: 'work_shift',
-              data: s
-            }
-          };
-          if (s.startDate) ev.startRecur = s.startDate;
-          if (s.endDate) {
-            const endD = new Date(`${s.endDate}T00:00:00`);
-            endD.setDate(endD.getDate() + 1);
-            const yyyy = endD.getFullYear();
-            const mm = String(endD.getMonth() + 1).padStart(2, '0');
-            const dd = String(endD.getDate()).padStart(2, '0');
-            ev.endRecur = `${yyyy}-${mm}-${dd}`;
-          }
-          events.push(ev);
-        }
-      });
+        });
+      }
 
-      // Các task được AI Auto-Schedule lên lịch
-      scheduledEvents.forEach(sch => {
-        events.push({
-          id: sch.id,
-          title: `[Task AI] ${sch.title}`,
-          start: sch.start,
-          end: sch.end,
-          backgroundColor: sch.color || '#1f3038',
-          borderColor: sch.color || '#1f3038',
-          extendedProps: {
-            type: 'scheduled_task',
-            data: sch
+      // Ca làm việc (Định kỳ hàng tuần hoặc theo ngày cụ thể)
+      if (showShifts) {
+        const shifts = typeof AppStore.getWorkSchedules === 'function' ? AppStore.getWorkSchedules() : [];
+        shifts.forEach(s => {
+          const workplaceSuffix = s.workplace ? ` (${s.workplace})` : '';
+          if (s.workDate) {
+            events.push({
+              id: s.id,
+              title: `[Ca làm] ${s.title}${workplaceSuffix}`,
+              start: `${s.workDate}T${s.startTime}:00`,
+              end: `${s.workDate}T${s.endTime}:00`,
+              backgroundColor: s.color || '#b45309',
+              borderColor: s.color || '#b45309',
+              extendedProps: {
+                type: 'work_shift',
+                data: s
+              }
+            });
+          } else if (s.dayOfWeek !== null && s.dayOfWeek !== undefined && s.dayOfWeek !== '') {
+            const ev = {
+              id: s.id,
+              title: `[Ca làm] ${s.title}${workplaceSuffix}`,
+              startTime: s.startTime + ':00',
+              endTime: s.endTime + ':00',
+              daysOfWeek: [parseInt(s.dayOfWeek)],
+              backgroundColor: s.color || '#b45309',
+              borderColor: s.color || '#b45309',
+              extendedProps: {
+                type: 'work_shift',
+                data: s
+              }
+            };
+            if (s.startDate) ev.startRecur = s.startDate;
+            if (s.endDate) {
+              const endD = new Date(`${s.endDate}T00:00:00`);
+              endD.setDate(endD.getDate() + 1);
+              const yyyy = endD.getFullYear();
+              const mm = String(endD.getMonth() + 1).padStart(2, '0');
+              const dd = String(endD.getDate()).padStart(2, '0');
+              ev.endRecur = `${yyyy}-${mm}-${dd}`;
+            }
+            events.push(ev);
           }
         });
-      });
+      }
+
+      // Các task được AI Auto-Schedule lên lịch
+      if (showAiSchedule) {
+        scheduledEvents.forEach(sch => {
+          events.push({
+            id: sch.id,
+            title: `[Kế hoạch tự học] ${sch.title}`,
+            start: sch.start,
+            end: sch.end,
+            backgroundColor: sch.color || '#1f3038',
+            borderColor: sch.color || '#1f3038',
+            extendedProps: {
+              type: 'scheduled_task',
+              data: sch
+            }
+          });
+        });
+      }
+
+      // Hạn chót của công việc và kế hoạch (Task & Plan Deadlines)
+      if (showDeadlines) {
+        const tasks = typeof AppStore.getTasks === 'function' ? AppStore.getTasks() : [];
+        tasks.forEach(t => {
+          if (!t.deadline) return;
+
+          let rawDeadline = String(t.deadline).trim();
+          if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(rawDeadline)) {
+            rawDeadline = rawDeadline.replace(' ', 'T');
+          }
+          const d = new Date(rawDeadline);
+          if (Number.isNaN(d.getTime())) return;
+
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          const hh = String(d.getHours()).padStart(2, '0');
+          const min = String(d.getMinutes()).padStart(2, '0');
+          const dateStr = `${yyyy}-${mm}-${dd}`;
+          const timeStr = `${hh}:${min}`;
+          const isZeroTime = hh === '00' && min === '00';
+
+          const isDone = t.status === 'done' || Number(t.progress) === 100;
+          const isOverdue = !isDone && d.getTime() < Date.now();
+
+          let bgColor = '#dc2626'; // Mặc định: Đỏ (urgent)
+          let borderColor = '#b91c1c';
+          if (isDone) {
+            bgColor = '#16a34a'; // Xanh lá hoàn thành
+            borderColor = '#15803d';
+          } else if (isOverdue) {
+            bgColor = '#991b1b'; // Đỏ sẫm quá hạn
+            borderColor = '#7f1d1d';
+          } else if (t.priority === 'urgent') {
+            bgColor = '#dc2626';
+            borderColor = '#b91c1c';
+          } else if (t.priority === 'high') {
+            bgColor = '#ea580c'; // Cam
+            borderColor = '#c2410c';
+          } else if (t.priority === 'medium') {
+            bgColor = '#d97706'; // Vàng hổ phách
+            borderColor = '#b45309';
+          } else if (t.priority === 'low') {
+            bgColor = '#4f46e5'; // Xanh chàm
+            borderColor = '#4338ca';
+          }
+
+          let titlePrefix = '⏰ [Hạn chót]';
+          if (isDone) {
+            titlePrefix = '✅ [Đã xong]';
+          } else if (isOverdue) {
+            titlePrefix = isZeroTime ? '⚠️ [Quá hạn]' : `⚠️ [Quá hạn ${timeStr}]`;
+          } else if (!isZeroTime) {
+            titlePrefix = `⏰ [Hạn ${timeStr}]`;
+          }
+
+          events.push({
+            id: 'deadline_' + t.id,
+            title: `${titlePrefix} ${t.title}`,
+            start: dateStr,
+            allDay: true,
+            backgroundColor: bgColor,
+            borderColor: borderColor,
+            textColor: '#ffffff',
+            classNames: ['fc-deadline-event'],
+            extendedProps: {
+              type: 'task_deadline',
+              data: t,
+              deadlineDate: d,
+              isOverdue,
+              isDone
+            }
+          });
+        });
+      }
 
       const emptyState = document.getElementById('calendarEmptyState');
       if (events.length === 0) {
         emptyState.classList.remove('d-none');
-        UIStates.empty(emptyState, 'Chưa có lịch học', 'Hãy thêm môn học hoặc quét thời khóa biểu để bắt đầu.');
+        UIStates.empty(emptyState, 'Chưa có lịch hiển thị', 'Hãy thêm môn học, ca làm hoặc tạo công việc có hạn chót để xem trên lịch.');
       } else {
         emptyState.classList.add('d-none');
       }
@@ -930,7 +1066,75 @@
 
         const detailModal = new bootstrap.Modal(document.getElementById('classDetailModal'));
         detailModal.show();
-      } else {
+      } else if (props.type === 'task_deadline') {
+        const task = props.data;
+        const d = props.deadlineDate;
+        const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        const formattedDeadline = d
+          ? `${dayNames[d.getDay()]}, ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} lúc ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+          : 'Không xác định';
+
+        const priorityMap = {
+          urgent: '<span class="badge bg-danger">Khẩn cấp</span>',
+          high: '<span class="badge bg-warning text-dark">Cao</span>',
+          medium: '<span class="badge bg-primary">Trung bình</span>',
+          low: '<span class="badge bg-secondary">Thấp</span>'
+        };
+
+        const statusMap = {
+          todo: '<span class="badge bg-secondary">Chưa bắt đầu</span>',
+          inprogress: '<span class="badge bg-info text-dark">Đang thực hiện</span>',
+          done: '<span class="badge bg-success">Đã hoàn thành</span>'
+        };
+
+        const isOverdue = props.isOverdue;
+        const isDone = props.isDone;
+
+        Swal.fire({
+          title: '<i class="bi bi-alarm text-danger me-2"></i>Hạn chót công việc & kế hoạch',
+          html: `
+            <div class="text-start small">
+              <h5 class="fw-bold text-dark mb-2">${escapeHtml(task.title)}</h5>
+              <div class="mb-3 d-flex flex-wrap gap-1 align-items-center">
+                ${priorityMap[task.priority] || priorityMap.medium}
+                ${statusMap[task.status] || statusMap.todo}
+                ${isOverdue ? '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Đã quá hạn</span>' : ''}
+              </div>
+              <div class="d-flex flex-column gap-2 p-3 bg-light rounded border">
+                <div><i class="bi bi-calendar-event me-2 text-danger"></i><strong>Hạn chót:</strong> <span class="font-monospace fw-bold text-danger">${formattedDeadline}</span></div>
+                <div><i class="bi bi-book me-2 text-primary"></i><strong>Môn học:</strong> ${escapeHtml(task.subject || 'Không có môn học')}</div>
+                <div><i class="bi bi-hourglass-split me-2 text-warning"></i><strong>Thời lượng ước tính:</strong> ${task.estimatedHours || 2} giờ</div>
+                <div><i class="bi bi-pie-chart me-2 text-success"></i><strong>Tiến độ:</strong> ${task.progress || 0}%</div>
+                ${task.description ? `<div class="mt-2 pt-2 border-top text-muted"><i class="bi bi-file-text me-1"></i>${escapeHtml(task.description)}</div>` : ''}
+              </div>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: isDone ? '<i class="bi bi-arrow-counterclockwise me-1"></i>Đánh dấu chưa xong' : '<i class="bi bi-check2-circle me-1"></i>Đánh dấu hoàn thành',
+          confirmButtonColor: isDone ? '#64748b' : '#16a34a',
+          cancelButtonText: '<i class="bi bi-box-arrow-up-right me-1"></i>Đến trang Công việc',
+          showDenyButton: true,
+          denyButtonText: 'Đóng',
+          denyButtonColor: '#94a3b8'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const newStatus = isDone ? 'todo' : 'done';
+            const newProgress = isDone ? 0 : 100;
+            AppStore.updateTask(task.id, { status: newStatus, progress: newProgress });
+            if (calendar) calendar.refetchEvents();
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: isDone ? 'Đã chuyển thành Chưa hoàn thành' : 'Đã hoàn thành công việc!',
+              showConfirmButton: false,
+              timer: 2000
+            });
+          } else if (result.dismiss === Swal.DismissReason.cancel) {
+            window.location.href = 'tasks.html';
+          }
+        });
+      } else if (props.type === 'scheduled_task') {
         // Scheduled Task
         const task = props.data;
         Swal.fire({
