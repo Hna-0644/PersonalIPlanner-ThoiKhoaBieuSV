@@ -138,8 +138,9 @@ test('ApiService.getWorkSchedules calls GET /api/work-schedules with Bearer toke
     { id: 'wrk_1', title: 'Ca tối T2', dayOfWeek: 1, startTime: '18:00', endTime: '22:00' }
   ];
 
+  const fixedToken = createMockJwt('usr_101');
   const { api } = setupFrontendEnvironment({
-    token: createMockJwt('usr_101'),
+    token: fixedToken,
     async fetchHandler(url, options) {
       capturedUrl = url;
       capturedOptions = options;
@@ -156,7 +157,7 @@ test('ApiService.getWorkSchedules calls GET /api/work-schedules with Bearer toke
   const res = await api.getWorkSchedules();
 
   assert.equal(capturedUrl, 'http://localhost:5000/api/work-schedules');
-  assert.equal(capturedOptions.headers['Authorization'], `Bearer ${createMockJwt('usr_101')}`);
+  assert.equal(capturedOptions.headers['Authorization'], `Bearer ${fixedToken}`);
   assert.deepEqual(res, mockShifts);
 });
 

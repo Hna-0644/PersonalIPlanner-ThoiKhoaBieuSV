@@ -2,9 +2,9 @@
 
 > **Mục đích:** giữ frontend, backend, database, kiểm thử và tài liệu dùng cùng thuật ngữ, field, enum và quy tắc nghiệp vụ.
 >
-> **Phiên bản:** 1.1 — chuẩn MVP. Đây là hợp đồng mục tiêu; mục 9 ghi các khác biệt chưa đồng bộ với prototype.
+> **Phiên bản:** 1.2 — chuẩn MVP mở rộng. Đây là hợp đồng mục tiêu; mục 9 ghi các khác biệt chưa đồng bộ với prototype, và tài liệu [future-roadmap.md](./future-roadmap.md) ghi nhận các tính năng OUT-OF-SCOPE.
 
-## 1. Cách các AI phối hợp
+## 1. Cách các AI phối hợp & Kiến trúc 6 Module
 
 1. Đọc hợp đồng này và sơ đồ trước khi sửa code: [diagrams.md](./diagrams.md).
 2. Dùng đúng tên field, enum, kiểu ngày giờ và quy tắc tại đây; không tự tạo alias hoặc enum tương đương.
@@ -14,17 +14,38 @@
 6. Tránh hai nguồn dữ liệu có thể mâu thuẫn. Trạng thái lịch đã áp dụng lấy từ `ScheduledEvent`; các cờ tương thích cũ trên `Task` phải được suy ra hoặc đồng bộ trong giai đoạn chuyển đổi.
 7. Không ghi credentials, token thật hoặc thông tin cá nhân thực vào fixture, tài liệu, log hay commit.
 
+### Quy ước kiến trúc 6 Module (Layered Architecture)
+
+Toàn bộ Backend được phân chia thành **6 module độc lập về mặt chức năng**, tuân thủ nghiêm ngặt luồng phân tầng một chiều:
+
+`routes -> controllers -> services -> repositories`
+
+| Module | Tên chuẩn | Phạm vi trách nhiệm | Các thành phần chính |
+|---|---|---|---|
+| **Module 1** | `auth` | Xác thực người dùng (Register/Login JWT HS256) và Quản lý hồ sơ & cấu hình giờ học (`User`, `StudyPreferences`). | `auth-routes.js`, `profile-routes.js` → `auth-controller.js` → `auth-service.js`, `profile-service.js` → `auth-repository.js` |
+| **Module 2** | `timetable` | Quản lý thời khóa biểu lớp học (`ClassEntry`) và lịch làm việc/ca làm (`WorkSchedule`), kiểm tra xung đột lịch cố định. | `class-routes.js`, `work-schedule-routes.js` → `timetable-controller.js` → `class-service.js`, `work-schedule-service.js` → `timetable-repository.js` |
+| **Module 3** | `tasks` | Quản lý công việc cá nhân (`Task`), thuật toán tự động xếp lịch (`SchedulePlan`) và sự kiện lịch học đã xác nhận (`ScheduledEvent`). | `task-routes.js`, `schedule-routes.js` → `task-controller.js`, `schedule-controller.js` → `task-service.js`, `schedule-service.js` → `task-repository.js`, `schedule-repository.js` |
+| **Module 4** | `cache-notification` | Quản lý thông báo người dùng (`Notification`), bộ nhớ đệm Redis cho lịch sự kiện và AI Vision trích xuất lịch. | `notification-routes.js`, `ai-routes.js` → `notification-controller.js` → `notification-service.js`, `ai-vision-service.js` → `notification-repository.js` |
+| **Module 5** | `marketplace` | Danh sách và quản lý tin trao đổi/mua bán tài liệu học tập giữa sinh viên. | `marketplace-routes.js` → `marketplace-controller.js` → `marketplace-service.js` → `marketplace-repository.js` |
+| **Module 6** | `community` | Review môn học và hỏi đáp theo lớp học phần, gồm bài viết, bình luận và lượt upvote. | `community-routes.js` → `community-controller.js` → `community-service.js` → `community-repository.js` |
+
+- **`routes`**: Chỉ định nghĩa HTTP method, path, gắn middleware (`authenticate`, `validate`, `validateId`) và ủy quyền cho `controllers`.
+- **`controllers`**: Nhận `req, res`, trích xuất tham số (`req.user.id`, `req.params`, `req.body`), gọi `services` và trả response chuẩn `{ data: ... }`.
+- **`services`**: Chứa logic nghiệp vụ, kiểm tra quy tắc miền (domain rules), băm mật khẩu, ký JWT, tính toán lịch và gọi `repositories`.
+- **`repositories`**: Chứa toàn bộ truy vấn SQL (`mysql2/promise`), quản lý transaction (`beginTransaction`, `commit`, `rollback`) và luôn đính kèm điều kiện `user_id = ?` từ JWT để chống lỗi bảo mật IDOR.
+
 ## 2. Từ vựng và quy tắc đặt tên
 
 | Khái niệm | Tên chuẩn | Ghi chú |
 |---|---|---|
-| Người sử dụng hệ thống | `User` | Một user sở hữu hồ sơ, lớp, công việc, sự kiện và thông báo của mình. |
+| Người sử dụng hệ thống | `User` | Một user sở hữu hồ sơ, lớp, lịch làm việc, công việc, sự kiện và thông báo của mình. |
 | Buổi học lặp theo tuần | `ClassEntry` / API resource `classes` | `dayOfWeek` xác định thứ; thời gian bắt đầu/kết thúc là giờ địa phương. |
+| Ca làm việc / lịch bận cố định | `WorkSchedule` / API resource `work-schedules` | Có thể lặp theo thứ (`dayOfWeek` + `startDate`/`endDate`) hoặc cố định theo ngày (`workDate`). |
 | Công việc cá nhân | `Task` | Có deadline tùy chọn, mức ưu tiên, trạng thái và thời lượng ước tính. |
 | Khoảng thời gian đã xác nhận trên lịch | `ScheduledEvent` | Chỉ ghi nhận lịch đã áp dụng, không phải kết quả preview chưa xác nhận. |
 | Kết quả thuật toán chưa xác nhận | `SchedulePlan` | Dữ liệu tạm trả về; chưa ghi thành `ScheduledEvent`. |
 | Khoảng giờ người dùng cho phép học/làm việc | `preferredHours` | Các khung `morning`, `afternoon`, `evening`; mỗi khung có `active`, `start`, `end`. |
-| Định danh | `id` | API dùng chuỗi có prefix (`usr_…`, `cls_…`, `tsk_…`, `sch_…`, `ntf_…`). Client phải giữ nguyên ID, không tự tách prefix/phụ thuộc phần số. ID không phải secret; mọi truy vấn vẫn phải giới hạn theo user đã xác thực. |
+| Định danh | `id` | API dùng chuỗi có prefix (`usr_…`, `cls_…`, `wsch_…` / `wrk_…`, `tsk_…`, `sch_…`, `ntf_…`, `mkt_…`, `sub_…`, `rev_…`, `pst_…`, `cmt_…`). Client phải giữ nguyên ID, không tự tách prefix/phụ thuộc phần số. ID không phải secret; mọi truy vấn vẫn phải giới hạn theo user đã xác thực. |
 
 ## 3. Khai báo entity và field chuẩn
 
@@ -61,7 +82,7 @@ Không trả `passwordHash`, access token hoặc refresh token trong đối tư�
 
 | Field JSON | Kiểu | Bắt buộc | Quy tắc |
 |---|---|---:|---|
-| `id` | `string` | Response | ID do hệ thống cấp. |
+| `id` | `string` | Response | ID do hệ thống cấp (`cls_<id>`). |
 | `title` | `string` | Có | Tên lớp không rỗng. |
 | `code` | `string \| null` | Không | Mã môn học. |
 | `room` | `string \| null` | Không | Phòng hoặc địa điểm trực tuyến. |
@@ -75,6 +96,26 @@ Không trả `passwordHash`, access token hoặc refresh token trong đối tư�
 | `notes` | `string \| null` | Không | Ghi chú. |
 
 Hai lớp cùng `dayOfWeek` bị xung đột khi khoảng giờ overlap **và** khoảng học kỳ overlap. Khoảng giờ overlap khi `candidate.startTime < existing.endTime` và `candidate.endTime > existing.startTime`; hai khoảng chỉ chạm biên nhau không bị tính là overlap. Khoảng học kỳ là inclusive; thiếu ngày đầu hoặc cuối được xem là không giới hạn ở phía đó.
+
+### WorkSchedule
+
+| Field JSON | Kiểu | Bắt buộc | Quy tắc |
+|---|---|---:|---|
+| `id` | `string` | Response | ID do hệ thống cấp (`wsch_<id>` hoặc alias tương thích `wrk_<id>`). |
+| `title` | `string` | Có | Tên ca làm việc / hoạt động cố định không rỗng. |
+| `workplace` | `string \| null` | Không | Địa điểm làm việc. |
+| `dayOfWeek` | `integer \| null` | Tùy chọn* | `0 = Chủ Nhật` .. `6 = Thứ Bảy` cho lịch lặp theo tuần. |
+| `workDate` | `LocalDate \| null` | Tùy chọn* | Ngày cụ thể `YYYY-MM-DD` cho ca làm đơn lẻ. (*Bắt buộc có ít nhất `dayOfWeek` hoặc `workDate`). |
+| `startTime` | `LocalTime` | Có | Chuỗi 24 giờ `HH:mm`. |
+| `endTime` | `LocalTime` | Có | Phải lớn hơn `startTime`. |
+| `startDate` | `LocalDate \| null` | Không | Ngày bắt đầu hiệu lực lặp (`YYYY-MM-DD`). |
+| `endDate` | `LocalDate \| null` | Không | Ngày kết thúc hiệu lực lặp; không sớm hơn `startDate`. |
+| `color` | `string \| null` | Không | Màu hiển thị dạng hex (mặc định `#0d7480`). |
+| `notes` | `string \| null` | Không | Ghi chú ca làm. |
+| `createdAt` | `Instant` | Response | ISO 8601 UTC. |
+| `updatedAt` | `Instant` | Response | ISO 8601 UTC. |
+
+Hai ca làm việc của cùng một user bị xung đột (`409 CONFLICT`) nếu rơi vào cùng ngày (hoặc thứ trùng với ngày nằm trong khoảng `startDate`..`endDate`) và có khoảng giờ `[startTime, endTime)` giao nhau. Khi thêm/sửa/xóa `WorkSchedule`, bộ nhớ đệm lịch sự kiện của user phải được vô hiệu hóa.
 
 ### Task
 
@@ -134,6 +175,18 @@ Hai lớp cùng `dayOfWeek` bị xung đột khi khoảng giờ overlap **và** 
 | `read` | `boolean` | `true` nếu đã đọc. |
 | `createdAt` | `Instant` | ISO 8601 có timezone/offset khi có backend. |
 
+### Community
+
+| Entity | Field JSON chuẩn | Quy tắc |
+|---|---|---|
+| `Subject` | `id`, `courseCode`, `subjectName`, `schoolCode`, `createdAt` | `id` dùng prefix `sub_`; `courseCode` là mã học phần chuẩn hóa. |
+| `CourseReview` | `id`, `subjectId`, `userId`, `lecturerName`, `rating`, `difficulty`, `attendanceRequired`, `gradingNotes`, `materialsNotes`, `content`, `createdAt`, `updatedAt` | `id` dùng `rev_`; `rating` và `difficulty` là số nguyên 1–5; một user chỉ có một review mỗi môn. |
+| `ClassPost` | `id`, `subjectId`, `classCode`, `userId`, `title`, `content`, `upvoteCount`, `createdAt` | `id` dùng `pst_`; title tối đa 120 ký tự, content tối đa 2.000 ký tự. |
+| `PostComment` | `id`, `postId`, `userId`, `content`, `upvoteCount`, `createdAt` | `id` dùng `cmt_`; content tối đa 2.000 ký tự. |
+| `CommunityPagination` | `page`, `limit`, `total`, `totalPages` | Mặc định `page=1`, `limit=20`; `limit` trong khoảng 1–100. |
+
+Tất cả timestamp Community (`createdAt`, `updatedAt`) là ISO 8601 UTC có hậu tố `Z`. Không nhận `userId` từ body; server suy ra chủ sở hữu từ JWT. `classCode` là phạm vi trao đổi: endpoint yêu cầu đăng nhập nhưng hiện không xác minh roster/đăng ký học phần.
+
 ## 4. Enum chuẩn
 
 | Enum | Giá trị cho phép |
@@ -146,19 +199,27 @@ Hai lớp cùng `dayOfWeek` bị xung đột khi khoảng giờ overlap **và** 
 
 Label tiếng Việt chỉ dùng cho hiển thị; lưu và truyền giá trị enum chuẩn ở trên. Không tự tạo các biến thể như `in_progress`, `completed`, `critical` nếu chưa cập nhật hợp đồng. `DEADLINE_PASSED` chỉ dùng khi deadline đã ở quá khứ; `DEADLINE_INFEASIBLE` dùng khi deadline còn tương lai nhưng không đủ slot khả thi trước hạn.
 
-## 5. Quy ước ngày giờ và định dạng
+## 5. Quy ước ngày giờ và chuẩn hóa múi giờ (`utils/timezone.js`)
 
 | Kiểu logic | Định dạng chuẩn | Ví dụ |
 |---|---|---|
 | `LocalDate` | `YYYY-MM-DD` | `2026-10-31` |
 | `LocalTime` | 24 giờ `HH:mm` | `08:30` |
-| `Instant` | ISO 8601 có `Z` hoặc offset | `2026-10-31T08:30:00+07:00` |
+| `Instant` | ISO 8601 có `Z` hoặc offset | `2026-10-31T08:30:00.000Z` hoặc `2026-10-31T15:30:00.000+07:00` |
 | `timezone` | Tên IANA | `Asia/Ho_Chi_Minh` |
 
 - `dayOfWeek` theo JavaScript `Date.getDay()`: Chủ Nhật bằng 0.
-- Lớp học và giờ rảnh là giờ địa phương; phải diễn giải trong timezone của user.
-- Deadline và sự kiện đã lưu qua API dùng ISO 8601 có offset; UI chuyển đổi theo timezone user.
-- MySQL `DATETIME(3)` cho `deadline`, `start_at`, `end_at`, `created_at`, `updated_at` được lưu theo UTC; driver kết nối phải đặt timezone UTC. `DATE`/`TIME` của lớp học giữ nguyên giá trị địa phương.
+- Lớp học (`ClassEntry`), lịch làm việc (`WorkSchedule`) và giờ rảnh (`preferredHours`) là giờ địa phương; phải diễn giải trong timezone của user (mặc định `Asia/Ho_Chi_Minh`).
+- Deadline và sự kiện đã lưu qua API dùng ISO 8601 có offset hoặc UTC (`Z`); UI chuyển đổi theo timezone user.
+- **Quy tắc chuẩn hóa múi giờ bắt buộc ở Backend**:
+  - Mọi cột MySQL `DATETIME(3)` cho `deadline`, `start_at`, `end_at`, `read_at`, `created_at`, `updated_at` đều được lưu theo **UTC**; driver kết nối MySQL đặt `timezone: 'Z'`.
+  - Tuyệt đối không dùng `new Date()` phụ thuộc múi giờ cục bộ của máy chủ khi tính toán hoặc parse chuỗi SQL không có hậu tố múi giờ. Mọi thao tác đọc/ghi thời gian phải đi qua tiện ích `backend/src/utils/timezone.js` sử dụng thư viện `luxon` (`DateTime`):
+    - `DEFAULT_TIMEZONE = 'Asia/Ho_Chi_Minh'`
+    - `fromDatabaseUtc(value)`: Chuyển giá trị từ MySQL (`Date`, chuỗi SQL `YYYY-MM-DD HH:mm:ss.SSS`, hoặc chuỗi ISO) sang đối tượng Luxon `DateTime` ở múi giờ `utc`.
+    - `toDatabaseUtc(value)`: Chuyển chuỗi ISO-8601 (có offset như `+07:00` hoặc `Z`) hoặc `Date`/`DateTime` sang đối tượng `Date` chuẩn UTC để lưu vào cột `DATETIME(3)` của MySQL một cách nhất quán.
+    - `toIsoUtcString(value)`: Serialize giá trị DB sang chuỗi ISO-8601 chuẩn UTC (`YYYY-MM-DDTHH:mm:ss.SSSZ`), trả về `null` nếu đầu vào rỗng.
+    - `toPresentationIso(value, zone = DEFAULT_TIMEZONE)`: Serialize giá trị thời gian sang chuỗi ISO-8601 kèm offset của múi giờ hiển thị (ví dụ `2026-11-20T15:30:00.000+07:00`).
+    - `nowUtc()`: Trả về thời điểm hiện tại theo UTC (`DateTime.utc()`).
 - Không dùng chuỗi ngày phụ thuộc locale (`31/10/2026`) trong API hoặc lưu trữ.
 - Test boundary cho giờ mùa hè/timezone nếu mở rộng ra ngoài timezone Việt Nam.
 
@@ -167,7 +228,7 @@ Label tiếng Việt chỉ dùng cho hiển thị; lưu và truyền giá trị 
 1. API nhận `taskIds` rõ ràng; chỉ xếp các task được yêu cầu, chưa `done`, và thuộc user hiện tại.
 2. Thứ tự ưu tiên: `urgent` → `high` → `medium` → `low`; trong cùng mức ưu tiên, deadline gần hơn trước; không deadline xếp sau task có deadline. Hòa hoàn toàn thì giữ thứ tự ID tăng dần để kết quả ổn định.
 3. Slot phải nằm hoàn toàn trong một khung `preferredHours` đang active.
-4. Không overlap lớp học, `ScheduledEvent` đã áp dụng hoặc slot khác trong cùng phương án.
+4. Không overlap lớp học (`ClassEntry`), ca làm việc (`WorkSchedule`), `ScheduledEvent` đã áp dụng hoặc slot khác trong cùng phương án.
 5. `breakMinutes` là khoảng nghỉ tối thiểu **giữa hai hoạt động**; slot liền kề chỉ hợp lệ nếu có ít nhất đúng số phút đó ở giữa. Khi nhiều slot cùng nằm cạnh một hoạt động, không cộng break hai lần.
 6. Toàn bộ slot phải kết thúc tại hoặc trước deadline; deadline là thời điểm, không chỉ so sánh ngày. Task thiếu deadline không bị loại vì deadline.
 7. Horizon gồm `days` ngày địa phương, bắt đầu từ hôm nay và có tính cả hôm nay. Nếu không truyền `days`, mặc định 7; miền hợp lệ 1–30.
@@ -185,7 +246,7 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 
 | Method | Endpoint | Auth | Request/response chính |
 |---|---|---:|---|
-| `POST` | `/auth/register` | Không | Request `{ fullName, email, password }` (mật khẩu tối thiểu 8 ký tự, tối đa 72 byte); trả `{ data: { user, accessToken, tokenType } }`. |
+| `POST` | `/auth/register` | Không | Request `{ fullName, email, password, studentId? }` (mật khẩu tối thiểu 8 ký tự, tối đa 72 byte); trả `{ data: { user, accessToken, tokenType } }`. |
 | `POST` | `/auth/login` | Không | Request `{ email, password }`; trả `{ data: { user, accessToken, tokenType } }`. |
 | `GET` | `/user/profile` | Có | Trả `{ data: user }` của user trong token. |
 | `PATCH` | `/user/profile` | Có | Partial update; chỉ ghi field gửi lên. `PUT` hiện là alias tương thích, không mang nghĩa replace toàn bộ resource. |
@@ -193,6 +254,10 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 | `POST` | `/classes` | Có | Nhận `ClassEntry` không có `id`; trả `{ data: ClassEntry }`; nếu trùng lịch trả `409 CONFLICT`, không lưu và đưa các lớp xung đột vào `error.details`. |
 | `PATCH` | `/classes/{id}` | Có | Partial update; field bỏ qua giữ nguyên, field `null` xóa giá trị nullable. `PUT` hiện là alias tương thích, không mang nghĩa replace toàn bộ resource. |
 | `DELETE` | `/classes/{id}` | Có | Xóa lớp thuộc user hiện tại; trả `{ data: { id, deleted: true } }`. |
+| `GET` | `/work-schedules` | Có | Trả `{ data: WorkSchedule[] }` thuộc user hiện tại. |
+| `POST` | `/work-schedules` | Có | Nhận `WorkSchedule` không có `id`; trả `{ data: WorkSchedule }`; nếu trùng ca làm trả `409 CONFLICT` kèm danh sách ca xung đột trong `error.details`. |
+| `PATCH` | `/work-schedules/{id}` | Có | Partial update ca làm việc (`PUT` là alias tương thích); kiểm tra lại xung đột trước khi lưu. |
+| `DELETE` | `/work-schedules/{id}` | Có | Xóa ca làm việc thuộc user hiện tại; vô hiệu hóa cache lịch. |
 | `GET` | `/tasks` | Có | Trả `{ data: Task[] }` thuộc user hiện tại. |
 | `POST` | `/tasks` | Có | Nhận task không có `id`; trả `{ data: Task }`. |
 | `PATCH` | `/tasks/{id}` | Có | Partial update; field bỏ qua giữ nguyên, field `null` xóa giá trị nullable. `PUT` hiện là alias tương thích, không mang nghĩa replace toàn bộ resource. |
@@ -203,19 +268,34 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 | `GET` | `/notifications` | Có | Trả tối đa 100 thông báo gần nhất của user. |
 | `PATCH` | `/notifications/{id}` | Có | Request `{ read: true }`; đánh dấu đã đọc, thao tác lặp lại thành công. `PUT /notifications/{id}/read` là alias cũ. |
 | `PATCH` | `/notifications` | Có | Request `{ readAll: true }`; đánh dấu toàn bộ đã đọc, trả số bản ghi thực sự thay đổi. `PUT /notifications/read-all` là alias cũ. |
+| `GET` | `/courses/{subjectId}/reviews` | Có | Query `page`, `limit`; trả `{ data: { summary, reviews, pagination } }` và `X-Cache: HIT|MISS`. Summary: `avgRating`, `totalReviews`, `attendanceRate`. |
+| `POST` | `/courses/{subjectId}/reviews` | Có | Nhận `rating`, `difficulty`, `attendanceRequired`, `content` và các ghi chú nullable tùy chọn; trả `{ data: CourseReview }`. Review trùng của user/môn trả `409 REVIEW_ALREADY_EXISTS`. |
+| `PUT` | `/courses/{subjectId}/reviews/me` | Có | Partial update review của user hiện tại; trả `{ data: CourseReview }`; không có review trả `404 NOT_FOUND`. |
+| `DELETE` | `/courses/{subjectId}/reviews/me` | Có | Xóa review của user hiện tại; trả `{ data: { subjectId, deleted: true } }`; không có review trả `404 NOT_FOUND`. |
+| `GET` | `/classes/{classCode}/posts` | Có | Query `page`, `limit`; trả `{ data: { posts, pagination } }` và `X-Cache: HIT|MISS` cho trang đầu `limit=20`. |
+| `POST` | `/classes/{classCode}/posts` | Có | Nhận `{ subjectId, title, content }`; trả `{ data: ClassPost }`. Mã lớp đã gắn với môn khác trả `409 CLASS_SUBJECT_CONFLICT`. |
+| `DELETE` | `/posts/{postId}/me` | Có | Chỉ xóa bài thuộc user hiện tại; trả `{ data: { id, deleted: true } }`; bài không tồn tại/không thuộc user trả `404 NOT_FOUND`. |
+| `GET` | `/posts/{postId}/comments` | Có | Query `page`, `limit`; trả bình luận theo thứ tự cũ đến mới trong `{ data: { comments, pagination } }`. |
+| `POST` | `/posts/{postId}/comments` | Có | Nhận `{ content }`; trả `{ data: PostComment }`; bài không tồn tại trả `404 NOT_FOUND`. |
+| `POST` | `/posts/{postId}/upvote` | Có | Toggle vote của user; trả `{ data: { upvoted, upvoteCount } }`. |
+| `POST` | `/comments/{commentId}/upvote` | Có | Toggle vote của user; trả `{ data: { upvoted, upvoteCount } }`. |
 
 ### Response và lỗi
 
 - Mọi response thành công dùng `{ "data": ... }`, bao gồm list, auth, update và delete; không trộn response bọc với response raw. Request body là JSON UTF-8; endpoint được bảo vệ dùng `Authorization: Bearer <accessToken>`.
 - Lỗi dùng cấu trúc `{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [] } }`.
-- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `INTERNAL_ERROR`.
-- HTTP status tương ứng: `400`, `401`, `403`, `404`, `409`, `500`; `409` dùng cho xung đột lịch hoặc trạng thái tài nguyên. Không biến lỗi thành response thành công giả.
+- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `REVIEW_ALREADY_EXISTS`, `CLASS_SUBJECT_CONFLICT`, `RATE_LIMIT_EXCEEDED`, `INTERNAL_ERROR`.
+- HTTP status tương ứng: `400`, `401`, `403`, `404`, `409`, `429`, `500`; `409` dùng cho xung đột lịch hoặc trạng thái tài nguyên. Không biến lỗi thành response thành công giả.
+- Community áp dụng `409 REVIEW_ALREADY_EXISTS` khi user gửi review trùng môn và `409 CLASS_SUBJECT_CONFLICT` khi `classCode` đã gắn với môn khác. Subject/post/comment hoặc review/bài viết không thuộc user hiện tại trả `404 NOT_FOUND`.
+- Community dùng `429 RATE_LIMIT_EXCEEDED` khi vượt giới hạn ghi: tối đa 5 lần tạo review/bài viết/bình luận mỗi phút và 30 lần upvote mỗi phút cho mỗi user đã xác thực. Bộ đếm tạo dùng chung giữa ba endpoint tạo; bộ đếm vote dùng chung giữa hai endpoint vote.
+- `GET /courses/{subjectId}/reviews` và `GET /classes/{classCode}/posts` đặt `X-Cache` thành `HIT` hoặc `MISS`. Redis lỗi không làm lỗi đọc MySQL; trang bài viết chỉ cache `page=1&limit=20`.
+- `classCode` chỉ phân vùng nội dung theo lớp học phần; mọi endpoint Community yêu cầu JWT nhưng hiện không xác minh user thuộc roster/đã đăng ký lớp đó. Không dùng mã lớp như bằng chứng quyền riêng tư.
 - Mọi truy vấn tài nguyên phải giới hạn theo user đã xác thực; không tin `userId` gửi từ client.
-- Mọi thao tác cập nhật hồ sơ/lớp/task là partial merge: field bỏ qua giữ nguyên, field nullable gửi `null` sẽ xóa giá trị, field không nullable không nhận `null`. `PATCH` là method chuẩn; `PUT` chỉ là alias tương thích tạm thời và có cùng semantics partial.
+- Mọi thao tác cập nhật hồ sơ/lớp/lịch làm việc/task là partial merge: field bỏ qua giữ nguyên, field nullable gửi `null` sẽ xóa giá trị, field không nullable không nhận `null`. `PATCH` là method chuẩn; `PUT` chỉ là alias tương thích tạm thời và có cùng semantics partial.
 - `/auth/register` trả `409 CONFLICT` nếu email đã được đăng ký. Login không tiết lộ email hay mật khẩu sai cụ thể.
 - Access token ký `HS256`, subject là public user ID, hết hạn theo cấu hình server. MVP không có refresh/revocation; logout phía client chỉ xóa token nên token bị lộ còn hiệu lực đến khi hết hạn.
 - `/notifications` list trả `{ data: Notification[] }`, giới hạn 100 mục mới nhất. `PATCH /notifications/{id}` nhận `{ read: true }`; `PATCH /notifications` nhận `{ readAll: true }`. PUT endpoint cũ chỉ duy trì alias trong thời gian chuyển đổi.
-- Lớp học trùng lịch trả `409 CONFLICT` và giữ danh sách lớp xung đột trong `error.details`; không lưu lớp conflict trong MVP.
+- Lớp học hoặc ca làm việc trùng lịch trả `409 CONFLICT` và giữ danh sách mục xung đột trong `error.details`; không lưu mục conflict trong MVP.
 
 ## 8. Mapping database
 
@@ -225,13 +305,22 @@ API/JavaScript dùng `camelCase`; cột MySQL dùng `snake_case`. Ví dụ:
 |---|---|
 | `userId` | `user_id` |
 | `dayOfWeek` | `day_of_week` |
+| `workDate` | `work_date` |
 | `startTime` | `start_time` |
 | `estimatedHours` | `estimated_hours` |
 | `createdAt` | `created_at` |
+| `subjectId` | `subject_id` |
+| `courseCode` | `course_code` |
+| `lecturerName` | `lecturer_name` |
+| `attendanceRequired` | `attendance_required` |
+| `gradingNotes` | `grading_notes` |
+| `materialsNotes` | `materials_notes` |
+| `classCode` | `class_code` |
+| `upvoteCount` | `upvote_count` |
 
 Không đưa tên cột SQL vào payload frontend; chỉ mapper/repository chịu trách nhiệm chuyển đổi.
 
-Mọi cột MySQL `DATETIME(3)` biểu diễn instant được ghi/đọc dưới dạng UTC. `created_at`/`updated_at` do DB tạo cũng được serialize thành ISO 8601 UTC. Mọi ID BIGINT phải được chuyển sang public ID có prefix ở ranh giới API; việc prefix không thay thế authorization.
+Mọi cột MySQL `DATETIME(3)` biểu diễn instant được ghi/đọc dưới dạng UTC thông qua `utils/timezone.js`. `created_at`/`updated_at` do DB tạo cũng được serialize thành ISO 8601 UTC (`toIsoUtcString`). Mọi ID BIGINT phải được chuyển sang public ID có prefix ở ranh giới API; việc prefix không thay thế authorization.
 
 `scheduled_events.task_id` là unique trong MVP: một task chỉ có tối đa một event áp dụng. Xóa task xóa event liên quan theo cascade. Trước khi hỗ trợ chia task thành nhiều phiên, cần migration/thay đổi hợp đồng riêng.
 
@@ -247,16 +336,16 @@ Hợp đồng trên là chuẩn mục tiêu. Prototype hiện có một số kh�
 | Nối frontend với API | Frontend hiện gọi trực tiếp `AppStore` ở nhiều màn hình và không xử lý envelope `data`. | Chưa đổi `USE_MOCK` trước khi adapter `ApiService` chuẩn hóa response/auth, ánh xạ public IDs và cập nhật CRUD/schedule/notification trên tất cả màn hình. |
 | Task chọn để lập lịch | UI lọc kết quả sau khi `AppStore.generateAutoSchedule()` đã sinh lịch cho toàn bộ task chưa hoàn thành. | Truyền `taskIds` vào thuật toán/API trước khi lập lịch. |
 | Task đã được xếp | `generateAutoSchedule()` hiện lấy mọi task chưa hoàn thành, không loại task đã scheduled. | Loại event/task đã có khỏi slot và không tạo event lặp; reschedule phải explicit. |
-| Slot bận | Thuật toán hiện đưa lớp học vào danh sách bận; cần xác nhận/đồng bộ đầy đủ scheduled event đã áp dụng. | Tất cả lớp, event đã lưu và slot mới đều tham gia kiểm tra overlap. |
+| Slot bận | Thuật toán hiện đưa lớp học và lịch làm việc vào danh sách bận; cần xác nhận/đồng bộ đầy đủ scheduled event đã áp dụng. | Tất cả lớp, ca làm việc, event đã lưu và slot mới đều tham gia kiểm tra overlap. |
 | Việc không xếp được | Hiện tại kết quả là một plan, thiếu danh sách nguyên nhân cho task không xếp được. | Trả `{ plan, unscheduled }` với reason ổn định. |
-| Ngày giờ | Prototype kết hợp `Date`, local time và `toISOString()`; có thể lệch ngày theo timezone. | Chuẩn hóa cách xử lý timezone trước khi dùng API/DB thật; thêm test boundary. |
+| Ngày giờ | Prototype kết hợp `Date`, local time và `toISOString()`; có thể lệch ngày theo timezone. | Chuẩn hóa cách xử lý timezone bằng `utils/timezone.js` (`luxon`); thêm test boundary. |
 | Lưu lịch | Prototype giữ `scheduled`/`scheduledTime` trên Task cùng danh sách ScheduledEvent. | Dùng ScheduledEvent làm nguồn sự thật; field cũ chỉ tương thích/chuyển đổi, tránh cập nhật lệch. |
 
 ## 10. Checklist trước khi hoàn tất một thay đổi
 
 - [ ] Đã đọc hợp đồng và sơ đồ liên quan.
 - [ ] Không tạo field, enum, route hoặc kiểu ngày giờ trùng nghĩa nhưng khác tên.
-- [ ] Đã cập nhật các tầng bị ảnh hưởng: UI/API/service/database.
+- [ ] Đã cập nhật các tầng bị ảnh hưởng: UI/API/controller/service/repository/database.
 - [ ] Đã thêm hoặc điều chỉnh test cho validation, quyền sở hữu, trạng thái và timezone liên quan.
 - [ ] Đã cập nhật tài liệu/hợp đồng nếu có quyết định nghiệp vụ mới.
 - [ ] Đã chạy các kiểm thử phù hợp và báo rõ kiểm thử nào chưa chạy.

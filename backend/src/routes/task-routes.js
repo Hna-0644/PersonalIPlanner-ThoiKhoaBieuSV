@@ -1,26 +1,18 @@
 const express = require('express');
 const { taskSchema, taskUpdateSchema } = require('../schemas');
 const { validate, validateId } = require('../middleware/validate');
-const { asyncHandler } = require('../utils/async-handler');
+const { createTaskController } = require('../controllers/task-controller');
 
-function createTaskRouter(taskService, authenticate) {
+function createTaskRouter(taskService, authenticate, taskController) {
   const router = express.Router();
+  const controller = taskController || createTaskController(taskService);
 
   router.use(authenticate);
-  router.get('/', asyncHandler(async (req, res) => {
-    res.json({ data: await taskService.list(req.user.id) });
-  }));
-  router.post('/', validate(taskSchema), asyncHandler(async (req, res) => {
-    res.status(201).json({ data: await taskService.create(req.user.id, req.body) });
-  }));
-  const updateTask = asyncHandler(async (req, res) => {
-    res.json({ data: await taskService.update(req.user.id, req.databaseId, req.body) });
-  });
-  router.patch('/:id', validateId('task'), validate(taskUpdateSchema), updateTask);
-  router.put('/:id', validateId('task'), validate(taskUpdateSchema), updateTask);
-  router.delete('/:id', validateId('task'), asyncHandler(async (req, res) => {
-    res.json({ data: await taskService.remove(req.user.id, req.databaseId) });
-  }));
+  router.get('/', controller.listTasks);
+  router.post('/', validate(taskSchema), controller.createTask);
+  router.patch('/:id', validateId('task'), validate(taskUpdateSchema), controller.updateTask);
+  router.put('/:id', validateId('task'), validate(taskUpdateSchema), controller.updateTask);
+  router.delete('/:id', validateId('task'), controller.deleteTask);
 
   return router;
 }

@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { AppError } = require('../utils/app-error');
 const { toPublicId } = require('../utils/public-id');
+const { DEFAULT_TIMEZONE } = require('../utils/timezone');
+const { createAuthRepository } = require('../repositories/auth-repository');
 
 const DEFAULT_HOURS = {
   morning: { start: '08:00', end: '11:30', active: true },
@@ -9,56 +11,37 @@ const DEFAULT_HOURS = {
   evening: { start: '19:30', end: '22:00', active: true }
 };
 
-function createAuthService({ pool, jwtSecret, jwtExpiresIn }) {
+function createAuthService({ pool, authRepository, jwtSecret, jwtExpiresIn }) {
+  const repository = authRepository || createAuthRepository({ pool });
+
   async function createAccount(input) {
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      const [result] = await connection.execute(
-        `INSERT INTO users (full_name, email, password_hash, student_id)
-         VALUES (?, ?, ?, ?)`,
-        [
-          input.fullName,
-          input.email,
-          await bcrypt.hash(input.password, 12),
-          input.studentId || null
-        ]
-      );
-      const userId = String(result.insertId);
-      await connection.execute(
-        `INSERT INTO study_preferences (user_id, preferred_hours)
-         VALUES (?, ?)`,
-        [userId, JSON.stringify(DEFAULT_HOURS)]
-      );
-      await connection.commit();
-      return issueSession(userId, {
-        id: toPublicId('user', userId),
-        fullName: input.fullName,
-        email: input.email,
-        studentId: input.studentId || null,
-        major: null,
-        university: null,
-        avatar: null,
-        preferredHours: DEFAULT_HOURS,
-        breakMinutes: 15,
-        timezone: 'Asia/Ho_Chi_Minh',
-        emailReminder: true,
-        browserReminder: true
-      });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    const passwordHash = await bcrypt.hash(input.password, 12);
+    const userId = await repository.createUserWithPreferences({
+      fullName: input.fullName,
+      email: input.email,
+      passwordHash,
+      studentId: input.studentId || null,
+      defaultHours: DEFAULT_HOURS
+    });
+
+    return issueSession(userId, {
+      id: toPublicId('user', userId),
+      fullName: input.fullName,
+      email: input.email,
+      studentId: input.studentId || null,
+      major: null,
+      university: null,
+      avatar: null,
+      preferredHours: DEFAULT_HOURS,
+      breakMinutes: 15,
+      timezone: DEFAULT_TIMEZONE,
+      emailReminder: true,
+      browserReminder: true
+    });
   }
 
   async function login(input) {
-    const [rows] = await pool.execute(
-      'SELECT id, full_name, email, password_hash FROM users WHERE email = ? LIMIT 1',
-      [input.email]
-    );
-    const user = rows[0];
+    const user = await repository.findUserCredentialsByEmail(input.email);
     const valid = user && await bcrypt.compare(input.password, user.password_hash);
     if (!valid) {
       throw new AppError(401, 'UNAUTHENTICATED', 'Email hoặc mật khẩu không chính xác.');
@@ -67,19 +50,11 @@ function createAuthService({ pool, jwtSecret, jwtExpiresIn }) {
   }
 
   async function getPublicUser(userId) {
-    const [rows] = await pool.execute(
-      `SELECT u.id, u.full_name, u.email, u.student_id, u.major, u.university, u.avatar,
-              p.preferred_hours, p.break_minutes, p.timezone, p.email_reminder, p.browser_reminder
-       FROM users u
-       JOIN study_preferences p ON p.user_id = u.id
-       WHERE u.id = ?
-       LIMIT 1`,
-      [userId]
-    );
-    if (!rows[0]) {
+    const row = await repository.findUserProfileById(userId);
+    if (!row) {
       throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy người dùng.');
     }
-    return mapUser(rows[0]);
+    return mapUser(row);
   }
 
   function issueSession(userId, user) {

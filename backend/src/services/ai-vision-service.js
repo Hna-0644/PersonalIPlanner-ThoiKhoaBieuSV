@@ -259,6 +259,9 @@ function createAiVisionService({ config = {} }) {
     scanScheduleImage,
     prompt,
     PERIOD_SCHEDULES,
+    UNIVERSITY_PERIOD_POLICIES: PERIOD_SCHEDULES,
+    resolvePeriodSchedule,
+    resolvePeriodTimes: convertPeriodToTimeRange,
     convertPeriodToTimeRange,
     normalizeRecognizedClassItem
   };
@@ -268,6 +271,9 @@ module.exports = {
   createAiVisionService,
   prompt,
   PERIOD_SCHEDULES,
+  UNIVERSITY_PERIOD_POLICIES: PERIOD_SCHEDULES,
+  resolvePeriodSchedule,
+  resolvePeriodTimes: convertPeriodToTimeRange,
   convertPeriodToTimeRange,
   normalizeRecognizedClassItem
 };

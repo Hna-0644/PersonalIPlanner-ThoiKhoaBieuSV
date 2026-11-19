@@ -1,35 +1,20 @@
 const { DateTime } = require('luxon');
 const { AppError } = require('../utils/app-error');
 const { toPublicId, toDatabaseId } = require('../utils/public-id');
-
-const WORK_SCHEDULE_FIELDS = [
-  'title', 'workplace', 'dayOfWeek', 'workDate', 'startTime', 'endTime',
-  'startDate', 'endDate', 'color', 'notes'
-];
-
-const WORK_SCHEDULE_COLUMNS = {
-  title: 'title',
-  workplace: 'workplace',
-  dayOfWeek: 'day_of_week',
-  workDate: 'work_date',
-  startTime: 'start_time',
-  endTime: 'end_time',
-  startDate: 'start_date',
-  endDate: 'end_date',
-  color: 'color',
-  notes: 'notes'
-};
+const { toIsoUtcString, nowUtc } = require('../utils/timezone');
+const {
+  lockUser,
+  listWorkSchedulesByUser,
+  listWorkSchedulesForUpdate,
+  findWorkScheduleForUpdate,
+  insertWorkSchedule,
+  updateWorkScheduleById,
+  deleteWorkScheduleById
+} = require('../repositories/timetable-repository');
 
 function createWorkScheduleService({ pool, redisClient }) {
   async function list(userId) {
-    const [rows] = await pool.execute(
-      `SELECT id, user_id, title, workplace, day_of_week, work_date, start_time, end_time,
-              start_date, end_date, color, notes, created_at, updated_at
-       FROM work_schedules
-       WHERE user_id = ?
-       ORDER BY day_of_week, work_date, start_time`,
-      [userId]
-    );
+    const rows = await listWorkSchedulesByUser(pool, userId);
     return rows.map(mapWorkSchedule);
   }
 
@@ -39,13 +24,7 @@ function createWorkScheduleService({ pool, redisClient }) {
       await connection.beginTransaction();
       await lockUser(connection, userId);
 
-      const [existingShifts] = await connection.execute(
-        `SELECT id, title, day_of_week, work_date, start_time, end_time, start_date, end_date
-         FROM work_schedules
-         WHERE user_id = ?
-         FOR UPDATE`,
-        [userId]
-      );
+      const existingShifts = await listWorkSchedulesForUpdate(connection, userId);
       ensureNoShiftConflict(existingShifts, input);
 
       const normalizedInput = {
@@ -53,20 +32,14 @@ function createWorkScheduleService({ pool, redisClient }) {
         color: input.color || '#0d7480'
       };
 
-      const columns = WORK_SCHEDULE_FIELDS.map(f => WORK_SCHEDULE_COLUMNS[f]);
-      const values = WORK_SCHEDULE_FIELDS.map(f => normalizedInput[f] ?? null);
-
-      const [result] = await connection.execute(
-        `INSERT INTO work_schedules (user_id, ${columns.join(', ')})
-         VALUES (?, ${columns.map(() => '?').join(', ')})`,
-        [userId, ...values]
-      );
+      const insertId = await insertWorkSchedule(connection, userId, normalizedInput);
 
       await connection.commit();
       await invalidateScheduleCache(redisClient, userId);
 
+      const nowIso = nowUtc().toISO();
       return {
-        id: toPublicId('work', result.insertId),
+        id: toPublicId('work', insertId),
         title: normalizedInput.title,
         workplace: normalizedInput.workplace ?? null,
         dayOfWeek: normalizedInput.dayOfWeek !== undefined && normalizedInput.dayOfWeek !== null
@@ -79,8 +52,8 @@ function createWorkScheduleService({ pool, redisClient }) {
         endDate: formatDateOnly(normalizedInput.endDate),
         color: normalizedInput.color,
         notes: normalizedInput.notes ?? null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: nowIso,
+        updatedAt: nowIso
       };
     } catch (error) {
       await connection.rollback();
@@ -97,20 +70,12 @@ function createWorkScheduleService({ pool, redisClient }) {
       await connection.beginTransaction();
       await lockUser(connection, userId);
 
-      const [rows] = await connection.execute(
-        `SELECT id, user_id, title, workplace, day_of_week, work_date, start_time, end_time,
-                start_date, end_date, color, notes, created_at, updated_at
-         FROM work_schedules
-         WHERE id = ? AND user_id = ?
-         FOR UPDATE`,
-        [dbId, userId]
-      );
-
-      if (!rows[0]) {
+      const existingRow = await findWorkScheduleForUpdate(connection, dbId, userId);
+      if (!existingRow) {
         throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy ca làm việc.');
       }
 
-      const current = mapWorkSchedule(rows[0]);
+      const current = mapWorkSchedule(existingRow);
       const merged = { ...current, ...input };
 
       if (merged.startTime >= merged.endTime) {
@@ -123,23 +88,10 @@ function createWorkScheduleService({ pool, redisClient }) {
         throw new AppError(400, 'VALIDATION_ERROR', 'Ngày kết thúc không được trước ngày bắt đầu.');
       }
 
-      const [existingShifts] = await connection.execute(
-        `SELECT id, title, day_of_week, work_date, start_time, end_time, start_date, end_date
-         FROM work_schedules
-         WHERE user_id = ?
-         FOR UPDATE`,
-        [userId]
-      );
+      const existingShifts = await listWorkSchedulesForUpdate(connection, userId);
       ensureNoShiftConflict(existingShifts, merged, dbId);
 
-      const entries = Object.entries(input).filter(([field]) => WORK_SCHEDULE_COLUMNS[field]);
-      if (entries.length > 0) {
-        const assignments = entries.map(([field]) => `${WORK_SCHEDULE_COLUMNS[field]} = ?`).join(', ');
-        await connection.execute(
-          `UPDATE work_schedules SET ${assignments} WHERE id = ? AND user_id = ?`,
-          [...entries.map(([, value]) => value ?? null), dbId, userId]
-        );
-      }
+      await updateWorkScheduleById(connection, userId, dbId, input);
 
       await connection.commit();
       await invalidateScheduleCache(redisClient, userId);
@@ -147,7 +99,7 @@ function createWorkScheduleService({ pool, redisClient }) {
       return {
         ...merged,
         id: toPublicId('work', dbId),
-        updatedAt: new Date().toISOString()
+        updatedAt: nowUtc().toISO()
       };
     } catch (error) {
       await connection.rollback();
@@ -159,12 +111,9 @@ function createWorkScheduleService({ pool, redisClient }) {
 
   async function remove(userId, scheduleId) {
     const dbId = resolveScheduleDbId(scheduleId);
-    const [result] = await pool.execute(
-      'DELETE FROM work_schedules WHERE id = ? AND user_id = ?',
-      [dbId, userId]
-    );
+    const affectedRows = await deleteWorkScheduleById(pool, userId, dbId);
 
-    if (!result.affectedRows) {
+    if (!affectedRows) {
       throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy ca làm việc.');
     }
 
@@ -183,16 +132,6 @@ function resolveScheduleDbId(scheduleId) {
     return String(scheduleId);
   }
   return toDatabaseId(scheduleId, 'work');
-}
-
-async function lockUser(connection, userId) {
-  const [rows] = await connection.execute(
-    'SELECT id FROM users WHERE id = ? FOR UPDATE',
-    [userId]
-  );
-  if (!rows.length) {
-    throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy người dùng.');
-  }
 }
 
 function ensureNoShiftConflict(existingShifts, candidateShift, excludeId = null) {
@@ -297,9 +236,8 @@ function formatDateOnly(val) {
 
 function formatIso(val) {
   if (!val) return null;
-  if (val instanceof Date) return val.toISOString();
-  const d = new Date(val);
-  return isNaN(d.getTime()) ? String(val) : d.toISOString();
+  const iso = toIsoUtcString(val);
+  return iso || String(val);
 }
 
 function mapWorkSchedule(row) {

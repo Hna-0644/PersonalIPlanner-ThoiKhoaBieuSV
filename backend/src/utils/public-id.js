@@ -6,7 +6,12 @@ const ID_PREFIXES = {
   task: 'tsk',
   schedule: 'sch',
   notification: 'ntf',
-  work: 'wrk'
+  work: 'wrk',
+  marketplace: 'mkt',
+  subject: 'sub',
+  review: 'rev',
+  post: 'pst',
+  comment: 'cmt'
 };
 
 function toPublicId(type, databaseId) {
