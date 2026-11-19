@@ -1,32 +1,19 @@
 const { AppError } = require('../utils/app-error');
 const { toPublicId } = require('../utils/public-id');
-
-const CLASS_FIELDS = [
-  'title', 'code', 'room', 'lecturer', 'dayOfWeek', 'startTime', 'endTime',
-  'semesterStart', 'semesterEnd', 'color', 'notes'
-];
-const CLASS_COLUMNS = {
-  title: 'title',
-  code: 'code',
-  room: 'room',
-  lecturer: 'lecturer',
-  dayOfWeek: 'day_of_week',
-  startTime: 'start_time',
-  endTime: 'end_time',
-  semesterStart: 'semester_start',
-  semesterEnd: 'semester_end',
-  color: 'color',
-  notes: 'notes'
-};
+const {
+  CLASS_FIELDS,
+  lockUser,
+  listClassesByUser,
+  findClassForUpdate,
+  findClassConflicts,
+  insertClass,
+  updateClassById,
+  deleteClassById
+} = require('../repositories/timetable-repository');
 
 function createClassService({ pool }) {
   async function list(userId) {
-    const [rows] = await pool.execute(
-      `SELECT id, title, code, room, lecturer, day_of_week, start_time, end_time,
-              semester_start, semester_end, color, notes
-       FROM classes WHERE user_id = ? ORDER BY day_of_week, start_time`,
-      [userId]
-    );
+    const rows = await listClassesByUser(pool, userId);
     return rows.map(mapClass);
   }
 
@@ -36,16 +23,10 @@ function createClassService({ pool }) {
       await connection.beginTransaction();
       await lockUser(connection, userId);
       await ensureNoConflict(connection, userId, input);
-      const columns = CLASS_FIELDS.map(field => CLASS_COLUMNS[field]);
-      const values = CLASS_FIELDS.map(field => input[field] ?? null);
-      const [result] = await connection.execute(
-        `INSERT INTO classes (user_id, ${columns.join(', ')})
-         VALUES (?, ${columns.map(() => '?').join(', ')})`,
-        [userId, ...values]
-      );
+      const insertId = await insertClass(connection, userId, input);
       await connection.commit();
       return {
-        id: toPublicId('class', result.insertId),
+        id: toPublicId('class', insertId),
         ...Object.fromEntries(CLASS_FIELDS.map(field => [field, input[field] ?? null]))
       };
     } catch (error) {
@@ -61,14 +42,9 @@ function createClassService({ pool }) {
     try {
       await connection.beginTransaction();
       await lockUser(connection, userId);
-      const [rows] = await connection.execute(
-        `SELECT id, title, code, room, lecturer, day_of_week, start_time, end_time,
-                semester_start, semester_end, color, notes
-         FROM classes WHERE id = ? AND user_id = ? FOR UPDATE`,
-        [classId, userId]
-      );
-      if (!rows[0]) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy thời khóa biểu.');
-      const merged = { ...mapClass(rows[0]), ...input };
+      const existingRow = await findClassForUpdate(connection, classId, userId);
+      if (!existingRow) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy thời khóa biểu.');
+      const merged = { ...mapClass(existingRow), ...input };
       if (merged.startTime >= merged.endTime) {
         throw new AppError(400, 'VALIDATION_ERROR', 'Giờ kết thúc phải sau giờ bắt đầu.');
       }
@@ -76,12 +52,7 @@ function createClassService({ pool }) {
         throw new AppError(400, 'VALIDATION_ERROR', 'Ngày kết thúc học kỳ không được trước ngày bắt đầu.');
       }
       await ensureNoConflict(connection, userId, merged, classId);
-      const entries = Object.entries(input);
-      const assignments = entries.map(([field]) => `${CLASS_COLUMNS[field]} = ?`).join(', ');
-      await connection.execute(
-        `UPDATE classes SET ${assignments} WHERE id = ? AND user_id = ?`,
-        [...entries.map(([, value]) => value ?? null), classId, userId]
-      );
+      await updateClassById(connection, userId, classId, input);
       await connection.commit();
       return { ...merged, id: toPublicId('class', classId) };
     } catch (error) {
@@ -93,11 +64,8 @@ function createClassService({ pool }) {
   }
 
   async function remove(userId, classId) {
-    const [result] = await pool.execute(
-      'DELETE FROM classes WHERE id = ? AND user_id = ?',
-      [classId, userId]
-    );
-    if (!result.affectedRows) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy thời khóa biểu.');
+    const affectedRows = await deleteClassById(pool, userId, classId);
+    if (!affectedRows) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy thời khóa biểu.');
     return { id: toPublicId('class', classId), deleted: true };
   }
 
@@ -105,27 +73,7 @@ function createClassService({ pool }) {
 }
 
 async function ensureNoConflict(connection, userId, entry, excludeId = null) {
-  const [rows] = await connection.execute(
-    `SELECT id, title, start_time, end_time
-     FROM classes
-     WHERE user_id = ? AND day_of_week = ?
-       AND start_time < ? AND end_time > ?
-       AND (? IS NULL OR semester_start IS NULL OR semester_start <= ?)
-       AND (? IS NULL OR semester_end IS NULL OR semester_end >= ?)
-       AND (? IS NULL OR id <> ?)`,
-    [
-      userId,
-      entry.dayOfWeek,
-      entry.endTime,
-      entry.startTime,
-      entry.semesterEnd || null,
-      entry.semesterEnd || null,
-      entry.semesterStart || null,
-      entry.semesterStart || null,
-      excludeId,
-      excludeId
-    ]
-  );
+  const rows = await findClassConflicts(connection, userId, entry, excludeId);
   if (rows.length) {
     throw new AppError(409, 'CONFLICT', 'Thời khóa biểu bị trùng giờ.', rows.map(row => ({
       id: toPublicId('class', row.id),
@@ -134,14 +82,6 @@ async function ensureNoConflict(connection, userId, entry, excludeId = null) {
       endTime: normalizeTime(row.end_time)
     })));
   }
-}
-
-async function lockUser(connection, userId) {
-  const [rows] = await connection.execute(
-    'SELECT id FROM users WHERE id = ? FOR UPDATE',
-    [userId]
-  );
-  if (!rows.length) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy người dùng.');
 }
 
 function normalizeTime(value) {

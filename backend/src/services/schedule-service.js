@@ -1,7 +1,22 @@
 const { DateTime } = require('luxon');
 const { AppError } = require('../utils/app-error');
 const { toDatabaseId, toPublicId } = require('../utils/public-id');
-const { lockUser } = require('./class-service');
+const { fromDatabaseUtc, toSqlUtcString } = require('../utils/timezone');
+const {
+  lockUser,
+  listClassSlotsByUser,
+  listWorkScheduleSlotsByUser,
+  listScheduledEventsByUser,
+  findScheduledEventsInWindow,
+  findScheduledEventsInWindowForUpdate,
+  findScheduledTaskIds,
+  findScheduledTaskIdsForUpdate,
+  insertScheduledEvent,
+  findStudyPreferencesByUser,
+  findTasksForAutoSchedule,
+  findTasksForApplyForUpdate,
+  insertScheduleNotification
+} = require('../repositories/timetable-repository');
 
 const PRIORITY_WEIGHT = { urgent: 4, high: 3, medium: 2, low: 1 };
 const DEFAULT_TASK_MINUTES = 90;
@@ -31,12 +46,7 @@ function createScheduleService({ pool, redisClient }) {
       }
     }
 
-    const [rows] = await pool.execute(
-      `SELECT id, task_id, title, subject, start_at, end_at, source, color
-       FROM scheduled_events
-       WHERE user_id = ? ORDER BY start_at`,
-      [userId]
-    );
+    const rows = await listScheduledEventsByUser(pool, userId);
     const events = rows.map(row => ({
       id: toPublicId('schedule', row.id),
       taskId: toPublicId('task', row.task_id),
@@ -62,20 +72,12 @@ function createScheduleService({ pool, redisClient }) {
   }
 
   async function generate(userId, input) {
-    const [userRows] = await pool.execute(
-      `SELECT p.preferred_hours, p.break_minutes, p.timezone
-       FROM study_preferences p WHERE p.user_id = ? LIMIT 1`,
-      [userId]
-    );
-    if (!userRows[0]) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy cấu hình người dùng.');
-    const preferences = mapPreferences(userRows[0]);
+    const userPrefRow = await findStudyPreferencesByUser(pool, userId);
+    if (!userPrefRow) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy cấu hình người dùng.');
+    const preferences = mapPreferences(userPrefRow);
     const breakMinutes = input.breakMinutes ?? preferences.breakMinutes;
     const databaseTaskIds = input.taskIds.map(taskId => toDatabaseId(taskId, 'task'));
-    const [taskRows] = await pool.execute(
-      `SELECT id, title, subject, priority, status, estimated_hours, deadline
-       FROM tasks WHERE user_id = ? AND id IN (${databaseTaskIds.map(() => '?').join(', ')})`,
-      [userId, ...databaseTaskIds]
-    );
+    const taskRows = await findTasksForAutoSchedule(pool, userId, databaseTaskIds);
     if (taskRows.length !== new Set(databaseTaskIds).size) {
       throw new AppError(404, 'NOT_FOUND', 'Một hoặc nhiều công việc không tồn tại.');
     }
@@ -94,29 +96,19 @@ function createScheduleService({ pool, redisClient }) {
     const today = DateTime.now().setZone(preferences.timezone).startOf('day');
     const lastDate = today.plus({ days: input.days });
     const [classRows, eventRows, workRows] = await Promise.all([
-      pool.execute(
-        `SELECT id, title, day_of_week, start_time, end_time, semester_start, semester_end
-         FROM classes WHERE user_id = ?`,
-        [userId]
+      listClassSlotsByUser(pool, userId),
+      findScheduledEventsInWindow(
+        pool,
+        userId,
+        toSqlUtcString(lastDate),
+        toSqlUtcString(today)
       ),
-      pool.execute(
-        `SELECT id, task_id, title, start_at, end_at
-         FROM scheduled_events
-         WHERE user_id = ? AND start_at < ? AND end_at > ?`,
-        [userId, lastDate.toUTC().toFormat('yyyy-LL-dd HH:mm:ss.SSS'),
-          today.toUTC().toFormat('yyyy-LL-dd HH:mm:ss.SSS')]
-      ),
-      pool.execute(
-        `SELECT id, title, workplace, day_of_week, work_date, start_time, end_time,
-                start_date, end_date, color, notes
-         FROM work_schedules WHERE user_id = ?`,
-        [userId]
-      )
+      listWorkScheduleSlotsByUser(pool, userId)
     ]);
 
-    const classes = classRows[0].map(mapClass);
-    const workSchedules = (workRows ? workRows[0] : []).map(mapWorkSchedule);
-    const events = eventRows[0].map(row => ({
+    const classes = classRows.map(mapClass);
+    const workSchedules = (workRows || []).map(mapWorkSchedule);
+    const events = eventRows.map(row => ({
       id: String(row.id),
       taskId: String(row.task_id),
       title: row.title,
@@ -219,13 +211,9 @@ function createScheduleService({ pool, redisClient }) {
     try {
       await connection.beginTransaction();
       await lockUser(connection, userId);
-      const [preferenceRows] = await connection.execute(
-        `SELECT preferred_hours, break_minutes, timezone
-         FROM study_preferences WHERE user_id = ? LIMIT 1`,
-        [userId]
-      );
-      if (!preferenceRows[0]) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy cấu hình người dùng.');
-      const preferences = mapPreferences(preferenceRows[0]);
+      const preferenceRow = await findStudyPreferencesByUser(connection, userId);
+      if (!preferenceRow) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy cấu hình người dùng.');
+      const preferences = mapPreferences(preferenceRow);
       if (timezone !== preferences.timezone) {
         throw new AppError(409, 'CONFLICT', 'Múi giờ đã thay đổi; hãy tạo lại đề xuất lịch.');
       }
@@ -234,13 +222,7 @@ function createScheduleService({ pool, redisClient }) {
         throw new AppError(400, 'VALIDATION_ERROR', 'Mỗi công việc chỉ được xếp một lần trong một phương án.');
       }
       const databaseTaskIds = taskIds.map(taskId => toDatabaseId(taskId, 'task'));
-      const [taskRows] = await connection.execute(
-        `SELECT id, title, subject, status, deadline
-         FROM tasks
-         WHERE user_id = ? AND id IN (${databaseTaskIds.map(() => '?').join(', ')})
-         FOR UPDATE`,
-        [userId, ...databaseTaskIds]
-      );
+      const taskRows = await findTasksForApplyForUpdate(connection, userId, databaseTaskIds);
       if (taskRows.length !== databaseTaskIds.length) {
         throw new AppError(404, 'NOT_FOUND', 'Một hoặc nhiều công việc không tồn tại.');
       }
@@ -254,27 +236,13 @@ function createScheduleService({ pool, redisClient }) {
       if ([...tasks.values()].some(task => task.status === 'done')) {
         throw new AppError(409, 'CONFLICT', 'Không thể áp dụng lịch cho công việc đã hoàn thành.');
       }
-      const [existingRows] = await connection.execute(
-        `SELECT task_id FROM scheduled_events
-         WHERE user_id = ? AND task_id IN (${databaseTaskIds.map(() => '?').join(', ')})
-         FOR UPDATE`,
-        [userId, ...databaseTaskIds]
-      );
+      const existingRows = await findScheduledTaskIdsForUpdate(connection, userId, databaseTaskIds);
       if (existingRows.length) {
         throw new AppError(409, 'CONFLICT', 'Một hoặc nhiều công việc đã được xếp lịch.');
       }
 
-      const [classRows] = await connection.execute(
-        `SELECT id, title, day_of_week, start_time, end_time, semester_start, semester_end
-         FROM classes WHERE user_id = ?`,
-        [userId]
-      );
-      const [workRows] = await connection.execute(
-        `SELECT id, title, workplace, day_of_week, work_date, start_time, end_time,
-                start_date, end_date, color, notes
-         FROM work_schedules WHERE user_id = ?`,
-        [userId]
-      );
+      const classRows = await listClassSlotsByUser(connection, userId);
+      const workRows = await listWorkScheduleSlotsByUser(connection, userId);
       const classes = classRows.map(mapClass);
       const workSchedules = workRows.map(mapWorkSchedule);
       const utcStarts = plan.map(item => localDateTime(
@@ -289,15 +257,11 @@ function createScheduleService({ pool, redisClient }) {
       ).toUTC());
       const earliestStart = DateTime.min(...utcStarts).minus({ minutes: breakMinutes });
       const latestEnd = DateTime.max(...utcEnds).plus({ minutes: breakMinutes });
-      const [busyEventRows] = await connection.execute(
-        `SELECT id, start_at, end_at FROM scheduled_events
-         WHERE user_id = ? AND start_at < ? AND end_at > ?
-         FOR UPDATE`,
-        [
-          userId,
-          latestEnd.toFormat('yyyy-LL-dd HH:mm:ss.SSS'),
-          earliestStart.toFormat('yyyy-LL-dd HH:mm:ss.SSS')
-        ]
+      const busyEventRows = await findScheduledEventsInWindowForUpdate(
+        connection,
+        userId,
+        toSqlUtcString(latestEnd),
+        toSqlUtcString(earliestStart)
       );
       const existingEvents = busyEventRows.map(row => ({
         start: fromDatabaseUtc(row.start_at),
@@ -360,20 +324,16 @@ function createScheduleService({ pool, redisClient }) {
           ...sameDaySlots,
           { start: timeToMinutes(item.startTime), end: timeToMinutes(item.endTime) }
         ]);
-        const [result] = await connection.execute(
-          `INSERT INTO scheduled_events (user_id, task_id, title, subject, start_at, end_at, source, color)
-           VALUES (?, ?, ?, ?, ?, ?, 'auto', '#8b5cf6')`,
-          [
-            userId,
-            databaseTaskId,
-            task.title,
-            task.subject,
-            start.toUTC().toFormat('yyyy-LL-dd HH:mm:ss.SSS'),
-            end.toUTC().toFormat('yyyy-LL-dd HH:mm:ss.SSS')
-          ]
-        );
+        const insertId = await insertScheduledEvent(connection, {
+          userId,
+          taskId: databaseTaskId,
+          title: task.title,
+          subject: task.subject,
+          startAtSql: toSqlUtcString(start),
+          endAtSql: toSqlUtcString(end)
+        });
         inserted.push({
-          id: toPublicId('schedule', result.insertId),
+          id: toPublicId('schedule', insertId),
           taskId: item.taskId,
           title: task.title,
           subject: task.subject,
@@ -384,10 +344,11 @@ function createScheduleService({ pool, redisClient }) {
         });
       }
 
-      await connection.execute(
-        `INSERT INTO notifications (user_id, type, title, message)
-         VALUES (?, 'success', ?, ?)`,
-        [userId, 'Đã áp dụng lịch', `Đã thêm ${inserted.length} phiên vào lịch của bạn.`]
+      await insertScheduleNotification(
+        connection,
+        userId,
+        'Đã áp dụng lịch',
+        `Đã thêm ${inserted.length} phiên vào lịch của bạn.`
       );
       await connection.commit();
       result = { events: inserted };
@@ -512,7 +473,8 @@ function makeBusyCalendar(today, days, classes, events, workSchedules = [], time
   }
   const toDateTime = (val) => {
     if (val?.isLuxonDateTime) return val;
-    if (val instanceof Date) return DateTime.fromJSDate(val);
+    const parsed = fromDatabaseUtc(val);
+    if (parsed && parsed.isValid) return parsed;
     return DateTime.fromISO(String(val));
   };
   for (const event of events) {
@@ -589,17 +551,8 @@ function normalizeTime(value) {
   return String(value).slice(0, 5);
 }
 
-function fromDatabaseUtc(value) {
-  if (value instanceof Date) return DateTime.fromJSDate(value, { zone: 'utc' });
-  return DateTime.fromSQL(String(value), { zone: 'utc' });
-}
-
 async function getScheduledTaskIds(pool, userId, taskIds) {
-  const [rows] = await pool.execute(
-    `SELECT DISTINCT task_id FROM scheduled_events
-     WHERE user_id = ? AND task_id IN (${taskIds.map(() => '?').join(', ')})`,
-    [userId, ...taskIds]
-  );
+  const rows = await findScheduledTaskIds(pool, userId, taskIds);
   return new Set(rows.map(row => toPublicId('task', row.task_id)));
 }
 

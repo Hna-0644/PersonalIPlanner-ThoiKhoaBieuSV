@@ -1,20 +1,16 @@
 const express = require('express');
 const { profileSchema } = require('../schemas');
 const { validate } = require('../middleware/validate');
-const { asyncHandler } = require('../utils/async-handler');
+const { createAuthController } = require('../controllers/auth-controller');
 
-function createProfileRouter(profileService, authenticate) {
+function createProfileRouter(profileService, authenticate, authController) {
   const router = express.Router();
+  const controller = authController || createAuthController({ profileService });
 
   router.use(authenticate);
-  router.get('/', asyncHandler(async (req, res) => {
-    res.json({ data: await profileService.getProfile(req.user.id) });
-  }));
-  const updateProfile = asyncHandler(async (req, res) => {
-    res.json({ data: await profileService.updateProfile(req.user.id, req.body) });
-  });
-  router.patch('/', validate(profileSchema), updateProfile);
-  router.put('/', validate(profileSchema), updateProfile);
+  router.get('/', controller.getProfile);
+  router.patch('/', validate(profileSchema), controller.updateProfile);
+  router.put('/', validate(profileSchema), controller.updateProfile);
 
   return router;
 }

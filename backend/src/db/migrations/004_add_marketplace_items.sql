@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS marketplace_items (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  subject_id BIGINT UNSIGNED NULL,
+  subject_tag VARCHAR(150) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  description TEXT NULL,
+  category ENUM('textbook', 'slides', 'notes', 'supplies', 'other') NOT NULL DEFAULT 'textbook',
+  price INT UNSIGNED NOT NULL DEFAULT 0,
+  contact_info VARCHAR(255) NOT NULL,
+  image_url VARCHAR(500) NULL,
+  status ENUM('available', 'sold') NOT NULL DEFAULT 'available',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_marketplace_status_subject_created (status, subject_tag, created_at DESC),
+  KEY idx_marketplace_user_status (user_id, status),
+  CONSTRAINT fk_marketplace_items_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT chk_marketplace_title_len CHECK (CHAR_LENGTH(title) >= 5),
+  CONSTRAINT chk_marketplace_subject_tag_not_empty CHECK (CHAR_LENGTH(TRIM(subject_tag)) > 0),
+  CONSTRAINT chk_marketplace_contact_not_empty CHECK (CHAR_LENGTH(TRIM(contact_info)) > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

@@ -1,20 +1,14 @@
 const express = require('express');
 const { registerSchema, loginSchema } = require('../schemas');
 const { validate } = require('../middleware/validate');
-const { asyncHandler } = require('../utils/async-handler');
+const { createAuthController } = require('../controllers/auth-controller');
 
-function createAuthRouter(authService) {
+function createAuthRouter(authService, authController) {
   const router = express.Router();
+  const controller = authController || createAuthController({ authService });
 
-  router.post('/register', validate(registerSchema), asyncHandler(async (req, res) => {
-    const data = await authService.createAccount(req.body);
-    res.status(201).json({ data });
-  }));
-
-  router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
-    const data = await authService.login(req.body);
-    res.json({ data });
-  }));
+  router.post('/register', validate(registerSchema), controller.register);
+  router.post('/login', validate(loginSchema), controller.login);
 
   return router;
 }
