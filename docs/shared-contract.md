@@ -2,9 +2,9 @@
 
 > **Mục đích:** giữ frontend, backend, database, kiểm thử và tài liệu dùng cùng thuật ngữ, field, enum và quy tắc nghiệp vụ.
 >
-> **Phiên bản:** 1.2 — chuẩn MVP mở rộng. Đây là hợp đồng mục tiêu; mục 9 ghi các khác biệt chưa đồng bộ với prototype, và tài liệu [future-roadmap.md](./future-roadmap.md) ghi nhận các tính năng OUT-OF-SCOPE.
+> **Phiên bản:** 1.3 — chuẩn MVP mở rộng. Đây là hợp đồng mục tiêu; mục 9 ghi các khác biệt chưa đồng bộ với prototype, và tài liệu [future-roadmap.md](./future-roadmap.md) ghi nhận các tính năng OUT-OF-SCOPE.
 
-## 1. Cách các AI phối hợp & Kiến trúc 4 Module
+## 1. Cách các AI phối hợp & Kiến trúc 6 Module
 
 1. Đọc hợp đồng này và sơ đồ trước khi sửa code: [diagrams.md](./diagrams.md).
 2. Dùng đúng tên field, enum, kiểu ngày giờ và quy tắc tại đây; không tự tạo alias hoặc enum tương đương.
@@ -14,9 +14,9 @@
 6. Tránh hai nguồn dữ liệu có thể mâu thuẫn. Trạng thái lịch đã áp dụng lấy từ `ScheduledEvent`; các cờ tương thích cũ trên `Task` phải được suy ra hoặc đồng bộ trong giai đoạn chuyển đổi.
 7. Không ghi credentials, token thật hoặc thông tin cá nhân thực vào fixture, tài liệu, log hay commit.
 
-### Quy ước kiến trúc 4 Module (Layered Architecture)
+### Quy ước kiến trúc 6 Module (Layered Architecture)
 
-Toàn bộ Backend được phân chia thành **4 module độc lập về mặt chức năng**, tuân thủ nghiêm ngặt luồng phân tầng một chiều:
+Toàn bộ Backend được phân chia thành **6 module độc lập về mặt chức năng**, tuân thủ nghiêm ngặt luồng phân tầng một chiều:
 
 `routes -> controllers -> services -> repositories`
 
@@ -26,6 +26,8 @@ Toàn bộ Backend được phân chia thành **4 module độc lập về mặt
 | **Module 2** | `timetable` | Quản lý thời khóa biểu lớp học (`ClassEntry`) và lịch làm việc/ca làm (`WorkSchedule`), kiểm tra xung đột lịch cố định. | `class-routes.js`, `work-schedule-routes.js` → `timetable-controller.js` → `class-service.js`, `work-schedule-service.js` → `timetable-repository.js` |
 | **Module 3** | `tasks` | Quản lý công việc cá nhân (`Task`), thuật toán tự động xếp lịch (`SchedulePlan`) và sự kiện lịch học đã xác nhận (`ScheduledEvent`). | `task-routes.js`, `schedule-routes.js` → `task-controller.js`, `schedule-controller.js` → `task-service.js`, `schedule-service.js` → `task-repository.js`, `schedule-repository.js` |
 | **Module 4** | `cache-notification` | Quản lý thông báo người dùng (`Notification`), bộ nhớ đệm Redis cho lịch sự kiện và AI Vision trích xuất lịch. | `notification-routes.js`, `ai-routes.js` → `notification-controller.js` → `notification-service.js`, `ai-vision-service.js` → `notification-repository.js` |
+| **Module 5** | `marketplace` | Danh sách và quản lý tin trao đổi/mua bán tài liệu học tập giữa sinh viên. | `marketplace-routes.js` → `marketplace-controller.js` → `marketplace-service.js` → `marketplace-repository.js` |
+| **Module 6** | `community` | Review môn học và hỏi đáp theo lớp học phần, gồm bài viết, bình luận và lượt upvote. | `community-routes.js` → `community-controller.js` → `community-service.js` → `community-repository.js` |
 
 - **`routes`**: Chỉ định nghĩa HTTP method, path, gắn middleware (`authenticate`, `validate`, `validateId`) và ủy quyền cho `controllers`.
 - **`controllers`**: Nhận `req, res`, trích xuất tham số (`req.user.id`, `req.params`, `req.body`), gọi `services` và trả response chuẩn `{ data: ... }`.
@@ -43,7 +45,7 @@ Toàn bộ Backend được phân chia thành **4 module độc lập về mặt
 | Khoảng thời gian đã xác nhận trên lịch | `ScheduledEvent` | Chỉ ghi nhận lịch đã áp dụng, không phải kết quả preview chưa xác nhận. |
 | Kết quả thuật toán chưa xác nhận | `SchedulePlan` | Dữ liệu tạm trả về; chưa ghi thành `ScheduledEvent`. |
 | Khoảng giờ người dùng cho phép học/làm việc | `preferredHours` | Các khung `morning`, `afternoon`, `evening`; mỗi khung có `active`, `start`, `end`. |
-| Định danh | `id` | API dùng chuỗi có prefix (`usr_…`, `cls_…`, `wsch_…` / `wrk_…`, `tsk_…`, `sch_…`, `ntf_…`). Client phải giữ nguyên ID, không tự tách prefix/phụ thuộc phần số. ID không phải secret; mọi truy vấn vẫn phải giới hạn theo user đã xác thực. |
+| Định danh | `id` | API dùng chuỗi có prefix (`usr_…`, `cls_…`, `wsch_…` / `wrk_…`, `tsk_…`, `sch_…`, `ntf_…`, `mkt_…`, `sub_…`, `rev_…`, `pst_…`, `cmt_…`). Client phải giữ nguyên ID, không tự tách prefix/phụ thuộc phần số. ID không phải secret; mọi truy vấn vẫn phải giới hạn theo user đã xác thực. |
 
 ## 3. Khai báo entity và field chuẩn
 
@@ -173,6 +175,18 @@ Hai ca làm việc của cùng một user bị xung đột (`409 CONFLICT`) nế
 | `read` | `boolean` | `true` nếu đã đọc. |
 | `createdAt` | `Instant` | ISO 8601 có timezone/offset khi có backend. |
 
+### Community
+
+| Entity | Field JSON chuẩn | Quy tắc |
+|---|---|---|
+| `Subject` | `id`, `courseCode`, `subjectName`, `schoolCode`, `createdAt` | `id` dùng prefix `sub_`; `courseCode` là mã học phần chuẩn hóa. |
+| `CourseReview` | `id`, `subjectId`, `userId`, `lecturerName`, `rating`, `difficulty`, `attendanceRequired`, `gradingNotes`, `materialsNotes`, `content`, `createdAt`, `updatedAt` | `id` dùng `rev_`; `rating` và `difficulty` là số nguyên 1–5; một user chỉ có một review mỗi môn. |
+| `ClassPost` | `id`, `subjectId`, `classCode`, `userId`, `title`, `content`, `upvoteCount`, `createdAt` | `id` dùng `pst_`; title tối đa 120 ký tự, content tối đa 2.000 ký tự. |
+| `PostComment` | `id`, `postId`, `userId`, `content`, `upvoteCount`, `createdAt` | `id` dùng `cmt_`; content tối đa 2.000 ký tự. |
+| `CommunityPagination` | `page`, `limit`, `total`, `totalPages` | Mặc định `page=1`, `limit=20`; `limit` trong khoảng 1–100. |
+
+Tất cả timestamp Community (`createdAt`, `updatedAt`) là ISO 8601 UTC có hậu tố `Z`. Không nhận `userId` từ body; server suy ra chủ sở hữu từ JWT. `classCode` là phạm vi trao đổi: endpoint yêu cầu đăng nhập nhưng hiện không xác minh roster/đăng ký học phần.
+
 ## 4. Enum chuẩn
 
 | Enum | Giá trị cho phép |
@@ -254,13 +268,28 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 | `GET` | `/notifications` | Có | Trả tối đa 100 thông báo gần nhất của user. |
 | `PATCH` | `/notifications/{id}` | Có | Request `{ read: true }`; đánh dấu đã đọc, thao tác lặp lại thành công. `PUT /notifications/{id}/read` là alias cũ. |
 | `PATCH` | `/notifications` | Có | Request `{ readAll: true }`; đánh dấu toàn bộ đã đọc, trả số bản ghi thực sự thay đổi. `PUT /notifications/read-all` là alias cũ. |
+| `GET` | `/courses/{subjectId}/reviews` | Có | Query `page`, `limit`; trả `{ data: { summary, reviews, pagination } }` và `X-Cache: HIT|MISS`. Summary: `avgRating`, `totalReviews`, `attendanceRate`. |
+| `POST` | `/courses/{subjectId}/reviews` | Có | Nhận `rating`, `difficulty`, `attendanceRequired`, `content` và các ghi chú nullable tùy chọn; trả `{ data: CourseReview }`. Review trùng của user/môn trả `409 REVIEW_ALREADY_EXISTS`. |
+| `PUT` | `/courses/{subjectId}/reviews/me` | Có | Partial update review của user hiện tại; trả `{ data: CourseReview }`; không có review trả `404 NOT_FOUND`. |
+| `DELETE` | `/courses/{subjectId}/reviews/me` | Có | Xóa review của user hiện tại; trả `{ data: { subjectId, deleted: true } }`; không có review trả `404 NOT_FOUND`. |
+| `GET` | `/classes/{classCode}/posts` | Có | Query `page`, `limit`; trả `{ data: { posts, pagination } }` và `X-Cache: HIT|MISS` cho trang đầu `limit=20`. |
+| `POST` | `/classes/{classCode}/posts` | Có | Nhận `{ subjectId, title, content }`; trả `{ data: ClassPost }`. Mã lớp đã gắn với môn khác trả `409 CLASS_SUBJECT_CONFLICT`. |
+| `DELETE` | `/posts/{postId}/me` | Có | Chỉ xóa bài thuộc user hiện tại; trả `{ data: { id, deleted: true } }`; bài không tồn tại/không thuộc user trả `404 NOT_FOUND`. |
+| `GET` | `/posts/{postId}/comments` | Có | Query `page`, `limit`; trả bình luận theo thứ tự cũ đến mới trong `{ data: { comments, pagination } }`. |
+| `POST` | `/posts/{postId}/comments` | Có | Nhận `{ content }`; trả `{ data: PostComment }`; bài không tồn tại trả `404 NOT_FOUND`. |
+| `POST` | `/posts/{postId}/upvote` | Có | Toggle vote của user; trả `{ data: { upvoted, upvoteCount } }`. |
+| `POST` | `/comments/{commentId}/upvote` | Có | Toggle vote của user; trả `{ data: { upvoted, upvoteCount } }`. |
 
 ### Response và lỗi
 
 - Mọi response thành công dùng `{ "data": ... }`, bao gồm list, auth, update và delete; không trộn response bọc với response raw. Request body là JSON UTF-8; endpoint được bảo vệ dùng `Authorization: Bearer <accessToken>`.
 - Lỗi dùng cấu trúc `{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [] } }`.
-- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `INTERNAL_ERROR`.
-- HTTP status tương ứng: `400`, `401`, `403`, `404`, `409`, `500`; `409` dùng cho xung đột lịch hoặc trạng thái tài nguyên. Không biến lỗi thành response thành công giả.
+- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `REVIEW_ALREADY_EXISTS`, `CLASS_SUBJECT_CONFLICT`, `RATE_LIMIT_EXCEEDED`, `INTERNAL_ERROR`.
+- HTTP status tương ứng: `400`, `401`, `403`, `404`, `409`, `429`, `500`; `409` dùng cho xung đột lịch hoặc trạng thái tài nguyên. Không biến lỗi thành response thành công giả.
+- Community áp dụng `409 REVIEW_ALREADY_EXISTS` khi user gửi review trùng môn và `409 CLASS_SUBJECT_CONFLICT` khi `classCode` đã gắn với môn khác. Subject/post/comment hoặc review/bài viết không thuộc user hiện tại trả `404 NOT_FOUND`.
+- Community dùng `429 RATE_LIMIT_EXCEEDED` khi vượt giới hạn ghi: tối đa 5 lần tạo review/bài viết/bình luận mỗi phút và 30 lần upvote mỗi phút cho mỗi user đã xác thực. Bộ đếm tạo dùng chung giữa ba endpoint tạo; bộ đếm vote dùng chung giữa hai endpoint vote.
+- `GET /courses/{subjectId}/reviews` và `GET /classes/{classCode}/posts` đặt `X-Cache` thành `HIT` hoặc `MISS`. Redis lỗi không làm lỗi đọc MySQL; trang bài viết chỉ cache `page=1&limit=20`.
+- `classCode` chỉ phân vùng nội dung theo lớp học phần; mọi endpoint Community yêu cầu JWT nhưng hiện không xác minh user thuộc roster/đã đăng ký lớp đó. Không dùng mã lớp như bằng chứng quyền riêng tư.
 - Mọi truy vấn tài nguyên phải giới hạn theo user đã xác thực; không tin `userId` gửi từ client.
 - Mọi thao tác cập nhật hồ sơ/lớp/lịch làm việc/task là partial merge: field bỏ qua giữ nguyên, field nullable gửi `null` sẽ xóa giá trị, field không nullable không nhận `null`. `PATCH` là method chuẩn; `PUT` chỉ là alias tương thích tạm thời và có cùng semantics partial.
 - `/auth/register` trả `409 CONFLICT` nếu email đã được đăng ký. Login không tiết lộ email hay mật khẩu sai cụ thể.
@@ -280,6 +309,14 @@ API/JavaScript dùng `camelCase`; cột MySQL dùng `snake_case`. Ví dụ:
 | `startTime` | `start_time` |
 | `estimatedHours` | `estimated_hours` |
 | `createdAt` | `created_at` |
+| `subjectId` | `subject_id` |
+| `courseCode` | `course_code` |
+| `lecturerName` | `lecturer_name` |
+| `attendanceRequired` | `attendance_required` |
+| `gradingNotes` | `grading_notes` |
+| `materialsNotes` | `materials_notes` |
+| `classCode` | `class_code` |
+| `upvoteCount` | `upvote_count` |
 
 Không đưa tên cột SQL vào payload frontend; chỉ mapper/repository chịu trách nhiệm chuyển đổi.
 

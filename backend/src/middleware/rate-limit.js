@@ -1,15 +1,28 @@
 const { AppError } = require('../utils/app-error');
 
 /**
- * Rate Limiter chống spam đăng tin Marketplace
- * Giới hạn theo userId (nếu đã xác thực) hoặc IP
+ * Fixed-window rate limit keyed by authenticated user ID or client IP.
  */
-function createRateLimiter({ windowMs = 60 * 1000, maxRequests = 5 } = {}) {
-  const hits = new Map();
+function createRateLimiter({
+  windowMs = 60 * 1000,
+  maxRequests = 5,
+  store = new Map(),
+  now: getNow = Date.now
+} = {}) {
+  const hits = store;
+  let nextCleanupAt = 0;
 
   return (req, res, next) => {
     const key = req.user?.id ? `user:${req.user.id}` : `ip:${req.ip || 'unknown'}`;
-    const now = Date.now();
+    const now = getNow();
+    if (now >= nextCleanupAt) {
+      for (const [storedKey, record] of hits) {
+        if (now >= record.expiresAt) {
+          hits.delete(storedKey);
+        }
+      }
+      nextCleanupAt = now + windowMs;
+    }
     const record = hits.get(key);
 
     if (!record || now >= record.expiresAt) {

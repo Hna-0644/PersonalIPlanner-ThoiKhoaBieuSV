@@ -7,7 +7,11 @@ const ID_PREFIXES = {
   schedule: 'sch',
   notification: 'ntf',
   work: 'wrk',
-  marketplace: 'mkt'
+  marketplace: 'mkt',
+  subject: 'sub',
+  review: 'rev',
+  post: 'pst',
+  comment: 'cmt'
 };
 
 function toPublicId(type, databaseId) {
