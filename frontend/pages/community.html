@@ -199,8 +199,14 @@
       </li>
       <li class="nav-item">
         <a href="community.html" class="nav-link active">
-          <i class="bi bi-people-fill"></i>
-          <span>Cộng đồng & Tài liệu</span>
+          <i class="bi bi-chat-square-heart-fill"></i>
+          <span>Đánh giá & Hỏi đáp</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="tradingsource.html" class="nav-link">
+          <i class="bi bi-shop"></i>
+          <span>Trao đổi tài liệu</span>
         </a>
       </li>
 
@@ -237,7 +243,7 @@
         <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn">
           <i class="bi bi-list fs-5"></i>
         </button>
-        <h4 class="fw-bold mb-0">Cộng đồng & Trao đổi tài liệu</h4>
+        <h4 class="fw-bold mb-0">Đánh giá và hỏi đáp môn học</h4>
       </div>
 
       <div class="header-actions">
@@ -270,205 +276,121 @@
 
     <div class="content-body">
       <!-- Page Banner -->
-      <div class="page-header mb-4 pb-3">
+      <div class="page-header mb-4 pb-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
-          <div class="text-primary small fw-semibold mb-1"><i class="bi bi-people-fill me-1"></i> Không gian học thuật mở</div>
-          <h1 class="page-title">Cộng đồng Sinh viên & Trao đổi tài liệu</h1>
-          <p class="page-subtitle">Tra cứu review môn học, thảo luận bài tập theo mã lớp và trao đổi giáo trình, đồ dùng học tập.</p>
+          <div class="text-primary small fw-semibold mb-1"><i class="bi bi-chat-square-heart-fill me-1"></i> Không gian học thuật theo Trường</div>
+          <h1 class="page-title">Đánh giá và hỏi đáp môn học</h1>
+          <p class="page-subtitle">Tra cứu review môn học theo Trường Cao đẳng / Đại học và thảo luận, hỏi đáp bài tập cùng sinh viên.</p>
+        </div>
+        <span class="badge bg-light text-dark border font-monospace px-3 py-2 d-none" id="badgeReviewCount">0</span>
+      </div>
+
+      <!-- Subject Selector & Action Bar -->
+      <div class="card-custom mb-4 p-3">
+        <div class="row g-3 align-items-center justify-content-between">
+          <div class="col-12 col-md-7 d-flex align-items-center gap-3 flex-wrap">
+            <label class="fw-semibold small text-muted mb-0" for="reviewSubjectSelect">
+              <i class="bi bi-journal-bookmark-fill text-primary me-1"></i> Chọn môn học:
+            </label>
+            <select class="form-select" id="reviewSubjectSelect" style="max-width: 380px;" onchange="handleSubjectSelectChange()">
+              <option value="sub_1">Lập trình Web (Node.js & React)</option>
+              <option value="sub_2">Cơ sở dữ liệu nâng cao</option>
+              <option value="sub_3">Trí tuệ nhân tạo (AI)</option>
+              <option value="sub_4">An toàn thông tin mạng</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-5 d-flex justify-content-md-end gap-2 flex-wrap">
+            <button class="btn btn-outline-primary d-flex align-items-center gap-2" onclick="openCreateQuestionModal()">
+              <i class="bi bi-question-circle"></i>
+              <span>Đặt câu hỏi mới</span>
+            </button>
+            <button class="btn btn-primary d-flex align-items-center gap-2" id="btnOpenReviewModal" onclick="openReviewModal()">
+              <i class="bi bi-pencil-square"></i>
+              <span id="btnWriteReviewText">Viết đánh giá môn này</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <ul class="nav nav-tabs community-tabs mb-4" id="communityTab" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button class="nav-link active d-flex align-items-center gap-2" id="tab-reviews-btn" data-bs-toggle="tab" data-bs-target="#tab-reviews" type="button" role="tab">
-            <i class="bi bi-chat-square-heart-fill"></i>
-            <span>Đánh giá và hỏi đáp môn học</span>
-            <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeReviewCount">0</span>
-          </button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link d-flex align-items-center gap-2" id="tab-market-btn" data-bs-toggle="tab" data-bs-target="#tab-market" type="button" role="tab">
-            <i class="bi bi-shop"></i>
-            <span>Trao đổi tài liệu & Đồ dùng</span>
-            <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeMarketCount">0</span>
-          </button>
-        </li>
-      </ul>
-
-      <!-- Tab Content -->
-      <div class="tab-content" id="communityTabContent">
-        
-        <!-- ===============================================================
-             TAB 1: ĐÁNH GIÁ VÀ HỎI ĐÁP MÔN HỌC (COURSE REVIEWS & CLASS Q&A)
-             =============================================================== -->
-        <div class="tab-pane fade show active" id="tab-reviews" role="tabpanel">
-          <!-- Subject Selector & Action Bar -->
-          <div class="card-custom mb-4 p-3">
-            <div class="row g-3 align-items-center justify-content-between">
-              <div class="col-12 col-md-7 d-flex align-items-center gap-3 flex-wrap">
-                <label class="fw-semibold small text-muted mb-0" for="reviewSubjectSelect">
-                  <i class="bi bi-journal-bookmark-fill text-primary me-1"></i> Chọn môn học:
-                </label>
-                <select class="form-select" id="reviewSubjectSelect" style="max-width: 380px;" onchange="handleSubjectSelectChange()">
-                  <option value="sub_1">Lập trình Web (Node.js & React)</option>
-                  <option value="sub_2">Cơ sở dữ liệu nâng cao</option>
-                  <option value="sub_3">Trí tuệ nhân tạo (AI)</option>
-                  <option value="sub_4">An toàn thông tin mạng</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-5 d-flex justify-content-md-end gap-2 flex-wrap">
-                <button class="btn btn-outline-primary d-flex align-items-center gap-2" onclick="openCreateQuestionModal()">
-                  <i class="bi bi-question-circle"></i>
-                  <span>Đặt câu hỏi mới</span>
-                </button>
-                <button class="btn btn-primary d-flex align-items-center gap-2" id="btnOpenReviewModal" onclick="openReviewModal()">
-                  <i class="bi bi-pencil-square"></i>
-                  <span id="btnWriteReviewText">Viết đánh giá môn này</span>
-                </button>
-              </div>
+      <!-- Summary KPI Row -->
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+          <div class="card-custom stat-card">
+            <div class="stat-icon warning">
+              <i class="bi bi-star-fill"></i>
             </div>
-          </div>
-
-          <!-- Summary KPI Row -->
-          <div class="row g-3 mb-4">
-            <div class="col-12 col-md-4">
-              <div class="card-custom stat-card">
-                <div class="stat-icon warning">
-                  <i class="bi bi-star-fill"></i>
-                </div>
-                <div>
-                  <div class="d-flex align-items-baseline gap-2">
-                    <div class="stat-value" id="summaryAvgRating">0.0</div>
-                    <span class="text-muted small font-monospace">/ 5.0</span>
-                  </div>
-                  <div class="stat-label">Điểm đánh giá trung bình</div>
-                </div>
+            <div>
+              <div class="d-flex align-items-baseline gap-2">
+                <div class="stat-value" id="summaryAvgRating">0.0</div>
+                <span class="text-muted small font-monospace">/ 5.0</span>
               </div>
+              <div class="stat-label">Điểm đánh giá trung bình</div>
             </div>
-
-            <div class="col-12 col-md-4">
-              <div class="card-custom stat-card">
-                <div class="stat-icon primary">
-                  <i class="bi bi-chat-left-heart-fill"></i>
-                </div>
-                <div>
-                  <div class="stat-value" id="summaryTotalReviews">0</div>
-                  <div class="stat-label">Tổng số lượt review</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-12 col-md-4">
-              <div class="card-custom stat-card">
-                <div class="stat-icon success">
-                  <i class="bi bi-person-check-fill"></i>
-                </div>
-                <div>
-                  <div class="stat-value" id="summaryAttendanceRate">0%</div>
-                  <div class="stat-label">Tỷ lệ báo có điểm danh</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 1: Đánh giá môn học -->
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
-              <i class="bi bi-star-half text-warning"></i>
-              <span>Đánh giá môn học</span>
-            </h5>
-          </div>
-          <div id="reviewsListContainer" class="d-flex flex-column gap-3 mb-5">
-            <!-- Rendered via JS -->
-          </div>
-
-          <!-- Section 2: Hỏi đáp & Thảo luận môn học -->
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pt-2 border-top">
-            <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
-              <i class="bi bi-chat-square-quote-fill text-primary"></i>
-              <span>Hỏi đáp & Thảo luận lớp học</span>
-              <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeQaCount">0</span>
-            </h5>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-              <select class="form-select form-select-sm" id="qaClassSelect" style="max-width: 240px;" onchange="handleQaClassSelectChange()">
-                <option value="ALL">Tất cả môn học</option>
-                <option value="IT3020" selected>Lập trình Web</option>
-                <option value="IT3040">Cơ sở dữ liệu nâng cao</option>
-                <option value="IT4010">Trí tuệ nhân tạo</option>
-                <option value="IT4080">An toàn thông tin mạng</option>
-              </select>
-              <div class="input-group input-group-sm" style="max-width: 210px;">
-                <input type="text" class="form-control" id="qaCustomCodeInput" placeholder="Môn khác (VD: Chuyên đề Oracle)">
-                <button class="btn btn-outline-primary" type="button" onclick="applyCustomQaCode()">Lọc</button>
-              </div>
-            </div>
-          </div>
-          <div id="qaPostsContainer" class="d-flex flex-column gap-3">
-            <!-- Rendered via JS -->
           </div>
         </div>
 
-        <!-- ===============================================================
-             TAB 3: CHỢ TÀI LIỆU & ĐỒ DÙNG (MARKETPLACE)
-             =============================================================== -->
-        <div class="tab-pane fade" id="tab-market" role="tabpanel">
-          <!-- Filter Bar -->
-          <div class="card-custom mb-4 p-3">
-            <div class="row g-3 align-items-center">
-              <div class="col-12 col-md-3">
-                <div class="input-group">
-                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                  <input type="text" class="form-control bg-light border-start-0" id="marketSearchInput" placeholder="Tìm sách, slide, dụng cụ..." oninput="renderMarketplace()">
-                </div>
-              </div>
-
-              <div class="col-6 col-md-2">
-                <select class="form-select" id="marketCategoryFilter" onchange="renderMarketplace()">
-                  <option value="all">Tất cả danh mục</option>
-                  <option value="textbook">Giáo trình / Sách</option>
-                  <option value="slides">Slide bài giảng</option>
-                  <option value="notes">Ghi chú / Đề cương</option>
-                  <option value="supplies">Đồ dùng học tập</option>
-                  <option value="other">Khác</option>
-                </select>
-              </div>
-
-              <div class="col-6 col-md-2">
-                <input type="text" class="form-control font-monospace" id="marketSubjectFilter" placeholder="Mã môn (VD: IT3020)" oninput="renderMarketplace()">
-              </div>
-
-              <div class="col-12 col-md-3 d-flex flex-column gap-1">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="marketFreeOnlySwitch" onchange="renderMarketplace()">
-                  <label class="form-check-label small fw-semibold text-success" for="marketFreeOnlySwitch">
-                    <i class="bi bi-gift-fill me-1"></i>Chỉ xem đồ tặng miễn phí (0đ)
-                  </label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="marketMineOnlySwitch" onchange="renderMarketplace()">
-                  <label class="form-check-label small fw-semibold" for="marketMineOnlySwitch">
-                    Tin đăng của tôi
-                  </label>
-                </div>
-              </div>
-
-              <div class="col-12 col-md-2 d-flex justify-content-md-end">
-                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" onclick="openCreateMarketModal()">
-                  <i class="bi bi-plus-circle"></i>
-                  <span>Đăng tin mới</span>
-                </button>
-              </div>
+        <div class="col-12 col-md-4">
+          <div class="card-custom stat-card">
+            <div class="stat-icon primary">
+              <i class="bi bi-chat-left-heart-fill"></i>
             </div>
-          </div>
-
-          <!-- Marketplace Grid -->
-          <div class="row g-4" id="marketplaceGridContainer">
-            <!-- Rendered via JS -->
+            <div>
+              <div class="stat-value" id="summaryTotalReviews">0</div>
+              <div class="stat-label">Tổng số lượt review</div>
+            </div>
           </div>
         </div>
 
+        <div class="col-12 col-md-4">
+          <div class="card-custom stat-card">
+            <div class="stat-icon success">
+              <i class="bi bi-person-check-fill"></i>
+            </div>
+            <div>
+              <div class="stat-value" id="summaryAttendanceRate">0%</div>
+              <div class="stat-label">Tỷ lệ báo có điểm danh</div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Section 1: Đánh giá môn học -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-star-half text-warning"></i>
+          <span>Đánh giá môn học</span>
+        </h5>
+      </div>
+      <div id="reviewsListContainer" class="d-flex flex-column gap-3 mb-5">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Section 2: Hỏi đáp & Thảo luận môn học -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pt-2 border-top">
+        <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-chat-square-quote-fill text-primary"></i>
+          <span>Hỏi đáp & Thảo luận lớp học</span>
+          <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeQaCount">0</span>
+        </h5>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <select class="form-select form-select-sm" id="qaClassSelect" style="max-width: 240px;" onchange="handleQaClassSelectChange()">
+            <option value="ALL">Tất cả môn học</option>
+            <option value="IT3020" selected>Lập trình Web</option>
+            <option value="IT3040">Cơ sở dữ liệu nâng cao</option>
+            <option value="IT4010">Trí tuệ nhân tạo</option>
+            <option value="IT4080">An toàn thông tin mạng</option>
+          </select>
+          <div class="input-group input-group-sm" style="max-width: 210px;">
+            <input type="text" class="form-control" id="qaCustomCodeInput" placeholder="Môn khác (VD: Chuyên đề Oracle)">
+            <button class="btn btn-outline-primary" type="button" onclick="applyCustomQaCode()">Lọc</button>
+          </div>
+        </div>
+      </div>
+      <div id="qaPostsContainer" class="d-flex flex-column gap-3">
+        <!-- Rendered via JS -->
+      </div>
+      <span class="d-none" id="badgeMarketCount">0</span>
+      <div class="d-none" id="marketplaceGridContainer"></div>
     </div>
   </main>
 </div>

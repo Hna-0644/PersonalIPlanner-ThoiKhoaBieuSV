@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="vi" data-type="software" data-radius="soft">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="page-type" content="software">
+  <meta name="site-kind" content="software">
+  <title>PersonalPlanner — Trao đổi tài liệu & Đồ dùng</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+
+  <style>
+    .market-card {
+      background: #ffffff;
+      border: 1px solid var(--hairline);
+      border-radius: var(--r-md);
+      padding: var(--s-5);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .market-card:hover {
+      border-color: var(--hairline-strong);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .price-tag {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--p-ink);
+    }
+    .price-free-badge {
+      background-color: var(--success-light);
+      color: var(--success);
+      border: 1px solid rgba(15, 125, 69, 0.25);
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .status-sold-badge {
+      background-color: var(--p-surface);
+      color: var(--p-muted);
+      border: 1px solid var(--hairline-strong);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+    .status-available-badge {
+      background-color: var(--primary-light);
+      color: var(--p-action);
+      border: 1px solid rgba(13, 116, 128, 0.25);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="sidebar-backdrop"></div>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <a href="../index.html" class="sidebar-brand">
+      <div class="brand-icon">
+        <i class="bi bi-calendar-check-fill"></i>
+      </div>
+      <div class="brand-text">Personal<span class="text-primary">Planner</span></div>
+    </a>
+
+    <ul class="sidebar-menu">
+      <li class="menu-label">Menu Chính</li>
+      <li class="nav-item">
+        <a href="../index.html" class="nav-link">
+          <i class="bi bi-grid-1x2-fill"></i>
+          <span>Tổng quan</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="timetable.html" class="nav-link">
+          <i class="bi bi-calendar3"></i>
+          <span>Thời khóa biểu</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="tasks.html" class="nav-link">
+          <i class="bi bi-check2-square"></i>
+          <span>Công việc & Kế hoạch</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="auto-schedule.html" class="nav-link">
+          <i class="bi bi-magic text-warning"></i>
+          <span>Tự động xếp lịch</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="statistics.html" class="nav-link">
+          <i class="bi bi-bar-chart-line-fill"></i>
+          <span>Thống kê & Báo cáo</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="community.html" class="nav-link">
+          <i class="bi bi-chat-square-heart-fill"></i>
+          <span>Đánh giá & Hỏi đáp</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="tradingsource.html" class="nav-link active">
+          <i class="bi bi-shop"></i>
+          <span>Trao đổi tài liệu</span>
+        </a>
+      </li>
+
+      <li class="menu-label mt-3">Hệ thống</li>
+      <li class="nav-item">
+        <a href="profile.html" class="nav-link">
+          <i class="bi bi-person-gear"></i>
+          <span>Tài khoản & Thiết lập</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="login.html" class="nav-link text-danger">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Đăng xuất</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <a href="profile.html" class="user-snippet">
+        <img src="" alt="Avatar" class="user-avatar user-avatar-target">
+        <div class="overflow-hidden">
+          <div class="fw-bold small text-truncate user-name-target">Đang tải...</div>
+          <div class="text-muted" style="font-size: 0.75rem;">Sinh viên</div>
+        </div>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+    <header class="app-header">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn">
+          <i class="bi bi-list fs-5"></i>
+        </button>
+        <h4 class="fw-bold mb-0">Trao đổi tài liệu & Đồ dùng</h4>
+      </div>
+
+      <div class="header-actions">
+        <div class="dropdown">
+          <button class="icon-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
+            <i class="bi bi-bell"></i>
+            <span class="badge-dot" id="notificationBadge" style="display: none;"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+              <span class="fw-bold small">Thông báo nhắc lịch</span>
+              <button class="btn btn-link btn-sm text-decoration-none p-0" onclick="markAllNotificationsRead()">Đã đọc hết</button>
+            </div>
+            <div id="notificationList"></div>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="btn p-0 border-0" data-bs-toggle="dropdown">
+            <img src="" alt="Avatar" class="user-avatar user-avatar-target">
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+            <li><a class="dropdown-item" href="profile.html"><i class="bi bi-person me-2"></i> Hồ sơ cá nhân</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="login.html"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-body">
+      <!-- Page Banner -->
+      <div class="page-header mb-4 pb-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="text-primary small fw-semibold mb-1"><i class="bi bi-shop me-1"></i> Không gian chia sẻ học liệu</div>
+          <h1 class="page-title">Trao đổi tài liệu & Đồ dùng học tập</h1>
+          <p class="page-subtitle">Chia sẻ giáo trình, slide bài giảng, đề cương ôn tập miễn phí (0đ) hoặc nhượng lại đồ dùng học tập cho các khóa sau.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-light text-dark border font-monospace px-3 py-2">
+            Tổng số tin đăng: <strong id="badgeMarketCount">0</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="card-custom mb-4 p-3">
+        <div class="row g-3 align-items-center">
+          <div class="col-12 col-md-3">
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+              <input type="text" class="form-control bg-light border-start-0" id="marketSearchInput" placeholder="Tìm sách, slide, dụng cụ..." oninput="renderMarketplace()">
+            </div>
+          </div>
+
+          <div class="col-6 col-md-2">
+            <select class="form-select" id="marketCategoryFilter" onchange="renderMarketplace()">
+              <option value="all">Tất cả danh mục</option>
+              <option value="textbook">Giáo trình / Sách</option>
+              <option value="slides">Slide bài giảng</option>
+              <option value="notes">Ghi chú / Đề cương</option>
+              <option value="supplies">Đồ dùng học tập</option>
+              <option value="other">Khác</option>
+            </select>
+          </div>
+
+          <div class="col-6 col-md-2">
+            <input type="text" class="form-control" id="marketSubjectFilter" placeholder="Môn học (VD: Cơ sở dữ liệu)" oninput="renderMarketplace()">
+          </div>
+
+          <div class="col-12 col-md-3 d-flex flex-column gap-1">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="marketFreeOnlySwitch" onchange="renderMarketplace()">
+              <label class="form-check-label small fw-semibold text-success" for="marketFreeOnlySwitch">
+                <i class="bi bi-gift-fill me-1"></i>Chỉ xem đồ tặng miễn phí (0đ)
+              </label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="marketMineOnlySwitch" onchange="renderMarketplace()">
+              <label class="form-check-label small fw-semibold" for="marketMineOnlySwitch">
+                Tin đăng của tôi
+              </label>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-2 d-flex justify-content-md-end">
+            <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" onclick="openCreateMarketModal()">
+              <i class="bi bi-plus-circle"></i>
+              <span>Đăng tin mới</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marketplace Grid -->
+      <div class="row g-4" id="marketplaceGridContainer">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- =====================================================================
+     MODAL: ĐĂNG TIN TRAO ĐỔI TÀI LIỆU & ĐỒ DÙNG
+     ===================================================================== -->
+<div class="modal fade" id="marketModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Đăng tin chia sẻ / nhượng lại tài liệu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="marketForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Tên tài liệu / Đồ dùng <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="marketTitleInput" placeholder="VD: Giáo trình Cơ sở dữ liệu nâng cao + Bộ đề cương ôn tập..." required>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Danh mục <span class="text-danger">*</span></label>
+              <select class="form-select" id="marketCategoryInput" required>
+                <option value="textbook">Giáo trình / Sách</option>
+                <option value="slides">Slide bài giảng</option>
+                <option value="notes">Ghi chú / Đề cương</option>
+                <option value="supplies">Đồ dùng học tập</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Môn học liên quan</label>
+              <input type="text" class="form-control" id="marketSubjectTagInput" placeholder="VD: Cơ sở dữ liệu, Chuyên đề Oracle...">
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Giá nhượng lại (VNĐ) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <input type="number" min="0" step="1000" class="form-control font-monospace" id="marketPriceInput" value="0" required>
+                <span class="input-group-text">đ</span>
+              </div>
+              <small class="text-success" style="font-size: 0.75rem;">* Nhập 0 để đăng tặng miễn phí (0đ)</small>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Thông tin liên hệ <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="marketContactInput" placeholder="VD: Zalo 0912.xxx.xxx / Link FB" required>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Mô tả tình trạng / Ghi chú</label>
+            <textarea class="form-control" id="marketDescInput" rows="3" placeholder="Tình trạng sách mới 95%, giao dịch tại thư viện trường hoặc gửi link Google Drive..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+          <button type="submit" class="btn btn-primary fw-semibold">Đăng tin lên chợ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../js/store.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ui-states.js"></script>
+<script src="../js/main.js"></script>
+
+<script>
+  const MARKET_STORAGE_KEY = 'pp_community_market_v1';
+
+  const DEFAULT_MARKET_ITEMS = [
+    {
+      id: 'mkt_seed_1',
+      userId: 'usr_demo_2',
+      sellerName: 'Lê Hoàng Lan',
+      title: 'Bộ đề cương & Slide tóm tắt Lập trình Web Fullstack (Node.js + React)',
+      subjectTag: 'Lập trình Web',
+      category: 'notes',
+      price: 0,
+      status: 'available',
+      contactInfo: 'Zalo: 0918.234.567 (Hoàng Lan)',
+      description: 'Mình tổng hợp toàn bộ kiến thức trọng tâm, sơ đồ luồng JWT Auth và 50 câu hỏi vấn đáp cuối kỳ. Tặng miễn phí cho các bạn khóa sau!',
+      createdAt: '2026-11-20T11:00:00Z'
+    },
+    {
+      id: 'mkt_seed_2',
+      userId: 'usr_demo_3',
+      sellerName: 'Phạm Quốc Bảo',
+      title: 'Giáo trình Database System Concepts (Bản in màu bìa cứng mới 95%)',
+      subjectTag: 'Cơ sở dữ liệu nâng cao',
+      category: 'textbook',
+      price: 85000,
+      status: 'available',
+      contactInfo: 'Zalo: 0987.654.321 - Giao tại Thư viện tầng 2',
+      description: 'Sách giữ rất kỹ, không viết vẽ bậy, kèm bookmark phân chương sẵn cho môn CSDL nâng cao.',
+      createdAt: '2026-11-19T14:30:00Z'
+    },
+    {
+      id: 'mkt_seed_3',
+      userId: 'usr_demo_4',
+      sellerName: 'Nguyễn Thu Hà',
+      title: 'Slide bài giảng & Source Code mẫu thuật toán Tìm kiếm AI (Python)',
+      subjectTag: 'Trí tuệ nhân tạo',
+      category: 'slides',
+      price: 0,
+      status: 'available',
+      contactInfo: 'Email: thuha.it@student.edu.vn / Zalo 0903.112.233',
+      description: 'Bộ slide đầy đủ 12 chương kèm Jupyter Notebook chạy sẵn A*, Genetic Algorithm và Neural Network cơ bản.',
+      createdAt: '2026-11-18T19:00:00Z'
+    },
+    {
+      id: 'mkt_seed_4',
+      userId: 'usr_demo_1',
+      sellerName: 'Trần Minh Quân',
+      title: 'Máy tính bỏ túi Casio fx-580VN X chính hãng còn bảo hành',
+      subjectTag: 'Dùng chung',
+      category: 'supplies',
+      price: 320000,
+      status: 'available',
+      contactInfo: 'Zalo: 0934.556.778 (Minh Quân)',
+      description: 'Mình đã qua hết các môn Toán cao cấp và Xác suất thống kê nên nhượng lại cho bạn nào cần đi thi.',
+      createdAt: '2026-11-17T08:00:00Z'
+    }
+  ];
+
+  let marketItemsData = [];
+
+  function getCurrentUser() {
+    return (window.AppStore && typeof AppStore.getUser === 'function')
+      ? AppStore.getUser()
+      : { id: 'guest', fullName: 'Sinh viên', university: '' };
+  }
+
+  function isBackendConnected() {
+    return Boolean(
+      window.ApiService &&
+      ApiService.isAuthenticated() &&
+      !String(ApiService.getToken()).endsWith('.local_sig')
+    );
+  }
+
+  function readLocalStore(key, defaultSeed) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        localStorage.setItem(key, JSON.stringify(defaultSeed));
+        return JSON.parse(JSON.stringify(defaultSeed));
+      }
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : JSON.parse(JSON.stringify(defaultSeed));
+    } catch {
+      return JSON.parse(JSON.stringify(defaultSeed));
+    }
+  }
+
+  function writeLocalStore(key, data) {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      console.warn('Không thể lưu dữ liệu chợ tài liệu xuống localStorage:', e);
+    }
+  }
+
+  function formatDateVi(isoStr) {
+    if (!isoStr) return 'Vừa xong';
+    const d = new Date(isoStr);
+    if (Number.isNaN(d.getTime())) return String(isoStr);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    marketItemsData = readLocalStore(MARKET_STORAGE_KEY, DEFAULT_MARKET_ITEMS);
+    await loadMarketplaceItems();
+  });
+
+  async function loadMarketplaceItems() {
+    const container = document.getElementById('marketplaceGridContainer');
+    UIStates.loading(container, 'Đang tải danh sách tài liệu & đồ dùng...');
+
+    if (isBackendConnected()) {
+      try {
+        let res = null;
+        if (typeof ApiService.getMarketplaceItems === 'function') {
+          const data = await ApiService.getMarketplaceItems({}, { silent: true });
+          res = data && Array.isArray(data.items) ? data.items : data;
+        } else {
+          const raw = await ApiService.request('/marketplace/items', { silent: true, skipErrorModal: true });
+          const unwrapped = raw && raw.data ? raw.data : raw;
+          res = unwrapped && Array.isArray(unwrapped.items) ? unwrapped.items : unwrapped;
+        }
+        if (Array.isArray(res) && res.length > 0) {
+          marketItemsData = res;
+          writeLocalStore(MARKET_STORAGE_KEY, marketItemsData);
+        }
+      } catch {
+        // Fallback local
+      }
+    }
+
+    renderMarketplace();
+  }
+
+  function renderMarketplace() {
+    const container = document.getElementById('marketplaceGridContainer');
+    const currentUser = getCurrentUser();
+
+    const q = document.getElementById('marketSearchInput').value.trim().toLowerCase();
+    const category = document.getElementById('marketCategoryFilter').value;
+    const subjectTag = document.getElementById('marketSubjectFilter').value.trim().toLowerCase();
+    const freeOnly = document.getElementById('marketFreeOnlySwitch').checked;
+    const mineOnly = document.getElementById('marketMineOnlySwitch').checked;
+
+    let filtered = [...marketItemsData];
+
+    if (q) {
+      filtered = filtered.filter(item =>
+        (item.title || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q) ||
+        (item.subjectTag || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (category !== 'all') {
+      filtered = filtered.filter(item => item.category === category);
+    }
+
+    if (subjectTag) {
+      filtered = filtered.filter(item => (item.subjectTag || '').toLowerCase().includes(subjectTag));
+    }
+
+    if (freeOnly) {
+      filtered = filtered.filter(item => Number(item.price) === 0);
+    }
+
+    if (mineOnly) {
+      filtered = filtered.filter(item => item.userId === currentUser.id);
+    }
+
+    const badgeEl = document.getElementById('badgeMarketCount');
+    if (badgeEl) badgeEl.textContent = filtered.length;
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div class="col-12" id="marketEmptyWrapper"></div>`;
+      UIStates.empty(
+        document.getElementById('marketEmptyWrapper'),
+        'Không tìm thấy tài liệu hoặc đồ dùng phù hợp',
+        'Hãy thử tắt bớt bộ lọc hoặc đăng tin chia sẻ tài liệu đầu tiên của bạn!'
+      );
+      return;
+    }
+
+    const categoryMeta = {
+      textbook: { label: 'Giáo trình / Sách', icon: 'bi-book' },
+      slides: { label: 'Slide bài giảng', icon: 'bi-easel2' },
+      notes: { label: 'Ghi chú / Đề cương', icon: 'bi-journal-text' },
+      supplies: { label: 'Đồ dùng học tập', icon: 'bi-calculator' },
+      other: { label: 'Tài liệu khác', icon: 'bi-folder2-open' }
+    };
+
+    container.innerHTML = filtered.map(item => {
+      const isMine = item.userId === currentUser.id;
+      const seller = item.sellerName || item.seller?.fullName || item.user?.fullName || (isMine ? currentUser.fullName : null) || item.userId || 'Sinh viên';
+      const sellerUniversity = item.sellerUniversity || item.seller?.university || item.user?.university || '';
+      const cat = categoryMeta[item.category] || categoryMeta.other;
+      const isFree = Number(item.price) === 0;
+      const isSold = item.status === 'sold';
+      const formattedPrice = isFree
+        ? '<span class="price-free-badge"><i class="bi bi-gift-fill me-1"></i>Miễn phí 0đ</span>'
+        : `<span class="price-tag">${Number(item.price).toLocaleString('vi-VN')}đ</span>`;
+
+      return `
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="market-card ${isSold ? 'opacity-75' : ''}">
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+              <span class="badge bg-light text-dark border">
+                <i class="bi ${cat.icon} me-1 text-primary"></i>${cat.label}
+              </span>
+              <span class="${isSold ? 'status-sold-badge' : 'status-available-badge'}">
+                <i class="bi ${isSold ? 'bi-check2-all' : 'bi-broadcast'} me-1"></i>${isSold ? 'Đã bán / Đã tặng' : 'Đang bán'}
+              </span>
+            </div>
+
+            <h5 class="fw-bold text-main mb-2 ${isSold ? 'text-decoration-line-through text-muted' : ''}">
+              ${escapeHtml(item.title)}
+            </h5>
+
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div>${formattedPrice}</div>
+              ${item.subjectTag ? `<span class="badge bg-primary-subtle text-primary border border-primary-subtle">${escapeHtml(item.subjectTag)}</span>` : ''}
+            </div>
+
+            <p class="text-muted small flex-grow-1 mb-3" style="line-height: 1.55;">
+              ${escapeHtml(item.description || 'Liên hệ trực tiếp để trao đổi tại trường.')}
+            </p>
+
+            <div class="p-2 px-3 bg-light rounded-3 border mb-3 d-flex align-items-center justify-content-between gap-2">
+              <div class="text-truncate small">
+                <i class="bi bi-telephone-outbound-fill text-primary me-1"></i>
+                <strong class="text-dark">${escapeHtml(item.contactInfo)}</strong>
+              </div>
+              <button class="btn btn-sm btn-link p-0 text-decoration-none flex-shrink-0" onclick="copyContactInfo('${escapeHtml(item.contactInfo)}')" title="Sao chép liên hệ">
+                <i class="bi bi-clipboard"></i> Copy
+              </button>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top small text-muted">
+              <span><i class="bi bi-person-circle me-1"></i>${escapeHtml(seller)}${sellerUniversity ? ` (${escapeHtml(sellerUniversity)})` : ''} • ${formatDateVi(item.createdAt)}</span>
+              ${isMine ? `
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-light border py-1 px-2" onclick="toggleMarketItemStatus('${item.id}')" title="Đổi trạng thái Đang bán / Đã bán">
+                    <i class="bi bi-arrow-repeat"></i> ${isSold ? 'Mở lại' : 'Đã xong'}
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger py-1 px-2" onclick="confirmDeleteMarketItem('${item.id}')" title="Xóa tin">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function copyContactInfo(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Đã sao chép', `Đã copy thông tin liên hệ: ${text}`, 'success');
+      });
+    } else {
+      Swal.fire('Thông tin liên hệ', text, 'info');
+    }
+  }
+
+  function openCreateMarketModal() {
+    document.getElementById('marketForm').reset();
+    document.getElementById('marketPriceInput').value = 0;
+    const modal = new bootstrap.Modal(document.getElementById('marketModal'));
+    modal.show();
+  }
+
+  document.getElementById('marketForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const currentUser = getCurrentUser();
+    const payload = {
+      title: document.getElementById('marketTitleInput').value.trim(),
+      category: document.getElementById('marketCategoryInput').value,
+      subjectTag: document.getElementById('marketSubjectTagInput').value.trim() || 'Dùng chung',
+      price: Math.max(0, Number(document.getElementById('marketPriceInput').value) || 0),
+      contactInfo: document.getElementById('marketContactInput').value.trim(),
+      description: document.getElementById('marketDescInput').value.trim()
+    };
+
+    if (!payload.title || !payload.contactInfo) return;
+
+    let serverItem = null;
+    if (isBackendConnected()) {
+      try {
+        if (typeof ApiService.createMarketplaceItem === 'function') {
+          serverItem = await ApiService.createMarketplaceItem(payload, { silent: true });
+        } else {
+          const res = await ApiService.request('/marketplace/items', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            silent: true,
+            skipErrorModal: true
+          });
+          serverItem = res && res.data ? res.data : res;
+        }
+      } catch { /* fallback local */ }
+    }
+
+    const newItem = {
+      id: (serverItem && serverItem.id) || 'mkt_' + Date.now(),
+      userId: currentUser.id,
+      sellerName: currentUser.fullName || 'Sinh viên',
+      sellerUniversity: currentUser.university || '',
+      ...payload,
+      status: 'available',
+      createdAt: new Date().toISOString()
+    };
+
+    marketItemsData.unshift(newItem);
+    writeLocalStore(MARKET_STORAGE_KEY, marketItemsData);
+    bootstrap.Modal.getInstance(document.getElementById('marketModal')).hide();
+    showToast('Đăng tin thành công', 'Tin rao tài liệu của bạn đã hiển thị trên Chợ!', 'success');
+    renderMarketplace();
+  });
+
+  async function toggleMarketItemStatus(itemId) {
+    const item = marketItemsData.find(m => m.id === itemId);
+    if (!item) return;
+
+    const nextStatus = item.status === 'sold' ? 'available' : 'sold';
+    if (isBackendConnected()) {
+      try {
+        if (typeof ApiService.updateMarketplaceItemStatus === 'function') {
+          await ApiService.updateMarketplaceItemStatus(itemId, nextStatus, { silent: true });
+        } else {
+          await ApiService.request(`/marketplace/items/${encodeURIComponent(itemId)}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: nextStatus }),
+            silent: true,
+            skipErrorModal: true
+          });
+        }
+      } catch { /* fallback local */ }
+    }
+
+    item.status = nextStatus;
+    writeLocalStore(MARKET_STORAGE_KEY, marketItemsData);
+    showToast(
+      'Đã cập nhật trạng thái',
+      nextStatus === 'sold' ? 'Đã đánh dấu tin đăng là Đã bán / Đã tặng.' : 'Đã mở lại tin đăng.',
+      'success'
+    );
+    renderMarketplace();
+  }
+
+  function confirmDeleteMarketItem(itemId) {
+    Swal.fire({
+      title: 'Xóa tin rao này?',
+      text: 'Tin đăng tài liệu sẽ bị xóa khỏi chợ.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#b91c1c',
+      cancelButtonColor: '#5d6b72',
+      confirmButtonText: 'Đồng ý xóa',
+      cancelButtonText: 'Hủy'
+    }).then(async (res) => {
+      if (!res.isConfirmed) return;
+      if (isBackendConnected()) {
+        try {
+          if (typeof ApiService.deleteMarketplaceItem === 'function') {
+            await ApiService.deleteMarketplaceItem(itemId, { silent: true });
+          } else {
+            await ApiService.request(`/marketplace/items/${encodeURIComponent(itemId)}`, {
+              method: 'DELETE',
+              silent: true,
+              skipErrorModal: true
+            });
+          }
+        } catch { /* ignore */ }
+      }
+      marketItemsData = marketItemsData.filter(m => m.id !== itemId);
+      writeLocalStore(MARKET_STORAGE_KEY, marketItemsData);
+      showToast('Đã xóa', 'Tin đăng đã được xóa khỏi Chợ tài liệu.', 'info');
+      renderMarketplace();
+    });
+  }
+</script>
+</body>
+</html>
