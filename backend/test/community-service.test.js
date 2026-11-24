@@ -562,3 +562,107 @@ test('getComments and createComment map authorName and authorUniversity from joi
   assert.equal(created.authorName, 'Tran Thi B');
   assert.equal(created.authorUniversity, 'HCMUT');
 });
+
+test('getReviews, createReview, updateMyReview, and deleteMyReview throw 422 UNIVERSITY_REQUIRED when user has no university', async () => {
+  for (const emptyUni of [null, '']) {
+    const repository = createRepository({
+      async findUserUniversity() {
+        return emptyUni;
+      }
+    });
+    const service = createService({ repository });
+
+    await assert.rejects(
+      service.getReviews('7', 1, 20, '42'),
+      error => error instanceof AppError && error.status === 422 && error.code === 'UNIVERSITY_REQUIRED'
+    );
+    await assert.rejects(
+      service.createReview('42', '7', {
+        rating: 5,
+        difficulty: 3,
+        attendanceRequired: true,
+        content: 'Clear course'
+      }),
+      error => error instanceof AppError && error.status === 422 && error.code === 'UNIVERSITY_REQUIRED'
+    );
+    await assert.rejects(
+      service.updateMyReview('42', '7', { rating: 4 }),
+      error => error instanceof AppError && error.status === 422 && error.code === 'UNIVERSITY_REQUIRED'
+    );
+    await assert.rejects(
+      service.deleteMyReview('42', '7'),
+      error => error instanceof AppError && error.status === 422 && error.code === 'UNIVERSITY_REQUIRED'
+    );
+  }
+});
+
+test('getReviews scopes review listing and summary cache key to the authenticated user university', async () => {
+  const calls = [];
+  const writes = [];
+  const invalidations = [];
+  const university = 'Trường Đại học Nguyễn Tất Thành';
+  const expectedCacheKey = 'review:subject:7:uni:trường đại học nguyễn tất thành:summary';
+
+  const repository = createRepository({
+    async findUserUniversity(userId) {
+      calls.push(['findUserUniversity', userId]);
+      return university;
+    },
+    async listReviews(subjectId, offset, limit, uni) {
+      calls.push(['listReviews', subjectId, offset, limit, uni]);
+      return {
+        rows: [{ ...reviewRow, author_university: university }],
+        total: 1
+      };
+    },
+    async getReviewSummary(subjectId, uni) {
+      calls.push(['getReviewSummary', subjectId, uni]);
+      return { avg_rating: '4.75', total_reviews: 2, attendance_rate: '100' };
+    }
+  });
+  const redisClient = {
+    isReady: true,
+    async get(key) {
+      calls.push(['redis.get', key]);
+      return null;
+    },
+    async setEx(key, ttl, payload) {
+      writes.push({ key, ttl, payload: JSON.parse(payload) });
+    },
+    async del(key) {
+      invalidations.push(key);
+    }
+  };
+
+  const service = createService({ repository, redisClient });
+  const result = await service.getReviews('7', 1, 20, '42');
+
+  assert.equal(result.university, university);
+  assert.deepEqual(result.summary, {
+    avgRating: 4.75,
+    totalReviews: 2,
+    attendanceRate: 100
+  });
+  assert.deepEqual(calls, [
+    ['findUserUniversity', '42'],
+    ['redis.get', expectedCacheKey],
+    ['listReviews', '7', 0, 20, university],
+    ['getReviewSummary', '7', university]
+  ]);
+  assert.deepEqual(writes, [{
+    key: expectedCacheKey,
+    ttl: 1800,
+    payload: result.summary
+  }]);
+
+  await service.createReview('42', '7', {
+    rating: 5,
+    difficulty: 3,
+    attendanceRequired: true,
+    content: 'Scoped review'
+  });
+  assert.deepEqual(invalidations, [
+    'review:subject:7:summary',
+    expectedCacheKey
+  ]);
+});

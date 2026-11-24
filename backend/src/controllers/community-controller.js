@@ -6,7 +6,8 @@ function createCommunityController(communityService) {
     const result = await communityService.getReviews(
       toDatabaseId(req.params.subjectId, 'subject'),
       req.query.page,
-      req.query.limit
+      req.query.limit,
+      req.user.id
     );
     const { cacheStatus, ...data } = result;
     res.set('X-Cache', cacheStatus);

@@ -123,7 +123,7 @@ test('review listing forwards pagination, converts subject ID, and reports X-Cac
 
   assert.equal(response.status, 200);
   assert.equal(response.headers['x-cache'], 'HIT');
-  assert.deepEqual(received, ['41', 2, 5]);
+  assert.deepEqual(received, ['41', 2, 5, '7']);
   assert.deepEqual(response.body.data.pagination, {
     page: 2, limit: 5, total: 7, totalPages: 2
   });

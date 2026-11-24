@@ -125,12 +125,37 @@ const DEFAULT_SUBJECTS_CATALOGUE = [
   }
 ];
 
+const UNIVERSITIES_LIST = [
+  'Trường Đại học Nguyễn Tất Thành',
+  'Đại học Quốc gia Hà Nội',
+  'Đại học Bách khoa Hà Nội',
+  'Trường Đại học Công nghệ Thông tin - ĐHQG TP.HCM',
+  'Trường Đại học FPT',
+  'Cao đẳng Thực hành FPT Polytechnic',
+  'Trường Cao đẳng Kỹ thuật Cao Thắng',
+  'Trường Đại học Sư phạm Kỹ thuật TP.HCM',
+  'Trường Đại học Kinh tế TP.HCM (UEH)',
+  'Trường Đại học Công nghiệp TP.HCM (IUH)'
+];
+
+function normalizeUniversityName(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/\s+/g, ' ');
+}
+
 const DEFAULT_COURSE_REVIEWS = [
   {
     id: 'rev_101',
     subjectId: 'sub_1',
     userId: 'usr_seed_1',
     authorName: 'Nguyễn Minh Quân (K66 - CNTT)',
+    authorUniversity: 'Đại học Bách khoa Hà Nội',
+    university: 'Đại học Bách khoa Hà Nội',
     lecturerName: 'TS. Hoàng Minh Đức',
     rating: 5,
     difficulty: 3,
@@ -145,14 +170,16 @@ const DEFAULT_COURSE_REVIEWS = [
     id: 'rev_102',
     subjectId: 'sub_1',
     userId: 'usr_seed_2',
-    authorName: 'Trần Thu Hà (K66 - KTPM)',
+    authorName: 'Trần Thu Hà (K22 - KTPM)',
+    authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
+    university: 'Trường Đại học Nguyễn Tất Thành',
     lecturerName: 'ThS. Lê Hải Đăng',
-    rating: 4,
-    difficulty: 4,
+    rating: 5,
+    difficulty: 3,
     attendanceRequired: true,
     gradingNotes: 'Điểm danh mỗi buổi 10%, Lab hàng tuần 20%, Đồ án cuối kỳ 70%.',
-    materialsNotes: 'Repo mẫu của giảng viên + Sách Fullstack Open.',
-    content: 'Khối lượng bài tập tuần khá nhiều nhưng giúp chắc tay code. Cần chú ý xử lý lỗi validation và phân quyền ở Backend vì thầy kiểm tra test case rất kỹ.',
+    materialsNotes: 'Repo mẫu của giảng viên NTTU + Sách Fullstack Open.',
+    content: 'Khối lượng bài tập tuần tại Đại học Nguyễn Tất Thành khá vừa sức và giúp chắc tay code. Cần chú ý xử lý lỗi validation và phân quyền ở Backend vì thầy kiểm tra test case rất kỹ.',
     createdAt: '2026-10-18T14:20:00.000Z',
     updatedAt: '2026-10-18T14:20:00.000Z'
   },
@@ -160,7 +187,9 @@ const DEFAULT_COURSE_REVIEWS = [
     id: 'rev_103',
     subjectId: 'sub_2',
     userId: 'usr_seed_3',
-    authorName: 'Lê Hoàng Nam (K65 - HTTT)',
+    authorName: 'Lê Hoàng Nam (K22 - HTTT)',
+    authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
+    university: 'Trường Đại học Nguyễn Tất Thành',
     lecturerName: 'PGS. TS. Trần Văn Kiên',
     rating: 5,
     difficulty: 4,
@@ -175,7 +204,9 @@ const DEFAULT_COURSE_REVIEWS = [
     id: 'rev_104',
     subjectId: 'sub_3',
     userId: 'usr_seed_4',
-    authorName: 'Phạm Gia Bảo (K66 - KHMT)',
+    authorName: 'Phạm Gia Bảo (K23 - KHMT)',
+    authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
+    university: 'Trường Đại học Nguyễn Tất Thành',
     lecturerName: 'TS. Vũ Thu Hà',
     rating: 4,
     difficulty: 4,
@@ -190,16 +221,86 @@ const DEFAULT_COURSE_REVIEWS = [
     id: 'rev_105',
     subjectId: 'sub_4',
     userId: 'usr_seed_5',
-    authorName: 'Đặng Quốc Huy (K65 - ATTT)',
+    authorName: 'Đặng Quốc Huy (K22 - ATTT)',
+    authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
+    university: 'Trường Đại học Nguyễn Tất Thành',
     lecturerName: 'ThS. Đỗ Quang Linh',
     rating: 5,
     difficulty: 3,
     attendanceRequired: true,
     gradingNotes: 'Thực hành CTF trên phòng Lab 40%, Thi lý thuyết & phân tích gói tin Wireshark 60%.',
-    materialsNotes: 'Tài liệu Lab OWASP Top 10, Wireshark & Криптография cơ bản.',
+    materialsNotes: 'Tài liệu Lab OWASP Top 10, Wireshark & Mật mã học cơ bản.',
     content: 'Phòng Lab thực hành bắt gói tin và phòng chống SQL Injection / XSS rất cuốn. Thầy nhiệt tình giải đáp cả ngoài giờ học.',
     createdAt: '2026-10-22T11:00:00.000Z',
     updatedAt: '2026-10-22T11:00:00.000Z'
+  },
+  {
+    id: 'rev_106',
+    subjectId: 'sub_1',
+    userId: 'usr_seed_6',
+    authorName: 'Vũ Minh Tuấn (QH-2023 - CNTT)',
+    authorUniversity: 'Đại học Quốc gia Hà Nội',
+    university: 'Đại học Quốc gia Hà Nội',
+    lecturerName: 'PGS. TS. Nguyễn Việt Anh',
+    rating: 5,
+    difficulty: 3,
+    attendanceRequired: true,
+    gradingNotes: 'Bài tập tuần 20%, Giữa kỳ 20%, Đồ án nhóm 60%.',
+    materialsNotes: 'Slide bài giảng UET-VNU & Tài liệu Node.js Design Patterns.',
+    content: 'Giảng viên định hướng kiến trúc hệ thống rất bài bản, yêu cầu viết Unit Test và tài liệu OpenAPI đầy đủ cho đồ án.',
+    createdAt: '2026-10-19T10:00:00.000Z',
+    updatedAt: '2026-10-19T10:00:00.000Z'
+  },
+  {
+    id: 'rev_107',
+    subjectId: 'sub_2',
+    userId: 'usr_seed_7',
+    authorName: 'Hoàng Thanh Trúc (QH-2022 - HTTT)',
+    authorUniversity: 'Đại học Quốc gia Hà Nội',
+    university: 'Đại học Quốc gia Hà Nội',
+    lecturerName: 'TS. Lê Quang Hiếu',
+    rating: 4,
+    difficulty: 4,
+    attendanceRequired: true,
+    gradingNotes: 'Thực hành phòng máy 30%, Thi cuối kỳ 70%.',
+    materialsNotes: 'Giáo trình CSDL nâng cao ĐHQGHN.',
+    content: 'Đề thi cuối kỳ tập trung nhiều vào tối ưu hóa truy vấn và phân tích kế hoạch thực thi (EXPLAIN ANALYZE).',
+    createdAt: '2026-10-21T08:30:00.000Z',
+    updatedAt: '2026-10-21T08:30:00.000Z'
+  },
+  {
+    id: 'rev_108',
+    subjectId: 'sub_1',
+    userId: 'usr_seed_8',
+    authorName: 'Ngô Bảo Châu (K18 - KTPM)',
+    authorUniversity: 'Trường Đại học FPT',
+    university: 'Trường Đại học FPT',
+    lecturerName: 'ThS. Phạm Công Danh',
+    rating: 5,
+    difficulty: 3,
+    attendanceRequired: true,
+    gradingNotes: 'Progress Test 20%, Lab 30%, Practical Exam (PE) + Final 50%.',
+    materialsNotes: 'Courseware trên FuLMS & Repo thực hành React/Express.',
+    content: 'Điểm danh nghiêm ngặt trên hệ thống FAP (nghỉ quá 20% cấm thi). Bài thi PE bám sát các bài Lab đã làm trên lớp.',
+    createdAt: '2026-10-23T14:00:00.000Z',
+    updatedAt: '2026-10-23T14:00:00.000Z'
+  },
+  {
+    id: 'rev_109',
+    subjectId: 'sub_1',
+    userId: 'usr_seed_9',
+    authorName: 'Đinh Tuấn Kiệt (K19 - Thiết kế Web)',
+    authorUniversity: 'Cao đẳng Thực hành FPT Polytechnic',
+    university: 'Cao đẳng Thực hành FPT Polytechnic',
+    lecturerName: 'ThS. Bùi Thành Đạt',
+    rating: 5,
+    difficulty: 2,
+    attendanceRequired: true,
+    gradingNotes: '8 bài Lab 40%, Quiz 20%, Bảo vệ Assignment 40%.',
+    materialsNotes: 'Slide LMS FPT Polytechnic + Video hướng dẫn từng giai đoạn Assignment.',
+    content: 'Học thực hành 100% trên máy, giảng viên cầm tay chỉ việc từ lúc dựng giao diện đến khi kết nối API hoàn chỉnh.',
+    createdAt: '2026-10-24T09:00:00.000Z',
+    updatedAt: '2026-10-24T09:00:00.000Z'
   }
 ];
 
@@ -1847,52 +1948,94 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
     );
   },
 
-  // === COMMUNITY COURSE REVIEWS (ĐÁNH GIÁ MÔN HỌC & GIẢNG VIÊN) ===
-  getLocalCourseReviews(subjectId = null) {
+  // === COMMUNITY COURSE REVIEWS (ĐÁNH GIÁ MÔN HỌC & GIẢNG VIÊN THEO TRƯỜNG CAO ĐẲNG / ĐẠI HỌC) ===
+  getUniversitiesList() {
+    return [...UNIVERSITIES_LIST];
+  },
+
+  normalizeUniversityName(name) {
+    return normalizeUniversityName(name);
+  },
+
+  getLocalCourseReviews(subjectId = null, university = null) {
     const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, DEFAULT_COURSE_REVIEWS);
-    const list = Array.isArray(all) ? all : DEFAULT_COURSE_REVIEWS;
-    if (!subjectId) return list;
-    return list.filter(r => r.subjectId === subjectId);
+    let list = Array.isArray(all) ? all : DEFAULT_COURSE_REVIEWS;
+    if (subjectId) {
+      list = list.filter(r => r.subjectId === subjectId);
+    }
+    const targetUni = university !== null && university !== undefined
+      ? String(university).trim()
+      : '';
+    if (targetUni) {
+      const normTarget = normalizeUniversityName(targetUni);
+      list = list.filter(
+        r => normalizeUniversityName(r.authorUniversity || r.university || r.user?.university || '') === normTarget
+      );
+    }
+    return list;
   },
 
   async fetchCourseReviews(subjectId = 'sub_1', query = {}) {
+    const user = this.getUser();
+    const userUni = String(user?.university || '').trim();
+    if (!userUni) {
+      const err = new Error('Vui lòng cập nhật thông tin Trường Cao đẳng / Đại học trước khi xem hoặc đánh giá môn học.');
+      err.code = 'UNIVERSITY_REQUIRED';
+      err.status = 422;
+      throw err;
+    }
+
     const targetSubjectId = String(subjectId || 'sub_1').trim();
     const page = Number(query.page) > 0 ? Number(query.page) : 1;
     const limit = Number(query.limit) > 0 ? Number(query.limit) : 20;
+    const normUserUni = normalizeUniversityName(userUni);
 
     if (isBackendOnlineSession() && window.ApiService && typeof ApiService.getCourseReviews === 'function') {
       try {
         const res = await ApiService.getCourseReviews(targetSubjectId, { page, limit }, { silent: true });
         if (res && Array.isArray(res.reviews)) {
-          // Đồng bộ vào kho local cho môn học tương ứng nếu server có dữ liệu
-          if (res.reviews.length > 0) {
-            const existingOther = this.getLocalCourseReviews().filter(r => r.subjectId !== targetSubjectId);
-            writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, [...res.reviews, ...existingOther]);
+          const scopedServerReviews = res.reviews.filter(r => {
+            const revUni = r.authorUniversity || r.university || r.user?.university || userUni;
+            return normalizeUniversityName(revUni) === normUserUni;
+          }).map(r => ({
+            ...r,
+            authorUniversity: r.authorUniversity || r.university || userUni,
+            university: r.university || r.authorUniversity || userUni
+          }));
+
+          // Đồng bộ vào kho local cho môn học và trường tương ứng nếu server có dữ liệu
+          if (scopedServerReviews.length > 0) {
+            const existingOther = this.getLocalCourseReviews().filter(
+              r => !(r.subjectId === targetSubjectId && normalizeUniversityName(r.authorUniversity || r.university || '') === normUserUni)
+            );
+            writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, [...scopedServerReviews, ...existingOther]);
           }
-          const summary = res.summary || computeReviewSummaryFromList(res.reviews);
+          const summary = res.summary || computeReviewSummaryFromList(scopedServerReviews);
           return {
+            university: res.university || userUni,
             summary: {
               ...summary,
               avgDifficulty:
                 summary.avgDifficulty !== undefined
                   ? summary.avgDifficulty
-                  : computeReviewSummaryFromList(res.reviews).avgDifficulty
+                  : computeReviewSummaryFromList(scopedServerReviews).avgDifficulty
             },
-            reviews: res.reviews,
+            reviews: scopedServerReviews,
             pagination: res.pagination || {
               page,
               limit,
-              total: res.reviews.length,
+              total: scopedServerReviews.length,
               totalPages: 1
             }
           };
         }
-      } catch {
+      } catch (err) {
+        if (err && err.code === 'UNIVERSITY_REQUIRED') throw err;
         // Fallback sang dữ liệu localStorage khi offline hoặc DB chưa seed subject
       }
     }
 
-    const filtered = this.getLocalCourseReviews(targetSubjectId).sort(
+    const filtered = this.getLocalCourseReviews(targetSubjectId, userUni).sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
     const summary = computeReviewSummaryFromList(filtered);
@@ -1900,6 +2043,7 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
     const paged = filtered.slice(offset, offset + limit);
 
     return {
+      university: userUni,
       summary,
       reviews: paged,
       pagination: {
@@ -1918,7 +2062,16 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
   async submitCourseReview(subjectId, reviewData) {
     const targetSubjectId = String(subjectId || 'sub_1').trim();
     const user = this.getUser();
+    const userUni = String(user?.university || '').trim();
+    if (!userUni) {
+      const err = new Error('Vui lòng cập nhật thông tin Trường Cao đẳng / Đại học trước khi xem hoặc đánh giá môn học.');
+      err.code = 'UNIVERSITY_REQUIRED';
+      err.status = 422;
+      throw err;
+    }
+
     const currentUserId = user.id || getCurrentUserScope();
+    const normUserUni = normalizeUniversityName(userUni);
 
     const cleanInput = {
       lecturerName: reviewData.lecturerName ? String(reviewData.lecturerName).trim() : null,
@@ -1939,7 +2092,9 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
           );
           const enriched = {
             ...created,
-            authorName: created.authorName || user.fullName || 'Sinh viên'
+            authorName: created.authorName || user.fullName || 'Sinh viên',
+            authorUniversity: created.authorUniversity || userUni,
+            university: created.university || created.authorUniversity || userUni
           };
           all.unshift(enriched);
           writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, all);
@@ -1955,7 +2110,9 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
               );
               const enriched = {
                 ...updated,
-                authorName: updated.authorName || user.fullName || 'Sinh viên'
+                authorName: updated.authorName || user.fullName || 'Sinh viên',
+                authorUniversity: updated.authorUniversity || userUni,
+                university: updated.university || updated.authorUniversity || userUni
               };
               all.unshift(enriched);
               writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, all);
@@ -1970,7 +2127,9 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
 
     const all = this.getLocalCourseReviews();
     const existingIdx = all.findIndex(
-      r => r.subjectId === targetSubjectId && r.userId === currentUserId
+      r => r.subjectId === targetSubjectId &&
+        r.userId === currentUserId &&
+        normalizeUniversityName(r.authorUniversity || r.university || userUni) === normUserUni
     );
     const nowIso = new Date().toISOString();
 
@@ -1979,6 +2138,8 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
         ...all[existingIdx],
         ...cleanInput,
         authorName: user.fullName || all[existingIdx].authorName || 'Sinh viên',
+        authorUniversity: userUni,
+        university: userUni,
         updatedAt: nowIso
       };
       all[existingIdx] = updatedReview;
@@ -1991,6 +2152,8 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
       subjectId: targetSubjectId,
       userId: currentUserId,
       authorName: user.fullName || 'Sinh viên',
+      authorUniversity: userUni,
+      university: userUni,
       ...cleanInput,
       createdAt: nowIso,
       updatedAt: nowIso

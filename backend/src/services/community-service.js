@@ -9,12 +9,29 @@ const CLASS_LATEST_POSTS_TTL_SECONDS = 300;
 function createCommunityService({ pool, redisClient, repository } = {}) {
   const repo = repository || createCommunityRepository({ pool });
 
-  async function getReviews(subjectId, page = 1, limit = 20) {
+  async function requireUserUniversity(userId) {
+    if (!userId) return null;
+    if (typeof repo.findUserUniversity !== 'function') return null;
+    const uni = await repo.findUserUniversity(userId);
+    if (!uni || !String(uni).trim()) {
+      throw new AppError(
+        422,
+        'UNIVERSITY_REQUIRED',
+        'Vui lòng cập nhật thông tin Trường Cao đẳng / Đại học trong hồ sơ trước khi xem hoặc đánh giá môn học.'
+      );
+    }
+    return String(uni).trim();
+  }
+
+  async function getReviews(subjectId, page = 1, limit = 20, userId = null) {
     await requireSubject(subjectId);
-    const cacheKey = getReviewSummaryCacheKey(subjectId);
+    const university = userId ? await requireUserUniversity(userId) : null;
+    const cacheKey = getReviewSummaryCacheKey(subjectId, university);
     const cachedSummary = await readReviewSummary(cacheKey);
     const offset = (page - 1) * limit;
-    const { rows, total } = await repo.listReviews(subjectId, offset, limit);
+    const { rows, total } = university
+      ? await repo.listReviews(subjectId, offset, limit, university)
+      : await repo.listReviews(subjectId, offset, limit);
     let summary;
     let cacheStatus;
 
@@ -22,12 +39,15 @@ function createCommunityService({ pool, redisClient, repository } = {}) {
       summary = cachedSummary.value;
       cacheStatus = 'HIT';
     } else {
-      summary = normalizeReviewSummary(await repo.getReviewSummary(subjectId));
+      const rawSummary = university
+        ? await repo.getReviewSummary(subjectId, university)
+        : await repo.getReviewSummary(subjectId);
+      summary = normalizeReviewSummary(rawSummary);
       cacheStatus = 'MISS';
       await writeReviewSummary(cacheKey, summary);
     }
 
-    return {
+    const response = {
       summary,
       reviews: rows.map(mapReview),
       pagination: {
@@ -38,10 +58,17 @@ function createCommunityService({ pool, redisClient, repository } = {}) {
       },
       cacheStatus
     };
+    if (university) {
+      return { university, ...response };
+    }
+    return response;
   }
 
   async function createReview(userId, subjectId, input) {
     await requireSubject(subjectId);
+    const university = typeof repo.findUserUniversity === 'function'
+      ? await requireUserUniversity(userId)
+      : null;
     let row;
     try {
       row = await repo.createReview(userId, subjectId, input);
@@ -53,28 +80,43 @@ function createCommunityService({ pool, redisClient, repository } = {}) {
     }
 
     await invalidateReviewSummary(subjectId);
+    if (university) {
+      await invalidateReviewSummary(subjectId, university);
+    }
     return mapReview(row);
   }
 
   async function updateMyReview(userId, subjectId, input) {
     await requireSubject(subjectId);
+    const university = typeof repo.findUserUniversity === 'function'
+      ? await requireUserUniversity(userId)
+      : null;
     const row = await repo.updateMyReview(userId, subjectId, input);
     if (!row) {
       throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy đánh giá của bạn cho môn học này.');
     }
 
     await invalidateReviewSummary(subjectId);
+    if (university) {
+      await invalidateReviewSummary(subjectId, university);
+    }
     return mapReview(row);
   }
 
   async function deleteMyReview(userId, subjectId) {
     await requireSubject(subjectId);
+    const university = typeof repo.findUserUniversity === 'function'
+      ? await requireUserUniversity(userId)
+      : null;
     const deleted = await repo.deleteMyReview(userId, subjectId);
     if (!deleted) {
       throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy đánh giá của bạn cho môn học này.');
     }
 
     await invalidateReviewSummary(subjectId);
+    if (university) {
+      await invalidateReviewSummary(subjectId, university);
+    }
     return {
       subjectId: toPublicId('subject', subjectId),
       deleted: true
@@ -218,9 +260,9 @@ function createCommunityService({ pool, redisClient, repository } = {}) {
     }
   }
 
-  async function invalidateReviewSummary(subjectId) {
+  async function invalidateReviewSummary(subjectId, university = null) {
     if (!redisClient) return;
-    const cacheKey = getReviewSummaryCacheKey(subjectId);
+    const cacheKey = getReviewSummaryCacheKey(subjectId, university);
     if (redisClient.isReady === false) {
       console.error(`Redis review summary invalidation skipped for ${cacheKey}: client is not ready.`);
       return;
@@ -302,7 +344,14 @@ function createCommunityService({ pool, redisClient, repository } = {}) {
   };
 }
 
-function getReviewSummaryCacheKey(subjectId) {
+function normalizeUniversityKey(university) {
+  return String(university || '').trim().toLowerCase() || 'all';
+}
+
+function getReviewSummaryCacheKey(subjectId, university = null) {
+  if (university && String(university).trim()) {
+    return `review:subject:${subjectId}:uni:${normalizeUniversityKey(university)}:summary`;
+  }
   return `review:subject:${subjectId}:summary`;
 }
 

@@ -190,8 +190,20 @@
                   <input type="text" class="form-control" id="inputMajor">
                 </div>
                 <div class="col-12 col-md-4">
-                  <label class="form-label fw-semibold small">Trường đại học, cao đẳng</label>
-                  <input type="text" class="form-control" id="inputUniversity">
+                  <label class="form-label fw-semibold small" for="inputUniversity">Trường đại học, cao đẳng</label>
+                  <input type="text" class="form-control" id="inputUniversity" list="universityPresetList" placeholder="Chọn hoặc nhập tên trường...">
+                  <datalist id="universityPresetList">
+                    <option value="Trường Đại học Nguyễn Tất Thành"></option>
+                    <option value="Đại học Quốc gia Hà Nội"></option>
+                    <option value="Đại học Bách khoa Hà Nội"></option>
+                    <option value="Trường Đại học Công nghệ Thông tin - ĐHQG TP.HCM"></option>
+                    <option value="Trường Đại học FPT"></option>
+                    <option value="Cao đẳng Thực hành FPT Polytechnic"></option>
+                    <option value="Trường Cao đẳng Kỹ thuật Cao Thắng"></option>
+                    <option value="Trường Đại học Sư phạm Kỹ thuật TP.HCM"></option>
+                    <option value="Trường Đại học Kinh tế TP.HCM (UEH)"></option>
+                    <option value="Trường Đại học Công nghiệp TP.HCM (IUH)"></option>
+                  </datalist>
                 </div>
               </div>
 

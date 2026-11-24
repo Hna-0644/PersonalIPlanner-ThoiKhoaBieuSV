@@ -76,6 +76,82 @@ test('listReviews binds subject and pagination and returns newest rows with a co
   assert.deepEqual(result, { rows, total: 25 });
 });
 
+test('findUserUniversity trims stored university and returns null when empty or missing', async () => {
+  const calls = [];
+  const repository = createRepository({
+    async execute(sql, params) {
+      calls.push({ sql, params });
+      if (params[0] === '42') {
+        return [[{ university: '  Trường Đại học Nguyễn Tất Thành  ' }], []];
+      }
+      if (params[0] === '43') {
+        return [[{ university: '   ' }], []];
+      }
+      return [[], []];
+    }
+  });
+
+  assert.equal(
+    await repository.findUserUniversity('42'),
+    'Trường Đại học Nguyễn Tất Thành'
+  );
+  assert.equal(await repository.findUserUniversity('43'), null);
+  assert.equal(await repository.findUserUniversity('44'), null);
+  assert.match(calls[0].sql, /SELECT university FROM users WHERE id = \? LIMIT 1/);
+  assert.deepEqual(calls[0].params, ['42']);
+});
+
+test('getReviewSummary filters by trimmed user university when university is provided', async () => {
+  const calls = [];
+  const repository = createRepository({
+    async execute(sql, params) {
+      calls.push({ sql, params });
+      return [[{ avg_rating: '4.5', total_reviews: 2, attendance_rate: '50.0' }], []];
+    }
+  });
+
+  const summary = await repository.getReviewSummary('7', 'Trường Đại học Nguyễn Tất Thành');
+
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /JOIN users u ON u\.id = course_reviews\.user_id/);
+  assert.match(calls[0].sql, /WHERE course_reviews\.subject_id = \? AND TRIM\(u\.university\) = \?/);
+  assert.deepEqual(calls[0].params, ['7', 'Trường Đại học Nguyễn Tất Thành']);
+  assert.deepEqual(summary, {
+    avg_rating: '4.5',
+    total_reviews: 2,
+    attendance_rate: '50.0'
+  });
+});
+
+test('listReviews filters count and rows by user university when university is provided', async () => {
+  const calls = [];
+  const rows = [{
+    id: '18',
+    subject_id: '7',
+    user_id: '42',
+    author_name: 'Nguyen Van A',
+    author_university: 'Trường Đại học Nguyễn Tất Thành'
+  }];
+  const repository = createRepository({
+    async execute(sql, params) {
+      calls.push({ sql, params });
+      return calls.length === 1
+        ? [[{ total: 1 }], []]
+        : [rows, []];
+    }
+  });
+
+  const result = await repository.listReviews('7', 0, 20, 'Trường Đại học Nguyễn Tất Thành');
+
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].sql, /LEFT JOIN users u ON u\.id = course_reviews\.user_id/);
+  assert.match(calls[0].sql, /WHERE course_reviews\.subject_id = \? AND TRIM\(u\.university\) = \?/);
+  assert.deepEqual(calls[0].params, ['7', 'Trường Đại học Nguyễn Tất Thành']);
+  assert.match(calls[1].sql, /WHERE course_reviews\.subject_id = \? AND TRIM\(u\.university\) = \?/);
+  assert.deepEqual(calls[1].params, ['7', 'Trường Đại học Nguyễn Tất Thành', '20', '0']);
+  assert.deepEqual(result, { rows, total: 1 });
+});
+
 test('createReview binds the authenticated owner and all review values', async () => {
   const calls = [];
   const row = {

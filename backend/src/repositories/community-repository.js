@@ -67,6 +67,15 @@ function createCommunityRepository({ pool }) {
     return rows[0] || null;
   }
 
+  async function findUserUniversity(userId) {
+    const [rows] = await pool.execute(
+      'SELECT university FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+    const trimmed = rows[0]?.university ? String(rows[0].university).trim() : '';
+    return trimmed || null;
+  }
+
   async function findPost(postId) {
     const [rows] = await pool.execute(
       `SELECT ${POST_COLUMNS}
@@ -78,15 +87,26 @@ function createCommunityRepository({ pool }) {
     return rows[0] || null;
   }
 
-  async function getReviewSummary(subjectId) {
-    const [rows] = await pool.execute(
-      `SELECT AVG(rating) AS avg_rating,
-              COUNT(*) AS total_reviews,
-              COALESCE(AVG(attendance_required) * 100, 0) AS attendance_rate
-       FROM course_reviews
-       WHERE subject_id = ?`,
-      [subjectId]
-    );
+  async function getReviewSummary(subjectId, university = null) {
+    const normalizedUniversity = university ? String(university).trim() : '';
+    const [rows] = normalizedUniversity
+      ? await pool.execute(
+          `SELECT AVG(rating) AS avg_rating,
+                  COUNT(*) AS total_reviews,
+                  COALESCE(AVG(attendance_required) * 100, 0) AS attendance_rate
+           FROM course_reviews
+           JOIN users u ON u.id = course_reviews.user_id
+           WHERE course_reviews.subject_id = ? AND TRIM(u.university) = ?`,
+          [subjectId, normalizedUniversity]
+        )
+      : await pool.execute(
+          `SELECT AVG(rating) AS avg_rating,
+                  COUNT(*) AS total_reviews,
+                  COALESCE(AVG(attendance_required) * 100, 0) AS attendance_rate
+           FROM course_reviews
+           WHERE subject_id = ?`,
+          [subjectId]
+        );
     return rows[0] || {
       avg_rating: null,
       total_reviews: 0,
@@ -94,20 +114,36 @@ function createCommunityRepository({ pool }) {
     };
   }
 
-  async function listReviews(subjectId, offset, limit) {
-    const [countRows] = await pool.execute(
-      'SELECT COUNT(*) AS total FROM course_reviews WHERE subject_id = ?',
-      [subjectId]
-    );
-    const [rows] = await pool.execute(
-      `SELECT ${REVIEW_COLUMNS}
-       FROM course_reviews
-       LEFT JOIN users u ON u.id = course_reviews.user_id
-       WHERE course_reviews.subject_id = ?
-       ORDER BY course_reviews.created_at DESC, course_reviews.id DESC
-       LIMIT ? OFFSET ?`,
-      [subjectId, String(limit), String(offset)]
-    );
+  async function listReviews(subjectId, offset, limit, university = null) {
+    const normalizedUniversity = university ? String(university).trim() : '';
+    const [countRows] = normalizedUniversity
+      ? await pool.execute(
+          'SELECT COUNT(*) AS total FROM course_reviews LEFT JOIN users u ON u.id = course_reviews.user_id WHERE course_reviews.subject_id = ? AND TRIM(u.university) = ?',
+          [subjectId, normalizedUniversity]
+        )
+      : await pool.execute(
+          'SELECT COUNT(*) AS total FROM course_reviews WHERE subject_id = ?',
+          [subjectId]
+        );
+    const [rows] = normalizedUniversity
+      ? await pool.execute(
+          `SELECT ${REVIEW_COLUMNS}
+           FROM course_reviews
+           LEFT JOIN users u ON u.id = course_reviews.user_id
+           WHERE course_reviews.subject_id = ? AND TRIM(u.university) = ?
+           ORDER BY course_reviews.created_at DESC, course_reviews.id DESC
+           LIMIT ? OFFSET ?`,
+          [subjectId, normalizedUniversity, String(limit), String(offset)]
+        )
+      : await pool.execute(
+          `SELECT ${REVIEW_COLUMNS}
+           FROM course_reviews
+           LEFT JOIN users u ON u.id = course_reviews.user_id
+           WHERE course_reviews.subject_id = ?
+           ORDER BY course_reviews.created_at DESC, course_reviews.id DESC
+           LIMIT ? OFFSET ?`,
+          [subjectId, String(limit), String(offset)]
+        );
     return { rows, total: Number(countRows[0]?.total || 0) };
   }
 
@@ -422,6 +458,7 @@ function createCommunityRepository({ pool }) {
 
   return {
     findSubject,
+    findUserUniversity,
     findPost,
     getReviewSummary,
     listReviews,

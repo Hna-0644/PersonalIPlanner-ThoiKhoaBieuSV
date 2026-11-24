@@ -237,7 +237,7 @@
         <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn">
           <i class="bi bi-list fs-5"></i>
         </button>
-        <h4 class="fw-bold mb-0">Cộng đồng & Chợ tài liệu</h4>
+        <h4 class="fw-bold mb-0">Cộng đồng & Trao đổi tài liệu</h4>
       </div>
 
       <div class="header-actions">
@@ -273,7 +273,7 @@
       <div class="page-header mb-4 pb-3">
         <div>
           <div class="text-primary small fw-semibold mb-1"><i class="bi bi-people-fill me-1"></i> Không gian học thuật mở</div>
-          <h1 class="page-title">Cộng đồng Sinh viên & Chợ tài liệu</h1>
+          <h1 class="page-title">Cộng đồng Sinh viên & Trao đổi tài liệu</h1>
           <p class="page-subtitle">Tra cứu review môn học, thảo luận bài tập theo mã lớp và trao đổi giáo trình, đồ dùng học tập.</p>
         </div>
       </div>
@@ -282,22 +282,15 @@
       <ul class="nav nav-tabs community-tabs mb-4" id="communityTab" role="tablist">
         <li class="nav-item" role="presentation">
           <button class="nav-link active d-flex align-items-center gap-2" id="tab-reviews-btn" data-bs-toggle="tab" data-bs-target="#tab-reviews" type="button" role="tab">
-            <i class="bi bi-star-half"></i>
-            <span>Đánh giá môn học</span>
+            <i class="bi bi-chat-square-heart-fill"></i>
+            <span>Đánh giá và hỏi đáp môn học</span>
             <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeReviewCount">0</span>
-          </button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link d-flex align-items-center gap-2" id="tab-qa-btn" data-bs-toggle="tab" data-bs-target="#tab-qa" type="button" role="tab">
-            <i class="bi bi-chat-square-quote-fill"></i>
-            <span>Hỏi đáp lớp học</span>
-            <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeQaCount">0</span>
           </button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link d-flex align-items-center gap-2" id="tab-market-btn" data-bs-toggle="tab" data-bs-target="#tab-market" type="button" role="tab">
             <i class="bi bi-shop"></i>
-            <span>Chợ tài liệu & Đồ dùng</span>
+            <span>Trao đổi tài liệu & Đồ dùng</span>
             <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeMarketCount">0</span>
           </button>
         </li>
@@ -307,7 +300,7 @@
       <div class="tab-content" id="communityTabContent">
         
         <!-- ===============================================================
-             TAB 1: ĐÁNH GIÁ MÔN HỌC (COURSE REVIEWS)
+             TAB 1: ĐÁNH GIÁ VÀ HỎI ĐÁP MÔN HỌC (COURSE REVIEWS & CLASS Q&A)
              =============================================================== -->
         <div class="tab-pane fade show active" id="tab-reviews" role="tabpanel">
           <!-- Subject Selector & Action Bar -->
@@ -317,15 +310,19 @@
                 <label class="fw-semibold small text-muted mb-0" for="reviewSubjectSelect">
                   <i class="bi bi-journal-bookmark-fill text-primary me-1"></i> Chọn môn học:
                 </label>
-                <select class="form-select" id="reviewSubjectSelect" style="max-width: 380px;" onchange="loadCourseReviews()">
-                  <option value="sub_1">IT3020 — Lập trình Web (Node.js & React)</option>
-                  <option value="sub_2">IT3040 — Cơ sở dữ liệu nâng cao</option>
-                  <option value="sub_3">IT4010 — Trí tuệ nhân tạo (AI)</option>
-                  <option value="sub_4">IT4080 — An toàn thông tin mạng</option>
+                <select class="form-select" id="reviewSubjectSelect" style="max-width: 380px;" onchange="handleSubjectSelectChange()">
+                  <option value="sub_1">Lập trình Web (Node.js & React)</option>
+                  <option value="sub_2">Cơ sở dữ liệu nâng cao</option>
+                  <option value="sub_3">Trí tuệ nhân tạo (AI)</option>
+                  <option value="sub_4">An toàn thông tin mạng</option>
                 </select>
               </div>
-              <div class="col-12 col-md-5 d-flex justify-content-md-end gap-2">
-                <button class="btn btn-primary d-flex align-items-center gap-2" onclick="openReviewModal()">
+              <div class="col-12 col-md-5 d-flex justify-content-md-end gap-2 flex-wrap">
+                <button class="btn btn-outline-primary d-flex align-items-center gap-2" onclick="openCreateQuestionModal()">
+                  <i class="bi bi-question-circle"></i>
+                  <span>Đặt câu hỏi mới</span>
+                </button>
+                <button class="btn btn-primary d-flex align-items-center gap-2" id="btnOpenReviewModal" onclick="openReviewModal()">
                   <i class="bi bi-pencil-square"></i>
                   <span id="btnWriteReviewText">Viết đánh giá môn này</span>
                 </button>
@@ -375,45 +372,38 @@
             </div>
           </div>
 
-          <!-- Reviews List -->
-          <div id="reviewsListContainer" class="d-flex flex-column gap-3">
+          <!-- Section 1: Đánh giá môn học -->
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-star-half text-warning"></i>
+              <span>Đánh giá môn học</span>
+            </h5>
+          </div>
+          <div id="reviewsListContainer" class="d-flex flex-column gap-3 mb-5">
             <!-- Rendered via JS -->
           </div>
-        </div>
 
-        <!-- ===============================================================
-             TAB 2: HỎI ĐÁP LỚP HỌC (CLASS Q&A)
-             =============================================================== -->
-        <div class="tab-pane fade" id="tab-qa" role="tabpanel">
-          <!-- Class Selector & Create Question Bar -->
-          <div class="card-custom mb-4 p-3">
-            <div class="row g-3 align-items-center justify-content-between">
-              <div class="col-12 col-md-8 d-flex align-items-center gap-2 flex-wrap">
-                <label class="fw-semibold small text-muted mb-0" for="qaClassSelect">
-                  <i class="bi bi-Hash text-primary me-1"></i> Mã lớp học phần:
-                </label>
-                <select class="form-select" id="qaClassSelect" style="max-width: 260px;" onchange="handleQaClassSelectChange()">
-                  <option value="ALL">Tất cả lớp học phần</option>
-                  <option value="IT3020" selected>IT3020 — Lập trình Web</option>
-                  <option value="IT3040">IT3040 — Cơ sở dữ liệu nâng cao</option>
-                  <option value="IT4010">IT4010 — Trí tuệ nhân tạo</option>
-                  <option value="IT4080">IT4080 — An toàn thông tin mạng</option>
-                </select>
-                <div class="input-group" style="max-width: 240px;">
-                  <input type="text" class="form-control form-control-sm font-monospace" id="qaCustomCodeInput" placeholder="Nhập mã lớp khác (VD: IT4520)...">
-                  <button class="btn btn-sm btn-outline-primary" type="button" onclick="applyCustomQaCode()">Lọc</button>
-                </div>
-              </div>
-              <div class="col-12 col-md-4 d-flex justify-content-md-end">
-                <button class="btn btn-primary d-flex align-items-center gap-2" onclick="openCreateQuestionModal()">
-                  <i class="bi bi-plus-lg"></i>
-                  <span>Đặt câu hỏi mới</span>
-                </button>
+          <!-- Section 2: Hỏi đáp & Thảo luận môn học -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pt-2 border-top">
+            <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-chat-square-quote-fill text-primary"></i>
+              <span>Hỏi đáp & Thảo luận lớp học</span>
+              <span class="badge bg-light text-dark border font-monospace ms-1" id="badgeQaCount">0</span>
+            </h5>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <select class="form-select form-select-sm" id="qaClassSelect" style="max-width: 240px;" onchange="handleQaClassSelectChange()">
+                <option value="ALL">Tất cả môn học</option>
+                <option value="IT3020" selected>Lập trình Web</option>
+                <option value="IT3040">Cơ sở dữ liệu nâng cao</option>
+                <option value="IT4010">Trí tuệ nhân tạo</option>
+                <option value="IT4080">An toàn thông tin mạng</option>
+              </select>
+              <div class="input-group input-group-sm" style="max-width: 210px;">
+                <input type="text" class="form-control" id="qaCustomCodeInput" placeholder="Môn khác (VD: Chuyên đề Oracle)">
+                <button class="btn btn-outline-primary" type="button" onclick="applyCustomQaCode()">Lọc</button>
               </div>
             </div>
           </div>
-
-          <!-- Q&A Posts List -->
           <div id="qaPostsContainer" class="d-flex flex-column gap-3">
             <!-- Rendered via JS -->
           </div>
@@ -592,10 +582,10 @@
             <div class="col-6">
               <label class="form-label fw-semibold small">Môn học liên quan</label>
               <select class="form-select" id="qaSubjectIdInput">
-                <option value="sub_1">IT3020 — Lập trình Web</option>
-                <option value="sub_2">IT3040 — Cơ sở dữ liệu nâng cao</option>
-                <option value="sub_3">IT4010 — Trí tuệ nhân tạo</option>
-                <option value="sub_4">IT4080 — An toàn thông tin</option>
+                <option value="sub_1">Lập trình Web</option>
+                <option value="sub_2">Cơ sở dữ liệu nâng cao</option>
+                <option value="sub_3">Trí tuệ nhân tạo</option>
+                <option value="sub_4">An toàn thông tin mạng</option>
               </select>
             </div>
           </div>
@@ -677,6 +667,64 @@
   </div>
 </div>
 
+<!-- =====================================================================
+     MODAL 4: CẬP NHẬT TRƯỜNG CAO ĐẲNG / ĐẠI HỌC BẮT BUỘC (UNIVERSITY GATE)
+     ===================================================================== -->
+<div class="modal fade" id="universityGateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+          <i class="bi bi-building-check text-primary"></i>
+          <span>Cập nhật Trường Cao đẳng / Đại học</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="universityGateForm">
+        <div class="modal-body">
+          <div class="p-3 bg-light border rounded-3 mb-3 small text-muted">
+            <i class="bi bi-info-circle-fill text-primary me-1"></i>
+            Đánh giá môn học được phân tách riêng theo từng <strong>Trường Cao đẳng / Đại học</strong> đã chọn. Vui lòng cập nhật thông tin trường của bạn để tiếp tục xem và gửi đánh giá.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="gateUniversityPresetSelect">Chọn nhanh trường từ danh sách</label>
+            <select class="form-select" id="gateUniversityPresetSelect" onchange="handleGateUniversityPresetChange()">
+              <option value="">-- Chọn Trường Cao đẳng / Đại học phổ biến --</option>
+              <option value="Trường Đại học Nguyễn Tất Thành">Trường Đại học Nguyễn Tất Thành</option>
+              <option value="Đại học Quốc gia Hà Nội">Đại học Quốc gia Hà Nội</option>
+              <option value="Đại học Bách khoa Hà Nội">Đại học Bách khoa Hà Nội</option>
+              <option value="Trường Đại học Công nghệ Thông tin - ĐHQG TP.HCM">Trường Đại học Công nghệ Thông tin - ĐHQG TP.HCM</option>
+              <option value="Trường Đại học FPT">Trường Đại học FPT</option>
+              <option value="Cao đẳng Thực hành FPT Polytechnic">Cao đẳng Thực hành FPT Polytechnic</option>
+              <option value="Trường Cao đẳng Kỹ thuật Cao Thắng">Trường Cao đẳng Kỹ thuật Cao Thắng</option>
+              <option value="Trường Đại học Sư phạm Kỹ thuật TP.HCM">Trường Đại học Sư phạm Kỹ thuật TP.HCM</option>
+              <option value="Trường Đại học Kinh tế TP.HCM (UEH)">Trường Đại học Kinh tế TP.HCM (UEH)</option>
+              <option value="Trường Đại học Công nghiệp TP.HCM (IUH)">Trường Đại học Công nghiệp TP.HCM (IUH)</option>
+            </select>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label fw-semibold small" for="gateUniversityCustomInput">Hoặc nhập tên Trường Cao đẳng / Đại học của bạn <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="gateUniversityCustomInput" placeholder="VD: Trường Đại học Nguyễn Tất Thành..." required>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <a href="profile.html" class="btn btn-sm btn-link text-decoration-none p-0">
+            <i class="bi bi-person-gear me-1"></i>Mở Hồ sơ cá nhân
+          </a>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+            <button type="submit" class="btn btn-primary fw-semibold">
+              <i class="bi bi-check2-circle me-1"></i>Lưu & Tiếp tục
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -709,6 +757,7 @@
       subjectId: 'sub_1',
       userId: 'usr_demo_1',
       authorName: 'Trần Minh Quân',
+      authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
       lecturerName: 'TS. Bùi Duy Tân',
       rating: 5,
       difficulty: 3,
@@ -723,6 +772,7 @@
       subjectId: 'sub_1',
       userId: 'usr_demo_2',
       authorName: 'Lê Hoàng Lan',
+      authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
       lecturerName: 'ThS. Nguyễn Trung Nguyên',
       rating: 4,
       difficulty: 3,
@@ -737,6 +787,7 @@
       subjectId: 'sub_2',
       userId: 'usr_demo_3',
       authorName: 'Phạm Quốc Bảo',
+      authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
       lecturerName: 'PGS. TS. Trần Văn Kiên',
       rating: 5,
       difficulty: 4,
@@ -751,6 +802,7 @@
       subjectId: 'sub_3',
       userId: 'usr_demo_4',
       authorName: 'Nguyễn Thu Hà',
+      authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
       lecturerName: 'TS. Hoàng Minh Đức',
       rating: 5,
       difficulty: 4,
@@ -759,6 +811,81 @@
       materialsNotes: 'Sách Artificial Intelligence: A Modern Approach (Russell & Norvig).',
       content: 'Được thực hành thuật toán A*, Minimax và huấn luyện mô hình thực tế. Giảng viên chấm điểm rất công tâm, khuyến khích sáng tạo.',
       createdAt: '2026-11-10T16:45:00Z'
+    },
+    {
+      id: 'rev_seed_5',
+      subjectId: 'sub_4',
+      userId: 'usr_demo_5',
+      authorName: 'Đặng Quốc Huy',
+      authorUniversity: 'Trường Đại học Nguyễn Tất Thành',
+      lecturerName: 'ThS. Đỗ Quang Linh',
+      rating: 5,
+      difficulty: 3,
+      attendanceRequired: true,
+      gradingNotes: 'Thực hành CTF trên phòng Lab 40%, Thi lý thuyết & phân tích gói tin Wireshark 60%.',
+      materialsNotes: 'Tài liệu Lab OWASP Top 10 & Wireshark.',
+      content: 'Phòng Lab thực hành bắt gói tin và phòng chống SQL Injection / XSS rất cuốn. Thầy nhiệt tình giải đáp cả ngoài giờ học.',
+      createdAt: '2026-11-09T11:00:00Z'
+    },
+    {
+      id: 'rev_seed_6',
+      subjectId: 'sub_1',
+      userId: 'usr_demo_6',
+      authorName: 'Vũ Minh Tuấn',
+      authorUniversity: 'Đại học Quốc gia Hà Nội',
+      lecturerName: 'PGS. TS. Nguyễn Việt Anh',
+      rating: 5,
+      difficulty: 3,
+      attendanceRequired: true,
+      gradingNotes: 'Bài tập tuần 20%, Giữa kỳ 20%, Đồ án nhóm 60%.',
+      materialsNotes: 'Slide bài giảng UET-VNU & Tài liệu Node.js Design Patterns.',
+      content: 'Giảng viên định hướng kiến trúc hệ thống rất bài bản, yêu cầu viết Unit Test và tài liệu OpenAPI đầy đủ cho đồ án.',
+      createdAt: '2026-11-14T10:00:00Z'
+    },
+    {
+      id: 'rev_seed_7',
+      subjectId: 'sub_1',
+      userId: 'usr_demo_7',
+      authorName: 'Nguyễn Minh Quân',
+      authorUniversity: 'Đại học Bách khoa Hà Nội',
+      lecturerName: 'TS. Hoàng Minh Đức',
+      rating: 5,
+      difficulty: 4,
+      attendanceRequired: true,
+      gradingNotes: 'Giữa kỳ 30% (Project nhóm REST API), Cuối kỳ 70% (Bảo vệ đồ án Fullstack + Vấn đáp).',
+      materialsNotes: 'Slide bài giảng trên LMS + Documentation Express.js và React.',
+      content: 'Môn học cực kỳ thực tế tại Bách khoa. Thầy giảng kỹ phần kiến trúc RESTful, JWT và tối ưu truy vấn.',
+      createdAt: '2026-11-13T08:30:00Z'
+    },
+    {
+      id: 'rev_seed_8',
+      subjectId: 'sub_1',
+      userId: 'usr_demo_8',
+      authorName: 'Ngô Bảo Châu',
+      authorUniversity: 'Trường Đại học FPT',
+      lecturerName: 'ThS. Phạm Công Danh',
+      rating: 5,
+      difficulty: 3,
+      attendanceRequired: true,
+      gradingNotes: 'Progress Test 20%, Lab 30%, Practical Exam (PE) + Final 50%.',
+      materialsNotes: 'Courseware trên FuLMS & Repo thực hành React/Express.',
+      content: 'Điểm danh nghiêm ngặt trên hệ thống FAP. Bài thi PE bám sát các bài Lab đã làm trên lớp.',
+      createdAt: '2026-11-11T14:00:00Z'
+    },
+    {
+      id: 'rev_seed_9',
+      subjectId: 'sub_1',
+      userId: 'usr_demo_9',
+      authorName: 'Đinh Tuấn Kiệt',
+      authorUniversity: 'Cao đẳng Thực hành FPT Polytechnic',
+      lecturerName: 'ThS. Bùi Thành Đạt',
+      rating: 5,
+      difficulty: 2,
+      attendanceRequired: true,
+      gradingNotes: '8 bài Lab 40%, Quiz 20%, Bảo vệ Assignment 40%.',
+      materialsNotes: 'Slide LMS FPT Polytechnic + Video hướng dẫn từng giai đoạn Assignment.',
+      content: 'Học thực hành 100% trên máy, giảng viên hướng dẫn chi tiết từ lúc dựng giao diện đến khi kết nối API hoàn chỉnh.',
+      createdAt: '2026-11-08T09:00:00Z'
     }
   ];
 
@@ -880,11 +1007,125 @@
   let qaPostsData = [];
   let marketItemsData = [];
   let expandedCommentsMap = { qa_seed_1: true };
+  let pendingOpenReviewAfterGate = false;
 
   function getCurrentUser() {
     return (window.AppStore && typeof AppStore.getUser === 'function')
       ? AppStore.getUser()
-      : { id: 'guest', fullName: 'Sinh viên' };
+      : { id: 'guest', fullName: 'Sinh viên', university: '' };
+  }
+
+  function normalizeUni(name) {
+    if (window.AppStore && typeof AppStore.normalizeUniversityName === 'function') {
+      return AppStore.normalizeUniversityName(name);
+    }
+    return String(name || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/\s+/g, ' ');
+  }
+
+  function hasValidUserUniversity(user = getCurrentUser()) {
+    return Boolean(user && String(user.university || '').trim());
+  }
+
+  function updateUniversityBannerUI() {
+    const user = getCurrentUser();
+    const uni = String(user?.university || '').trim();
+    const labelEl = document.getElementById('currentUniversityLabel');
+    const bannerEl = document.getElementById('currentUniversityBanner');
+    if (labelEl) {
+      if (uni) {
+        labelEl.textContent = uni;
+        labelEl.className = 'text-primary fw-bold';
+      } else {
+        labelEl.textContent = 'Chưa cập nhật (Bắt buộc cập nhật để xem & đánh giá)';
+        labelEl.className = 'text-danger fw-bold';
+      }
+    }
+    if (bannerEl) {
+      bannerEl.style.borderLeftColor = uni ? 'var(--p-action)' : '#dc2626';
+    }
+  }
+
+  function handleGateUniversityPresetChange() {
+    const preset = document.getElementById('gateUniversityPresetSelect').value;
+    if (preset) {
+      document.getElementById('gateUniversityCustomInput').value = preset;
+    }
+  }
+
+  function openUniversityGateModal(openReviewAfter = false) {
+    pendingOpenReviewAfterGate = Boolean(openReviewAfter);
+    const user = getCurrentUser();
+    const currentUni = String(user?.university || '').trim();
+    const presetSelect = document.getElementById('gateUniversityPresetSelect');
+    const customInput = document.getElementById('gateUniversityCustomInput');
+
+    if (customInput) customInput.value = currentUni;
+    if (presetSelect) {
+      const matchedOpt = Array.from(presetSelect.options).find(
+        o => o.value && normalizeUni(o.value) === normalizeUni(currentUni)
+      );
+      presetSelect.value = matchedOpt ? matchedOpt.value : '';
+    }
+
+    const modalEl = document.getElementById('universityGateModal');
+    if (modalEl) {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+  }
+
+  async function saveUniversityFromGate(universityValue, openReviewAfter = false) {
+    const cleanUni = String(universityValue || '').trim();
+    if (!cleanUni) {
+      showToast('Thiếu thông tin trường', 'Vui lòng chọn hoặc nhập tên Trường Cao đẳng / Đại học của bạn.', 'warning');
+      return false;
+    }
+
+    if (window.AppStore && typeof AppStore.updateUser === 'function') {
+      AppStore.updateUser({ university: cleanUni });
+    }
+    if (isBackendConnected() && window.ApiService && typeof ApiService.updateProfile === 'function') {
+      try {
+        await ApiService.updateProfile({ university: cleanUni }, { silent: true });
+      } catch {
+        // Đã lưu ở AppStore local
+      }
+    }
+
+    const modalEl = document.getElementById('universityGateModal');
+    const modalInstance = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
+    if (modalInstance) modalInstance.hide();
+
+    updateUniversityBannerUI();
+    showToast('Đã cập nhật trường học', `Đang hiển thị đánh giá môn học của: ${cleanUni}`, 'success');
+    await loadCourseReviews();
+
+    if (openReviewAfter || pendingOpenReviewAfterGate) {
+      pendingOpenReviewAfterGate = false;
+      openReviewModal();
+    }
+    return true;
+  }
+
+  function saveInlineUniversityGate() {
+    const selectEl = document.getElementById('inlineGateUniversitySelect');
+    const inputEl = document.getElementById('inlineGateUniversityInput');
+    const chosen = (inputEl && inputEl.value.trim()) || (selectEl && selectEl.value.trim()) || '';
+    saveUniversityFromGate(chosen, false);
+  }
+
+  function handleInlineGateSelectChange() {
+    const selectEl = document.getElementById('inlineGateUniversitySelect');
+    const inputEl = document.getElementById('inlineGateUniversityInput');
+    if (selectEl && inputEl && selectEl.value) {
+      inputEl.value = selectEl.value;
+    }
   }
 
   function isBackendConnected() {
@@ -920,7 +1161,24 @@
   // Khởi tạo trang
   document.addEventListener('DOMContentLoaded', async () => {
     populateDynamicSubjectsAndClasses();
+    const gateForm = document.getElementById('universityGateForm');
+    if (gateForm) {
+      gateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const customVal = document.getElementById('gateUniversityCustomInput').value.trim();
+        const presetVal = document.getElementById('gateUniversityPresetSelect').value.trim();
+        await saveUniversityFromGate(customVal || presetVal, pendingOpenReviewAfterGate);
+      });
+    }
     await initCommunityData();
+    if (!hasValidUserUniversity()) {
+      openUniversityGateModal(false);
+    }
+  });
+
+  window.addEventListener('pp:store-synced', () => {
+    updateUniversityBannerUI();
+    renderCourseReviews();
   });
 
   function populateDynamicSubjectsAndClasses() {
@@ -930,12 +1188,12 @@
     const existingCodes = new Set(['ALL', 'IT3020', 'IT3040', 'IT4010', 'IT4080']);
 
     classes.forEach(cls => {
-      const code = (cls.code || '').trim().toUpperCase();
+      const code = (cls.code || cls.title || '').trim().toUpperCase();
       if (code && !existingCodes.has(code)) {
         existingCodes.add(code);
         const opt = document.createElement('option');
         opt.value = code;
-        opt.textContent = `${code} — ${cls.title || 'Lớp học phần'}`;
+        opt.textContent = cls.title || code;
         qaSelect.appendChild(opt);
       }
     });
@@ -945,6 +1203,8 @@
     reviewsData = readLocalStore(COMMUNITY_STORAGE_KEYS.REVIEWS, DEFAULT_REVIEWS);
     qaPostsData = readLocalStore(COMMUNITY_STORAGE_KEYS.QA_POSTS, DEFAULT_QA_POSTS);
     marketItemsData = readLocalStore(COMMUNITY_STORAGE_KEYS.MARKET_ITEMS, DEFAULT_MARKET_ITEMS);
+
+    updateUniversityBannerUI();
 
     await Promise.all([
       loadCourseReviews(),
@@ -956,10 +1216,35 @@
 
   function updateTabCounters() {
     const subjectId = document.getElementById('reviewSubjectSelect').value;
-    const subjectReviews = reviewsData.filter(r => r.subjectId === subjectId);
-    document.getElementById('badgeReviewCount').textContent = subjectReviews.length;
-    document.getElementById('badgeQaCount').textContent = qaPostsData.length;
+    const currentUser = getCurrentUser();
+    const userUni = String(currentUser?.university || '').trim();
+    const subjectReviews = userUni
+      ? reviewsData.filter(
+          r => r.subjectId === subjectId &&
+            normalizeUni(r.authorUniversity || r.university || r.user?.university || '') === normalizeUni(userUni)
+        )
+      : [];
+    const qaClassCode = document.getElementById('qaClassSelect')?.value || 'ALL';
+    const matchingQa = qaClassCode === 'ALL'
+      ? qaPostsData
+      : qaPostsData.filter(p => (p.classCode || '').toUpperCase() === qaClassCode.toUpperCase());
+    document.getElementById('badgeReviewCount').textContent = subjectReviews.length + matchingQa.length;
+    document.getElementById('badgeQaCount').textContent = matchingQa.length;
     document.getElementById('badgeMarketCount').textContent = marketItemsData.length;
+  }
+
+  function handleSubjectSelectChange() {
+    const subjectId = document.getElementById('reviewSubjectSelect').value;
+    const subjectMeta = SUBJECT_CATALOG.find(s => s.id === subjectId);
+    const qaSelect = document.getElementById('qaClassSelect');
+    if (subjectMeta && qaSelect) {
+      const hasOption = Array.from(qaSelect.options).some(o => o.value === subjectMeta.code);
+      if (hasOption) {
+        qaSelect.value = subjectMeta.code;
+      }
+    }
+    loadCourseReviews();
+    loadQaPosts();
   }
 
   function formatDateVi(isoStr) {
@@ -981,12 +1266,21 @@
   }
 
   // =========================================================================
-  // TAB 1: ĐÁNH GIÁ MÔN HỌC (COURSE REVIEWS)
+  // TAB 1: ĐÁNH GIÁ MÔN HỌC (COURSE REVIEWS - PHÂN TÁCH THEO TRƯỜNG ĐH/CĐ)
   // =========================================================================
   async function loadCourseReviews() {
+    updateUniversityBannerUI();
+    const currentUser = getCurrentUser();
+    const userUni = String(currentUser?.university || '').trim();
     const subjectId = document.getElementById('reviewSubjectSelect').value;
     const container = document.getElementById('reviewsListContainer');
-    UIStates.loading(container, 'Đang tải đánh giá môn học...');
+
+    if (!userUni) {
+      renderCourseReviews();
+      return;
+    }
+
+    UIStates.loading(container, `Đang tải đánh giá môn học tại ${userUni}...`);
 
     if (isBackendConnected()) {
       try {
@@ -1000,26 +1294,65 @@
           res = raw && raw.data ? raw.data : raw;
         }
         if (res && Array.isArray(res.reviews || res)) {
-          const serverList = Array.isArray(res.reviews) ? res.reviews : res;
-          const others = reviewsData.filter(r => r.subjectId !== subjectId);
+          const serverList = (Array.isArray(res.reviews) ? res.reviews : res).map(r => ({
+            ...r,
+            authorUniversity: r.authorUniversity || r.university || r.user?.university || userUni
+          }));
+          const normUserUni = normalizeUni(userUni);
+          const others = reviewsData.filter(
+            r => !(r.subjectId === subjectId && normalizeUni(r.authorUniversity || r.university || '') === normUserUni)
+          );
           reviewsData = [...others, ...serverList];
           writeLocalStore(COMMUNITY_STORAGE_KEYS.REVIEWS, reviewsData);
         }
-      } catch {
-        // Fallback mượt về dữ liệu local
+      } catch (err) {
+        if (err && (err.code === 'UNIVERSITY_REQUIRED' || err.status === 422)) {
+          openUniversityGateModal(false);
+        }
       }
     }
 
     renderCourseReviews();
   }
 
+  function renderUniversityRequiredGateCard(container) {
+    container.innerHTML = `
+      <div class="alert alert-warning d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 mb-0 border-warning-subtle rounded-3">
+        <div class="small">
+          <i class="bi bi-exclamation-circle-fill me-2"></i>
+          Bạn chưa chọn <strong>Trường Cao đẳng / Đại học</strong>. Vui lòng cập nhật thông tin trường để xem và viết đánh giá môn học.
+        </div>
+        <button type="button" class="btn btn-sm btn-warning fw-semibold" onclick="openUniversityGateModal(false)">
+          Cập nhật ngay
+        </button>
+      </div>
+    `;
+  }
+
   function renderCourseReviews() {
+    updateUniversityBannerUI();
     const subjectId = document.getElementById('reviewSubjectSelect').value;
     const container = document.getElementById('reviewsListContainer');
     const currentUser = getCurrentUser();
+    const userUni = String(currentUser?.university || '').trim();
 
+    if (!userUni) {
+      document.getElementById('summaryAvgRating').textContent = '0.0';
+      document.getElementById('summaryTotalReviews').textContent = '0';
+      document.getElementById('summaryAttendanceRate').textContent = '0%';
+      const btnTextEl = document.getElementById('btnWriteReviewText');
+      if (btnTextEl) btnTextEl.textContent = 'Cập nhật trường để đánh giá';
+      updateTabCounters();
+      renderUniversityRequiredGateCard(container);
+      return;
+    }
+
+    const normUserUni = normalizeUni(userUni);
     const list = reviewsData
-      .filter(r => r.subjectId === subjectId)
+      .filter(
+        r => r.subjectId === subjectId &&
+          normalizeUni(r.authorUniversity || r.university || r.user?.university || '') === normUserUni
+      )
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
     // Tính toán Summary
@@ -1034,7 +1367,7 @@
     document.getElementById('summaryTotalReviews').textContent = total;
     document.getElementById('summaryAttendanceRate').textContent = `${attendanceRate}%`;
 
-    // Kiểm tra xem user hiện tại đã review môn này chưa
+    // Kiểm tra xem user hiện tại đã review môn này tại trường hiện tại chưa
     const myReview = list.find(r => r.userId === currentUser.id);
     const btnTextEl = document.getElementById('btnWriteReviewText');
     if (btnTextEl) {
@@ -1046,8 +1379,8 @@
     if (list.length === 0) {
       UIStates.empty(
         container,
-        'Chưa có đánh giá cho môn học này',
-        'Hãy là sinh viên đầu tiên chia sẻ kinh nghiệm học và thi môn này!'
+        `Chưa có đánh giá cho môn học này tại ${userUni}`,
+        `Hãy là sinh viên đầu tiên của ${userUni} chia sẻ kinh nghiệm học và thi môn này!`
       );
       return;
     }
@@ -1063,7 +1396,7 @@
     container.innerHTML = list.map(rev => {
       const isMine = rev.userId === currentUser.id;
       const author = rev.authorName || rev.user?.fullName || (isMine ? currentUser.fullName : null) || rev.userId || 'Sinh viên';
-      const authorUniversity = rev.authorUniversity || rev.user?.university || '';
+      const authorUniversity = rev.authorUniversity || rev.university || rev.user?.university || userUni;
       const diffLevel = Number(rev.difficulty) || 3;
       const diffBadgeClass = diffLevel >= 4 ? 'priority-high' : (diffLevel === 3 ? 'priority-medium' : 'priority-low');
 
@@ -1077,7 +1410,7 @@
               <div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                   <span class="fw-bold text-main">${escapeHtml(author)}</span>
-                  ${authorUniversity ? `<span class="badge bg-light text-muted border">${escapeHtml(authorUniversity)}</span>` : ''}
+                  ${authorUniversity ? `<span class="badge bg-light text-muted border"><i class="bi bi-building me-1"></i>${escapeHtml(authorUniversity)}</span>` : ''}
                   ${isMine ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Đánh giá của bạn</span>' : ''}
                   <span class="text-muted small">• ${formatDateVi(rev.createdAt)}</span>
                 </div>
@@ -1137,15 +1470,31 @@
   }
 
   function openReviewModal() {
+    const currentUser = getCurrentUser();
+    const userUni = String(currentUser?.university || '').trim();
+    if (!userUni) {
+      showToast(
+        'Cần cập nhật thông tin trường',
+        'Vui lòng cập nhật Trường Cao đẳng / Đại học của bạn trước khi viết đánh giá môn học.',
+        'warning'
+      );
+      openUniversityGateModal(true);
+      return;
+    }
+
     const subjectSelect = document.getElementById('reviewSubjectSelect');
     const subjectId = subjectSelect.value;
     const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
-    const currentUser = getCurrentUser();
+    const normUserUni = normalizeUni(userUni);
 
     document.getElementById('reviewForm').reset();
-    document.getElementById('reviewSubjectNameDisplay').value = subjectText;
+    document.getElementById('reviewSubjectNameDisplay').value = `${subjectText} (${userUni})`;
 
-    const myReview = reviewsData.find(r => r.subjectId === subjectId && r.userId === currentUser.id);
+    const myReview = reviewsData.find(
+      r => r.subjectId === subjectId &&
+        r.userId === currentUser.id &&
+        normalizeUni(r.authorUniversity || r.university || userUni) === normUserUni
+    );
     const deleteBtn = document.getElementById('btnDeleteMyReviewModal');
 
     if (myReview) {
@@ -1173,6 +1522,13 @@
     e.preventDefault();
     const subjectId = document.getElementById('reviewSubjectSelect').value;
     const currentUser = getCurrentUser();
+    const userUni = String(currentUser?.university || '').trim();
+    if (!userUni) {
+      bootstrap.Modal.getInstance(document.getElementById('reviewModal'))?.hide();
+      openUniversityGateModal(true);
+      return;
+    }
+
     const payload = {
       lecturerName: document.getElementById('reviewLecturerInput').value.trim(),
       rating: Number(document.getElementById('reviewRatingInput').value) || 5,
@@ -1194,6 +1550,10 @@
           } catch (err) {
             if (err && err.status === 409 && typeof ApiService.updateMyCourseReview === 'function') {
               savedReview = await ApiService.updateMyCourseReview(subjectId, payload, { silent: true });
+            } else if (err && (err.code === 'UNIVERSITY_REQUIRED' || err.status === 422)) {
+              bootstrap.Modal.getInstance(document.getElementById('reviewModal'))?.hide();
+              openUniversityGateModal(true);
+              return;
             }
           }
         } else if (typeof ApiService.upsertSubjectReview === 'function') {
@@ -1212,13 +1572,19 @@
       }
     }
 
-    const existingIdx = reviewsData.findIndex(r => r.subjectId === subjectId && r.userId === currentUser.id);
+    const normUserUni = normalizeUni(userUni);
+    const existingIdx = reviewsData.findIndex(
+      r => r.subjectId === subjectId &&
+        r.userId === currentUser.id &&
+        normalizeUni(r.authorUniversity || r.university || userUni) === normUserUni
+    );
     const reviewRecord = {
       id: (savedReview && savedReview.id) || (existingIdx !== -1 ? reviewsData[existingIdx].id : 'rev_' + Date.now()),
       subjectId,
       userId: currentUser.id,
       authorName: (savedReview && savedReview.authorName) || currentUser.fullName || 'Sinh viên',
-      authorUniversity: (savedReview && savedReview.authorUniversity) || currentUser.university || '',
+      authorUniversity: (savedReview && savedReview.authorUniversity) || userUni,
+      university: (savedReview && savedReview.university) || userUni,
       ...payload,
       createdAt: new Date().toISOString()
     };
@@ -1231,7 +1597,7 @@
 
     writeLocalStore(COMMUNITY_STORAGE_KEYS.REVIEWS, reviewsData);
     bootstrap.Modal.getInstance(document.getElementById('reviewModal')).hide();
-    showToast('Đã lưu đánh giá', 'Cảm ơn bạn đã đóng góp đánh giá môn học cho cộng đồng!', 'success');
+    showToast('Đã lưu đánh giá', `Cảm ơn bạn đã đóng góp đánh giá môn học cho cộng đồng ${userUni}!`, 'success');
     renderCourseReviews();
   });
 
@@ -1285,14 +1651,14 @@
   }
 
   function applyCustomQaCode() {
-    const custom = document.getElementById('qaCustomCodeInput').value.trim().toUpperCase();
+    const custom = document.getElementById('qaCustomCodeInput').value.trim();
     if (!custom) return;
     const select = document.getElementById('qaClassSelect');
-    let found = Array.from(select.options).some(opt => opt.value === custom);
+    let found = Array.from(select.options).some(opt => opt.value.toUpperCase() === custom.toUpperCase());
     if (!found) {
       const opt = document.createElement('option');
       opt.value = custom;
-      opt.textContent = `${custom} — Lớp tùy chỉnh`;
+      opt.textContent = custom;
       select.appendChild(opt);
     }
     select.value = custom;

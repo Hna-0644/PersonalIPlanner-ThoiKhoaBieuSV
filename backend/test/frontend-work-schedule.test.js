@@ -731,3 +731,102 @@ test('AppStore.scanLocalDeadlineReminders generates non-duplicate urgent reminde
   const notifsAfterSecondScan = store.getNotifications().filter(n => n.title === 'Sắp đến hạn: Bài tập lớn Giải thuật');
   assert.equal(notifsAfterSecondScan.length, 1);
 });
+
+// ==========================================
+// 8. Course Reviews University Gate & Scoped Filtering Tests
+// ==========================================
+
+test('AppStore.fetchCourseReviews and submitCourseReview reject with UNIVERSITY_REQUIRED (status 422) when user has not entered university', async () => {
+  const { store } = setupFrontendEnvironment();
+
+  store.registerLocalAccount({
+    fullName: 'Sinh viên Chưa Chọn Trường',
+    email: 'nouni@student.edu.vn',
+    password: 'Password123'
+  });
+
+  assert.equal(store.getUser().university, '');
+
+  await assert.rejects(
+    async () => store.fetchCourseReviews('sub_1'),
+    (err) => {
+      assert.equal(err.code, 'UNIVERSITY_REQUIRED');
+      assert.equal(err.status, 422);
+      assert.ok(err.message.includes('Trường Cao đẳng / Đại học'));
+      return true;
+    }
+  );
+
+  await assert.rejects(
+    async () => store.submitCourseReview('sub_1', {
+      lecturerName: 'TS. Nguyễn Văn A',
+      rating: 5,
+      difficulty: 3,
+      attendanceRequired: true,
+      content: 'Đánh giá khi chưa chọn trường'
+    }),
+    (err) => {
+      assert.equal(err.code, 'UNIVERSITY_REQUIRED');
+      assert.equal(err.status, 422);
+      return true;
+    }
+  );
+});
+
+test('AppStore.fetchCourseReviews and submitCourseReview succeed after user updates university and strictly scope reviews to that university', async () => {
+  const { store } = setupFrontendEnvironment();
+
+  store.registerLocalAccount({
+    fullName: 'Lê Minh Khôi',
+    email: 'khoi.nttu@student.edu.vn',
+    password: 'Password123'
+  });
+
+  // Update university to Trường Đại học Nguyễn Tất Thành
+  store.updateUser({ university: 'Trường Đại học Nguyễn Tất Thành' });
+  assert.equal(store.getUser().university, 'Trường Đại học Nguyễn Tất Thành');
+
+  const nttuRes = await store.fetchCourseReviews('sub_1');
+  assert.equal(nttuRes.university, 'Trường Đại học Nguyễn Tất Thành');
+  assert.ok(Array.isArray(nttuRes.reviews));
+  assert.ok(nttuRes.reviews.length >= 1, 'Should have seeded reviews for Trường Đại học Nguyễn Tất Thành');
+  for (const rev of nttuRes.reviews) {
+    assert.equal(
+      store.normalizeUniversityName(rev.authorUniversity || rev.university),
+      store.normalizeUniversityName('Trường Đại học Nguyễn Tất Thành'),
+      'Must only return reviews belonging to Trường Đại học Nguyễn Tất Thành'
+    );
+  }
+
+  // Submit a new review under Trường Đại học Nguyễn Tất Thành
+  const created = await store.submitCourseReview('sub_1', {
+    lecturerName: 'ThS. Trần Quốc Tuấn',
+    rating: 5,
+    difficulty: 3,
+    attendanceRequired: true,
+    gradingNotes: 'Quá trình 40%, Cuối kỳ 60%',
+    materialsNotes: 'Slide LMS Nguyễn Tất Thành',
+    content: 'Môn học tại ĐH Nguyễn Tất Thành rất sát thực tế!'
+  });
+
+  assert.equal(created.authorUniversity, 'Trường Đại học Nguyễn Tất Thành');
+  assert.equal(created.university, 'Trường Đại học Nguyễn Tất Thành');
+
+  // Switch user to Đại học Quốc gia Hà Nội and verify NTTU review is excluded
+  store.updateUser({ university: 'Đại học Quốc gia Hà Nội' });
+  const vnuRes = await store.fetchCourseReviews('sub_1');
+  assert.equal(vnuRes.university, 'Đại học Quốc gia Hà Nội');
+  assert.ok(vnuRes.reviews.length >= 1);
+  for (const rev of vnuRes.reviews) {
+    assert.equal(
+      store.normalizeUniversityName(rev.authorUniversity || rev.university),
+      store.normalizeUniversityName('Đại học Quốc gia Hà Nội'),
+      'Must only return reviews belonging to Đại học Quốc gia Hà Nội'
+    );
+  }
+  assert.equal(
+    vnuRes.reviews.some(r => r.id === created.id),
+    false,
+    'Review from Trường Đại học Nguyễn Tất Thành must not appear under Đại học Quốc gia Hà Nội'
+  );
+});
