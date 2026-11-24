@@ -68,10 +68,27 @@
         loadDocuments();
       }, 250);
     });
+    const searchForm = document.getElementById('studyDocumentSearchForm');
+    if (searchForm) {
+      searchForm.addEventListener('submit', event => {
+        event.preventDefault();
+        window.clearTimeout(searchTimer);
+        resetAndLoad();
+        document.getElementById('studyDocuments').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
     document.getElementById('studyDocumentUniversityFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentSubjectFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentAcademicYearFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentCategoryFilter').addEventListener('change', resetAndLoad);
+    document.querySelectorAll('[data-study-category]').forEach(button => {
+      button.addEventListener('click', () => {
+        const filter = document.getElementById('studyDocumentCategoryFilter');
+        filter.value = button.dataset.studyCategory;
+        resetAndLoad();
+        document.getElementById('studyDocuments').scrollIntoView({ behavior: 'smooth' });
+      });
+    });
     document.getElementById('studyDocumentsSavedToggle').addEventListener('click', toggleSavedDocuments);
     document.getElementById('studyDocumentsPrevious').addEventListener('click', () => changePage(-1));
     document.getElementById('studyDocumentsNext').addEventListener('click', () => changePage(1));
@@ -176,8 +193,8 @@
   }
 
   function getAvailableSubjects() {
-    const subjects = typeof SUBJECT_CATALOG !== 'undefined'
-      ? SUBJECT_CATALOG.map(subject => ({ code: subject.code, name: subject.name }))
+    const subjects = Array.isArray(window.StudySubjectCatalog)
+      ? window.StudySubjectCatalog.map(subject => ({ code: subject.code, name: subject.name }))
       : [];
     const knownCodes = new Set(subjects.map(subject => subject.code));
 

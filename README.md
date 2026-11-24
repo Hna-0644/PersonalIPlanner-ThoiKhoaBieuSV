@@ -30,7 +30,7 @@ Hệ thống đã hoàn thiện kết nối giữa giao diện Frontend và Back
 - **Quản lý Thời khóa biểu & Quét lịch AI:** Thêm/sửa/xóa lớp học, cảnh báo trùng giờ và hỗ trợ quét ảnh thời khóa biểu tự động bằng Gemini AI Vision (`/api/ai/scan-schedule`).
 - **Quản lý Lịch làm việc (Work Shifts):** Tạo, chỉnh sửa, xóa và theo dõi các ca làm việc/lịch làm thêm trực quan ngay trên lịch biểu và bảng điều khiển (`/api/work-schedules`).
 - **Quản lý Công việc (Tasks):** Thiết lập mức ưu tiên, deadline, thời lượng ước tính, tiến độ, bộ lọc và chế độ xem Danh sách / Kanban (`/api/tasks`).
-- **Cộng đồng & Thư viện tài liệu:** Đánh giá/hỏi đáp môn học và tìm kiếm, lọc, chia sẻ tài liệu PDF/DOC/DOCX/PPTX hoặc link HTTPS theo trường, môn và niên khóa (`/api/documents`).
+- **Cộng đồng & Thư viện tài liệu:** Đánh giá/hỏi đáp môn học; trang Trao đổi tài liệu hỗ trợ tìm kiếm, lọc, xem trước PDF và chia sẻ PDF/DOC/DOCX/PPTX hoặc link HTTPS theo trường, môn, niên khóa, bên cạnh chợ trao đổi (`/api/documents`).
 - **Tự động xếp lịch thông minh (Auto-scheduling):** Tự động phân bổ các công việc chưa hoàn thành vào các khung giờ trống hợp lệ, tôn trọng lịch học cố định, ca làm việc, giờ nghỉ và khung giờ продуктив ưu tiên của người dùng mà không gây xung đột thời gian (`/api/schedule/auto-generate` & `/api/schedule/apply`).
 - **Thống kê & Hồ sơ cá nhân:** Biểu đồ tiến độ công việc, quản lý thông tin cá nhân và thiết lập khung giờ học tập ưu tiên.
 

@@ -104,3 +104,107 @@ test('document API does not treat an offline local-account 401 as success', asyn
     /Đăng nhập bằng tài khoản máy chủ/
   );
 });
+
+test('study library page provides the controls required by the shared document module', () => {
+  const page = fs.readFileSync(
+    path.join(__dirname, '../../frontend/pages/tradingsource.html'),
+    'utf8'
+  );
+  const source = fs.readFileSync(
+    path.join(__dirname, '../../frontend/js/documents.js'),
+    'utf8'
+  );
+  const requiredIds = new Set(
+    [...source.matchAll(/getElementById\('([^']+)'\)/g)].map(match => match[1])
+  );
+  for (const id of requiredIds) {
+    assert.match(page, new RegExp(`\\bid="${id}"`), `missing #${id}`);
+  }
+  assert.match(page, /src="\.\.\/js\/subject-catalog\.js"/);
+  assert.match(page, /src="\.\.\/js\/documents\.js"/);
+  assert.match(page, /id="marketplaceGridContainer"/);
+  assert.match(page, /id="marketForm"/);
+});
+
+test('study library category shortcut applies the category and retains search filters', async () => {
+  const source = fs.readFileSync(
+    path.join(__dirname, '../../frontend/js/documents.js'),
+    'utf8'
+  );
+  const elements = new Map();
+  const requests = [];
+  let initialize;
+
+  class Element {
+    constructor() {
+      this.value = '';
+      this.options = [];
+      this.listeners = {};
+      this.classList = { toggle() {}, add() {}, remove() {} };
+    }
+    addEventListener(name, callback) { this.listeners[name] = callback; }
+    replaceChildren(...options) { this.options = options; }
+    add(option) { this.options.push(option); }
+    scrollIntoView() { this.scrolled = true; }
+  }
+  function getElement(id) {
+    if (!elements.has(id)) elements.set(id, new Element());
+    return elements.get(id);
+  }
+  getElement('studyDocumentCategoryFilter').options = [
+    { value: '' }, { value: 'past_exams' }
+  ];
+  const shortcut = new Element();
+  shortcut.dataset = { studyCategory: 'past_exams' };
+  const document = {
+    addEventListener(name, callback) {
+      if (name === 'DOMContentLoaded') initialize = callback;
+    },
+    getElementById: getElement,
+    querySelectorAll(selector) {
+      return selector === '[data-study-category]' ? [shortcut] : [];
+    }
+  };
+  const window = {
+    location: { search: '' },
+    StudySubjectCatalog: [{ code: 'IT3040', name: 'Cơ sở dữ liệu' }],
+    addEventListener() {},
+    setTimeout,
+    clearTimeout
+  };
+  const ApiService = {
+    async getStudyDocumentFilters() {
+      return { universities: ['UIT'], academicYears: ['2025-2026'], subjects: [] };
+    },
+    async getStudyDocuments(query) {
+      requests.push(query);
+      return { documents: [], pagination: { page: 1, total: 0, totalPages: 1 } };
+    }
+  };
+  function Option(label, value) { this.textContent = label; this.value = value; }
+  vm.runInNewContext(source, {
+    window, document, ApiService, Option, URLSearchParams, setTimeout, clearTimeout
+  });
+  await initialize();
+  getElement('studyDocumentSearch').value = 'Cơ sở dữ liệu';
+  getElement('studyDocumentUniversityFilter').value = 'UIT';
+  getElement('studyDocumentAcademicYearFilter').value = '2025-2026';
+  shortcut.listeners.click();
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(getElement('studyDocumentCategoryFilter').value, 'past_exams');
+  assert.equal(getElement('studyDocuments').scrolled, true);
+  assert.equal(requests.at(-1).q, 'Cơ sở dữ liệu');
+  assert.equal(requests.at(-1).university, 'UIT');
+  assert.equal(requests.at(-1).academicYear, '2025-2026');
+  assert.equal(requests.at(-1).category, 'past_exams');
+
+  let prevented = false;
+  getElement('studyDocumentSearchForm').listeners.submit({
+    preventDefault() { prevented = true; }
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(prevented, true);
+  assert.equal(requests.at(-1).q, 'Cơ sở dữ liệu');
+  assert.equal(requests.at(-1).category, 'past_exams');
+});

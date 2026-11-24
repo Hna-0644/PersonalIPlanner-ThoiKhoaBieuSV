@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="page-type" content="software">
   <meta name="site-kind" content="software">
-  <title>PersonalPlanner — Trao đổi tài liệu & Đồ dùng</title>
+  <title>PersonalPlanner — Thư viện học liệu</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +14,124 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/study-documents.css">
 
   <style>
+    .app-main { min-width: 0; }
+    .library-hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(1.5rem, 4vw, 3.25rem);
+      border-radius: 22px;
+      background: #e8f4f1;
+      color: #173a38;
+    }
+    .library-hero-content { position: relative; z-index: 1; max-width: 720px; }
+    .library-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .4rem .7rem;
+      border: 1px solid #cce4dc;
+      border-radius: 999px;
+      background: rgba(255,255,255,.7);
+      color: #176f62;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .library-hero h1 {
+      margin: 1rem 0 .75rem;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1.12;
+      letter-spacing: -.04em;
+      font-weight: 800;
+    }
+    .library-hero p { max-width: 580px; color: #496963; line-height: 1.65; }
+    .library-search {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      max-width: 640px;
+      margin-top: 1.5rem;
+      padding: .45rem .45rem .45rem 1rem;
+      border: 1px solid #d5e5e0;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 8px 26px rgba(27, 74, 62, .08);
+    }
+    .library-search input { min-width: 0; border: 0; box-shadow: none !important; }
+    .library-hero-decoration {
+      position: absolute;
+      top: -50px;
+      right: -25px;
+      width: 290px;
+      height: 290px;
+      border: 45px solid rgba(255,255,255,.35);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .library-quick-links {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .library-quick-link {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      min-width: 0;
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid var(--hairline);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--p-ink);
+      text-align: left;
+      transition: var(--transition);
+    }
+    .library-quick-link:hover, .library-quick-link:focus-visible {
+      border-color: #9dcfc1;
+      box-shadow: var(--shadow-sm);
+    }
+    .library-quick-link i {
+      display: grid;
+      flex: 0 0 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 11px;
+      background: #eaf5f2;
+      color: #147d6d;
+      font-size: 1.15rem;
+    }
+    .library-quick-link span { font-size: .9rem; font-weight: 700; }
+    .library-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; }
+    .library-section-heading h2 { margin: 0 0 .35rem; font-size: 1.35rem; font-weight: 750; }
+    .library-section-heading p { margin: 0; color: var(--p-muted); font-size: .9rem; }
+    .library-filter-panel { padding: 1rem; border: 1px solid var(--hairline); border-radius: 14px; background: #fff; }
+    .library-filter-panel label { display: block; margin-bottom: .4rem; color: var(--p-muted); font-size: .76rem; font-weight: 700; }
+    .library-share {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1.5rem;
+      border: 1px solid #d8e9e3;
+      border-radius: 16px;
+      background: #f2f9f6;
+    }
+    .library-market { border-top: 1px solid var(--hairline); padding-top: 2rem; }
+    @media (max-width: 991.98px) { .library-quick-links { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 575.98px) {
+      .library-hero-decoration { opacity: .4; right: -180px; }
+      .library-search { gap: .25rem; }
+      .library-quick-links { gap: .6rem; }
+      .library-quick-link { padding: .75rem; }
+      .library-quick-link i { flex-basis: 36px; height: 36px; }
+      .library-quick-link span { font-size: .8rem; }
+    }
     .market-card {
       background: #ffffff;
       border: 1px solid var(--hairline);
@@ -159,7 +275,7 @@
         <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn">
           <i class="bi bi-list fs-5"></i>
         </button>
-        <h4 class="fw-bold mb-0">Trao đổi tài liệu & Đồ dùng</h4>
+        <h4 class="fw-bold mb-0">Thư viện học liệu</h4>
       </div>
 
       <div class="header-actions">
@@ -191,11 +307,105 @@
     </header>
 
     <div class="content-body">
+      <section class="library-hero mb-4" aria-labelledby="libraryHeroTitle">
+        <div class="library-hero-decoration" aria-hidden="true"></div>
+        <div class="library-hero-content">
+          <div class="library-eyebrow"><i class="bi bi-stars"></i> Học cùng cộng đồng</div>
+          <h1 id="libraryHeroTitle">Tìm đúng tài liệu.<br>Học theo cách của bạn.</h1>
+          <p>Khám phá bài giảng, ghi chú và đề thi được chia sẻ bởi sinh viên. Tìm theo trường, môn học và niên khóa của bạn.</p>
+          <form class="library-search" id="studyDocumentSearchForm" role="search">
+            <i class="bi bi-search text-muted" aria-hidden="true"></i>
+            <label class="visually-hidden" for="studyDocumentSearch">Tìm tài liệu học tập</label>
+            <input class="form-control" id="studyDocumentSearch" type="search" maxlength="200" placeholder="Tìm tài liệu, môn học, trường...">
+            <button class="btn btn-primary flex-shrink-0" type="submit">Khám phá</button>
+          </form>
+          <div class="small mt-3"><i class="bi bi-shield-check me-1"></i> Chia sẻ những tài liệu bạn có quyền sử dụng.</div>
+        </div>
+      </section>
+
+      <section class="mb-5" aria-labelledby="libraryCategoriesHeading">
+        <div class="library-section-heading mb-3">
+          <div>
+            <h2 id="libraryCategoriesHeading">Bạn đang tìm gì?</h2>
+            <p>Khám phá học liệu theo nhu cầu của bạn.</p>
+          </div>
+        </div>
+        <div class="library-quick-links">
+          <button class="library-quick-link" type="button" data-study-category="lecture_notes"><i class="bi bi-easel2"></i><span>Bài giảng</span></button>
+          <button class="library-quick-link" type="button" data-study-category="summaries"><i class="bi bi-journal-text"></i><span>Tóm tắt &amp; đề cương</span></button>
+          <button class="library-quick-link" type="button" data-study-category="assignments"><i class="bi bi-pencil-square"></i><span>Bài tập &amp; đồ án</span></button>
+          <button class="library-quick-link" type="button" data-study-category="past_exams"><i class="bi bi-file-earmark-check"></i><span>Đề thi các năm</span></button>
+        </div>
+      </section>
+
+      <section class="mb-5" id="studyDocuments" aria-labelledby="studyDocumentsHeading">
+        <div class="library-section-heading mb-3">
+          <div>
+            <h2 id="studyDocumentsHeading">Thư viện tài liệu <span class="badge bg-light text-dark border" id="studyDocumentsCount">0</span></h2>
+            <p>Tài liệu từ cộng đồng, dành cho hành trình học tập của bạn.</p>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary d-flex align-items-center gap-2" type="button" id="studyDocumentsSavedToggle" aria-pressed="false">
+              <i class="bi bi-bookmark-heart"></i><span>Thư viện của tôi</span>
+            </button>
+            <button class="btn btn-primary d-flex align-items-center gap-2" type="button" id="openStudyDocumentModal">
+              <i class="bi bi-cloud-arrow-up"></i><span>Đăng tài liệu</span>
+            </button>
+          </div>
+        </div>
+        <div class="library-filter-panel mb-3">
+          <div class="row g-3">
+            <div class="col-12 col-sm-6 col-xl-3">
+              <label for="studyDocumentUniversityFilter">Trường</label>
+              <select class="form-select" id="studyDocumentUniversityFilter"><option value="">Tất cả trường</option></select>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+              <label for="studyDocumentSubjectFilter">Môn học</label>
+              <select class="form-select" id="studyDocumentSubjectFilter"><option value="">Tất cả môn học</option></select>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+              <label for="studyDocumentAcademicYearFilter">Niên khóa</label>
+              <select class="form-select" id="studyDocumentAcademicYearFilter"><option value="">Tất cả niên khóa</option></select>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+              <label for="studyDocumentCategoryFilter">Loại tài liệu</label>
+              <select class="form-select" id="studyDocumentCategoryFilter">
+                <option value="">Tất cả danh mục</option>
+                <option value="lecture_notes">Bài giảng (Lecture notes)</option>
+                <option value="summaries">Tóm tắt / Đề cương (Summaries)</option>
+                <option value="assignments">Bài tập bắt buộc &amp; Đồ án (Assignments)</option>
+                <option value="past_exams">Đề thi các năm (Past exams)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="studyDocumentsStatus" class="small text-muted mb-3" role="status" aria-live="polite"></div>
+        <div class="row g-3" id="studyDocumentsGrid"></div>
+        <div class="d-flex align-items-center justify-content-between gap-2 mt-3">
+          <span class="small text-muted" id="studyDocumentsPagination"></span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="studyDocumentsPrevious">Trước</button>
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="studyDocumentsNext">Tiếp</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="library-share mb-5">
+        <div>
+          <h2 class="h5 fw-bold mb-1">Kiến thức hữu ích hơn khi được chia sẻ.</h2>
+          <p class="text-muted small mb-0">Đăng tài liệu của bạn để giúp những sinh viên khác cùng học tốt hơn.</p>
+        </div>
+        <button class="btn btn-outline-primary" type="button" onclick="document.getElementById('openStudyDocumentModal').click()">
+          <i class="bi bi-cloud-arrow-up me-1"></i> Chia sẻ tài liệu
+        </button>
+      </aside>
+
+      <section class="library-market" id="marketplace" aria-labelledby="marketplaceHeading">
       <!-- Page Banner -->
       <div class="page-header mb-4 pb-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
           <div class="text-primary small fw-semibold mb-1"><i class="bi bi-shop me-1"></i> Không gian chia sẻ học liệu</div>
-          <h1 class="page-title">Trao đổi tài liệu & Đồ dùng học tập</h1>
+          <h2 class="page-title" id="marketplaceHeading">Chợ trao đổi học tập</h2>
           <p class="page-subtitle">Chia sẻ giáo trình, slide bài giảng, đề cương ôn tập miễn phí (0đ) hoặc nhượng lại đồ dùng học tập cho các khóa sau.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -258,8 +468,112 @@
       <div class="row g-4" id="marketplaceGridContainer">
         <!-- Rendered via JS -->
       </div>
+      </section>
     </div>
   </main>
+</div>
+
+<div class="modal fade" id="studyDocumentModal" tabindex="-1" aria-labelledby="studyDocumentModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="studyDocumentModalTitle">Đăng tài liệu học tập</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <form id="studyDocumentForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="studyDocumentTitle">Tên tài liệu</label>
+            <input class="form-control" id="studyDocumentTitle" name="title" maxlength="200" required minlength="3" placeholder="Ví dụ: Đề cương ôn tập cuối kỳ">
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-7">
+              <label class="form-label fw-semibold" for="studyDocumentSubject">Môn học</label>
+              <select class="form-select" id="studyDocumentSubject" name="subjectCode" required></select>
+            </div>
+            <div class="col-12 col-sm-5">
+              <label class="form-label fw-semibold" for="studyDocumentCategory">Loại tài liệu</label>
+              <select class="form-select" id="studyDocumentCategory" name="category" required>
+                <option value="lecture_notes">Bài giảng (Lecture notes)</option>
+                <option value="summaries">Tóm tắt / Đề cương (Summaries)</option>
+                <option value="assignments">Bài tập bắt buộc &amp; Đồ án (Assignments)</option>
+                <option value="past_exams">Đề thi các năm (Past exams)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-7">
+              <label class="form-label fw-semibold" for="studyDocumentUniversity">Trường</label>
+              <input class="form-control" id="studyDocumentUniversity" name="university" maxlength="500" required placeholder="Tên trường đại học/cao đẳng">
+            </div>
+            <div class="col-12 col-sm-5">
+              <label class="form-label fw-semibold" for="studyDocumentAcademicYear">Niên khóa</label>
+              <input class="form-control" id="studyDocumentAcademicYear" name="academicYear" maxlength="9" required pattern="\d{4}-\d{4}" placeholder="2025-2026" title="Nhập theo định dạng YYYY-YYYY, ví dụ 2025-2026">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="studyDocumentDescription">Mô tả <span class="text-muted fw-normal">(không bắt buộc)</span></label>
+            <textarea class="form-control" id="studyDocumentDescription" name="description" rows="3" maxlength="2000" placeholder="Nội dung, chương hoặc học kỳ liên quan"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="studyDocumentSourceType">Nguồn tài liệu</label>
+            <select class="form-select" id="studyDocumentSourceType">
+              <option value="file">Tải tệp từ máy</option>
+              <option value="link">Chia sẻ link HTTPS</option>
+            </select>
+          </div>
+          <div id="studyDocumentFileGroup">
+            <label class="form-label fw-semibold" for="studyDocumentFile">Tệp tài liệu</label>
+            <input class="form-control" id="studyDocumentFile" name="file" type="file" accept=".pdf,.doc,.docx,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation" required>
+            <div class="form-text">Chấp nhận PDF, DOC, DOCX hoặc PPTX; tối đa 15 MB. Chỉ đăng tài liệu bạn có quyền chia sẻ.</div>
+          </div>
+          <div class="d-none" id="studyDocumentLinkGroup">
+            <label class="form-label fw-semibold" for="studyDocumentSourceUrl">Link tài liệu (HTTPS)</label>
+            <input class="form-control" id="studyDocumentSourceUrl" name="sourceUrl" type="url" inputmode="url" pattern="https://.+" maxlength="2048" placeholder="https://drive.google.com/..." disabled>
+            <div class="form-text">Kiểm tra quyền truy cập link trước khi chia sẻ.</div>
+          </div>
+          <div class="small text-danger mt-2" id="studyDocumentFormError" role="alert"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" type="button" data-bs-dismiss="modal">Hủy</button>
+          <button class="btn btn-primary" type="submit" id="studyDocumentSubmit"><i class="bi bi-cloud-arrow-up me-1"></i> Tải lên và đăng</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="studyDocumentPreviewModal" tabindex="-1" aria-labelledby="studyDocumentPreviewTitle" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="min-w-0">
+          <h5 class="modal-title fw-bold text-truncate" id="studyDocumentPreviewTitle">Xem trước tài liệu</h5>
+          <div class="small text-muted" id="studyDocumentPreviewPageCount"></div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="study-document-reader-stage">
+          <div class="small text-muted text-center" id="studyDocumentPreviewStatus" role="status" aria-live="polite">Đang tải tài liệu...</div>
+          <canvas id="studyDocumentPreviewCanvas" class="d-none" aria-label="Trang tài liệu PDF đang xem"></canvas>
+        </div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <span class="small text-muted" id="studyDocumentPreviewPosition"></span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" type="button" id="studyDocumentPreviewPrevious" disabled>Trang trước</button>
+            <button class="btn btn-outline-primary btn-sm" type="button" id="studyDocumentPreviewNext" disabled>Trang tiếp</button>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" type="button" id="studyDocumentPreviewBookmark"><i class="bi bi-bookmark me-1"></i>Lưu vào Thư viện của tôi</button>
+          <button class="btn btn-primary btn-sm" type="button" id="studyDocumentPreviewDownload"><i class="bi bi-download me-1"></i>Tải xuống PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- =====================================================================
@@ -333,6 +647,9 @@
 <script src="../js/auth.js"></script>
 <script src="../js/ui-states.js"></script>
 <script src="../js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="../js/subject-catalog.js"></script>
+<script src="../js/documents.js"></script>
 
 <script>
   const MARKET_STORAGE_KEY = 'pp_community_market_v1';
