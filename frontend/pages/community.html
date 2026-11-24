@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="page-type" content="software">
   <meta name="site-kind" content="software">
-  <title>PersonalPlanner — Cộng đồng & Chợ tài liệu</title>
+  <title>PersonalPlanner — Cộng đồng học tập</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,6 +63,18 @@
     }
     .market-card:hover {
       transform: translateY(-2px);
+    }
+    .study-document-card {
+      background: #ffffff;
+      border: 1px solid var(--hairline);
+      border-radius: var(--r-md);
+      height: 100%;
+      padding: var(--s-5);
+      transition: var(--transition);
+    }
+    .study-document-card:hover {
+      border-color: var(--hairline-strong);
+      box-shadow: var(--shadow-md);
     }
 
     .star-rating {
@@ -243,7 +255,7 @@
         <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn">
           <i class="bi bi-list fs-5"></i>
         </button>
-        <h4 class="fw-bold mb-0">Đánh giá và hỏi đáp môn học</h4>
+        <h4 class="fw-bold mb-0">Cộng đồng học tập</h4>
       </div>
 
       <div class="header-actions">
@@ -279,8 +291,8 @@
       <div class="page-header mb-4 pb-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
           <div class="text-primary small fw-semibold mb-1"><i class="bi bi-chat-square-heart-fill me-1"></i> Không gian học thuật theo Trường</div>
-          <h1 class="page-title">Đánh giá và hỏi đáp môn học</h1>
-          <p class="page-subtitle">Tra cứu review môn học theo Trường Cao đẳng / Đại học và thảo luận, hỏi đáp bài tập cùng sinh viên.</p>
+          <h1 class="page-title">Cộng đồng học tập</h1>
+          <p class="page-subtitle">Tìm, chia sẻ tài liệu theo môn học, đọc đánh giá và trao đổi bài tập cùng sinh viên.</p>
         </div>
         <span class="badge bg-light text-dark border font-monospace px-3 py-2 d-none" id="badgeReviewCount">0</span>
       </div>
@@ -365,7 +377,65 @@
         <!-- Rendered via JS -->
       </div>
 
-      <!-- Section 2: Hỏi đáp & Thảo luận môn học -->
+      <!-- Section 2: Thư viện tài liệu học tập -->
+      <section class="mb-5 pt-2 border-top" aria-labelledby="studyDocumentsHeading">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pt-3">
+          <div>
+            <h5 class="fw-bold mb-1 d-flex align-items-center gap-2" id="studyDocumentsHeading">
+              <i class="bi bi-folder2-open text-primary"></i>
+              <span>Thư viện tài liệu học tập</span>
+              <span class="badge bg-light text-dark border" id="studyDocumentsCount">0</span>
+            </h5>
+            <p class="text-muted small mb-0">Tìm và chia sẻ ghi chú, slide, đề thi theo môn học.</p>
+          </div>
+          <button class="btn btn-primary d-flex align-items-center gap-2" type="button" id="openStudyDocumentModal">
+            <i class="bi bi-cloud-arrow-up"></i>
+            <span>Đăng tài liệu</span>
+          </button>
+        </div>
+
+        <div class="card-custom p-3 mb-3">
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-lg-6">
+              <label class="visually-hidden" for="studyDocumentSearch">Tìm tài liệu</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input class="form-control" id="studyDocumentSearch" type="search" maxlength="200" placeholder="Tìm tên tài liệu, môn học hoặc trường Đại học/Cao đẳng...">
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+              <label class="visually-hidden" for="studyDocumentSubjectFilter">Lọc theo môn học</label>
+              <select class="form-select" id="studyDocumentSubjectFilter">
+                <option value="">Tất cả môn học</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+              <label class="visually-hidden" for="studyDocumentCategoryFilter">Lọc theo loại tài liệu</label>
+              <select class="form-select" id="studyDocumentCategoryFilter">
+                <option value="">Tất cả loại tài liệu</option>
+                <option value="notes">Ghi chú</option>
+                <option value="slides">Slide bài giảng</option>
+                <option value="exam">Đề thi</option>
+                <option value="assignment">Bài tập</option>
+                <option value="summary">Đề cương / Tóm tắt</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="studyDocumentsStatus" class="small text-muted mb-3" role="status" aria-live="polite"></div>
+        <div class="row g-3" id="studyDocumentsGrid"></div>
+        <div class="d-flex align-items-center justify-content-between gap-2 mt-3">
+          <span class="small text-muted" id="studyDocumentsPagination"></span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="studyDocumentsPrevious">Trước</button>
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="studyDocumentsNext">Tiếp</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Hỏi đáp & Thảo luận môn học -->
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pt-2 border-top">
         <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
           <i class="bi bi-chat-square-quote-fill text-primary"></i>
@@ -393,6 +463,58 @@
       <div class="d-none" id="marketplaceGridContainer"></div>
     </div>
   </main>
+</div>
+
+<div class="modal fade" id="studyDocumentModal" tabindex="-1" aria-labelledby="studyDocumentModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="studyDocumentModalTitle">Đăng tài liệu học tập</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <form id="studyDocumentForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="studyDocumentTitle">Tên tài liệu</label>
+            <input class="form-control" id="studyDocumentTitle" name="title" maxlength="200" required minlength="3" placeholder="Ví dụ: Đề cương ôn tập cuối kỳ">
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-7">
+              <label class="form-label fw-semibold" for="studyDocumentSubject">Môn học</label>
+              <select class="form-select" id="studyDocumentSubject" name="subjectCode" required></select>
+            </div>
+            <div class="col-12 col-sm-5">
+              <label class="form-label fw-semibold" for="studyDocumentCategory">Loại tài liệu</label>
+              <select class="form-select" id="studyDocumentCategory" name="category" required>
+                <option value="notes">Ghi chú</option>
+                <option value="slides">Slide bài giảng</option>
+                <option value="exam">Đề thi</option>
+                <option value="assignment">Bài tập</option>
+                <option value="summary">Đề cương / Tóm tắt</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="studyDocumentDescription">Mô tả <span class="text-muted fw-normal">(không bắt buộc)</span></label>
+            <textarea class="form-control" id="studyDocumentDescription" name="description" rows="3" maxlength="2000" placeholder="Nội dung, chương hoặc học kỳ liên quan"></textarea>
+          </div>
+          <div>
+            <label class="form-label fw-semibold" for="studyDocumentFile">Tệp tài liệu</label>
+            <input class="form-control" id="studyDocumentFile" name="file" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+            <div class="form-text">Chấp nhận PDF, DOC hoặc DOCX; tối đa 15 MB. Chỉ đăng tài liệu bạn có quyền chia sẻ.</div>
+          </div>
+          <div class="small text-danger mt-2" id="studyDocumentFormError" role="alert"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" type="button" data-bs-dismiss="modal">Hủy</button>
+          <button class="btn btn-primary" type="submit" id="studyDocumentSubmit">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Tải lên và đăng
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- =====================================================================
@@ -655,6 +777,7 @@
 <script src="../js/auth.js"></script>
 <script src="../js/ui-states.js"></script>
 <script src="../js/main.js"></script>
+<script src="../js/documents.js"></script>
 
 <script>
   // =========================================================================

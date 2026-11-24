@@ -1,6 +1,6 @@
 # PersonalPlanner Backend
 
-REST API MVP sử dụng Node.js, Express và MySQL. API hiện có đăng ký/đăng nhập, hồ sơ, thời khóa biểu, công việc, lập lịch đề xuất/áp dụng, lịch đã áp dụng và thông báo.
+REST API MVP sử dụng Node.js, Express và MySQL. API hiện có đăng ký/đăng nhập, hồ sơ, thời khóa biểu, công việc, lập lịch đề xuất/áp dụng, lịch đã áp dụng, thông báo, hỏi đáp cộng đồng và thư viện tài liệu học tập.
 
 ## Yêu cầu
 
@@ -55,9 +55,13 @@ Danh sách endpoint hiện thực:
 - `GET /api/schedule/events`
 - `POST /api/schedule/auto-generate`, `POST /api/schedule/apply`
 - `GET /api/notifications`, `PUT /api/notifications/read-all`, `PUT /api/notifications/{id}/read`
+- `GET /api/documents` — tìm kiếm/lọc tài liệu theo môn và loại.
+- `POST /api/documents` — multipart upload PDF/DOC/DOCX tối đa 15 MiB; lưu file trong `backend/uploads/documents`.
+- `GET /api/documents/{id}/file` — tải tài liệu đã đăng.
 - `POST /api/ai/scan-schedule` — gửi ảnh dưới dạng data URL/base64 trong JSON; giờ tiết được quy đổi theo trường trong hồ sơ tài khoản.
 
 Token access hiện không có refresh-token endpoint. Gửi email nhắc lịch, quên mật khẩu và worker định kỳ chưa được triển khai.
+Kho tài liệu dùng lưu trữ local cho MVP; cần cấu hình object storage dùng chung trước khi mở rộng lên nhiều backend instance.
 
 ## Database migrations
 

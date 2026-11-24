@@ -28,6 +28,7 @@ Toàn bộ Backend được phân chia thành **6 module độc lập về mặt
 | **Module 4** | `cache-notification` | Quản lý thông báo người dùng (`Notification`), bộ nhớ đệm Redis cho lịch sự kiện và AI Vision trích xuất lịch. | `notification-routes.js`, `ai-routes.js` → `notification-controller.js` → `notification-service.js`, `ai-vision-service.js` → `notification-repository.js` |
 | **Module 5** | `marketplace` | Danh sách và quản lý tin trao đổi/mua bán tài liệu học tập giữa sinh viên. | `marketplace-routes.js` → `marketplace-controller.js` → `marketplace-service.js` → `marketplace-repository.js` |
 | **Module 6** | `community` | Review môn học và hỏi đáp theo lớp học phần, gồm bài viết, bình luận và lượt upvote. | `community-routes.js` → `community-controller.js` → `community-service.js` → `community-repository.js` |
+| **Module 7** | `documents` | Thư viện tài liệu học tập theo môn, tìm kiếm/lọc, đăng và tải tài liệu. | `document-routes.js` → `document-controller.js` → `document-service.js` → `document-repository.js` |
 
 - **`routes`**: Chỉ định nghĩa HTTP method, path, gắn middleware (`authenticate`, `validate`, `validateId`) và ủy quyền cho `controllers`.
 - **`controllers`**: Nhận `req, res`, trích xuất tham số (`req.user.id`, `req.params`, `req.body`), gọi `services` và trả response chuẩn `{ data: ... }`.
@@ -268,6 +269,9 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 | `GET` | `/notifications` | Có | Trả tối đa 100 thông báo gần nhất của user. |
 | `PATCH` | `/notifications/{id}` | Có | Request `{ read: true }`; đánh dấu đã đọc, thao tác lặp lại thành công. `PUT /notifications/{id}/read` là alias cũ. |
 | `PATCH` | `/notifications` | Có | Request `{ readAll: true }`; đánh dấu toàn bộ đã đọc, trả số bản ghi thực sự thay đổi. `PUT /notifications/read-all` là alias cũ. |
+| `GET` | `/documents` | Có | Query `q?`, `subjectCode?`, `category?`, `page?`, `limit?`; trả `{ data: { documents, pagination } }`, sắp xếp mới nhất trước. |
+| `POST` | `/documents` | Có | `multipart/form-data`: `file` (PDF/DOC/DOCX, tối đa 15 MiB), `subjectCode`, `subjectName`, `title`, `category`, `description?`; trả `{ data: StudyDocument }`. Giới hạn 5 lần đăng/phút/user. |
+| `GET` | `/documents/{id}/file` | Có | Tải file dưới dạng binary attachment; ID dạng `doc_123`. |
 | `GET` | `/courses/{subjectId}/reviews` | Có | Query `page`, `limit`; trả `{ data: { summary, reviews, pagination } }` và `X-Cache: HIT|MISS`. Summary: `avgRating`, `totalReviews`, `attendanceRate`. |
 | `POST` | `/courses/{subjectId}/reviews` | Có | Nhận `rating`, `difficulty`, `attendanceRequired`, `content` và các ghi chú nullable tùy chọn; trả `{ data: CourseReview }`. Review trùng của user/môn trả `409 REVIEW_ALREADY_EXISTS`. |
 | `PUT` | `/courses/{subjectId}/reviews/me` | Có | Partial update review của user hiện tại; trả `{ data: CourseReview }`; không có review trả `404 NOT_FOUND`. |
@@ -282,12 +286,13 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 
 ### Response và lỗi
 
-- Mọi response thành công dùng `{ "data": ... }`, bao gồm list, auth, update và delete; không trộn response bọc với response raw. Request body là JSON UTF-8; endpoint được bảo vệ dùng `Authorization: Bearer <accessToken>`.
+- Mọi response API dạng JSON thành công dùng `{ "data": ... }`, bao gồm list, auth, update và delete; endpoint tải tài liệu trả binary attachment. Request body mặc định là JSON UTF-8, riêng `POST /documents` dùng multipart; endpoint được bảo vệ dùng `Authorization: Bearer <accessToken>`.
 - Lỗi dùng cấu trúc `{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [] } }`.
-- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `REVIEW_ALREADY_EXISTS`, `CLASS_SUBJECT_CONFLICT`, `RATE_LIMIT_EXCEEDED`, `INTERNAL_ERROR`.
+- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `REVIEW_ALREADY_EXISTS`, `CLASS_SUBJECT_CONFLICT`, `RATE_LIMIT_EXCEEDED`, `FILE_TOO_LARGE`, `INVALID_DOCUMENT_FILE`, `INTERNAL_ERROR`.
 - HTTP status tương ứng: `400`, `401`, `403`, `404`, `409`, `429`, `500`; `409` dùng cho xung đột lịch hoặc trạng thái tài nguyên. Không biến lỗi thành response thành công giả.
 - Community áp dụng `409 REVIEW_ALREADY_EXISTS` khi user gửi review trùng môn và `409 CLASS_SUBJECT_CONFLICT` khi `classCode` đã gắn với môn khác. Subject/post/comment hoặc review/bài viết không thuộc user hiện tại trả `404 NOT_FOUND`.
 - Community dùng `429 RATE_LIMIT_EXCEEDED` khi vượt giới hạn ghi: tối đa 5 lần tạo review/bài viết/bình luận mỗi phút và 30 lần upvote mỗi phút cho mỗi user đã xác thực. Bộ đếm tạo dùng chung giữa ba endpoint tạo; bộ đếm vote dùng chung giữa hai endpoint vote.
+- Tài liệu được lưu trong `backend/uploads/documents` với tên nội bộ ngẫu nhiên; thư mục bị loại khỏi Git. MVP lưu file trên ổ đĩa local, giới hạn mỗi file 15 MiB và chỉ chấp nhận PDF/DOC/DOCX. Triển khai nhiều instance cần chuyển sang object storage dùng chung.
 - `GET /courses/{subjectId}/reviews` và `GET /classes/{classCode}/posts` đặt `X-Cache` thành `HIT` hoặc `MISS`. Redis lỗi không làm lỗi đọc MySQL; trang bài viết chỉ cache `page=1&limit=20`.
 - `classCode` chỉ phân vùng nội dung theo lớp học phần; mọi endpoint Community yêu cầu JWT nhưng hiện không xác minh user thuộc roster/đã đăng ký lớp đó. Không dùng mã lớp như bằng chứng quyền riêng tư.
 - Mọi truy vấn tài nguyên phải giới hạn theo user đã xác thực; không tin `userId` gửi từ client.

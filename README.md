@@ -30,6 +30,7 @@ Hệ thống đã hoàn thiện kết nối giữa giao diện Frontend và Back
 - **Quản lý Thời khóa biểu & Quét lịch AI:** Thêm/sửa/xóa lớp học, cảnh báo trùng giờ và hỗ trợ quét ảnh thời khóa biểu tự động bằng Gemini AI Vision (`/api/ai/scan-schedule`).
 - **Quản lý Lịch làm việc (Work Shifts):** Tạo, chỉnh sửa, xóa và theo dõi các ca làm việc/lịch làm thêm trực quan ngay trên lịch biểu và bảng điều khiển (`/api/work-schedules`).
 - **Quản lý Công việc (Tasks):** Thiết lập mức ưu tiên, deadline, thời lượng ước tính, tiến độ, bộ lọc và chế độ xem Danh sách / Kanban (`/api/tasks`).
+- **Cộng đồng & Thư viện tài liệu:** Đánh giá/hỏi đáp môn học và tìm kiếm, lọc, đăng, tải tài liệu PDF/DOC/DOCX theo môn (`/api/documents`).
 - **Tự động xếp lịch thông minh (Auto-scheduling):** Tự động phân bổ các công việc chưa hoàn thành vào các khung giờ trống hợp lệ, tôn trọng lịch học cố định, ca làm việc, giờ nghỉ và khung giờ продуктив ưu tiên của người dùng mà không gây xung đột thời gian (`/api/schedule/auto-generate` & `/api/schedule/apply`).
 - **Thống kê & Hồ sơ cá nhân:** Biểu đồ tiến độ công việc, quản lý thông tin cá nhân và thiết lập khung giờ học tập ưu tiên.
 
@@ -40,7 +41,7 @@ Hệ thống đã hoàn thiện kết nối giữa giao diện Frontend và Back
 | Giao diện (Frontend) | HTML5, CSS3, Vanilla JavaScript |
 | UI & Lịch biểu | Bootstrap 5, FullCalendar |
 | Biểu đồ & Thông báo | Chart.js, SweetAlert2 |
-| Máy chủ (Backend) | Node.js (>= 20), Express.js, Zod, Luxon |
+| Máy chủ (Backend) | Node.js (>= 20), Express.js, Multer, Zod, Luxon |
 | Cơ sở dữ liệu & Cache | MySQL 8.0+, Redis (tùy chọn cache lịch trình) |
 | Xác thực & AI | JWT (`jsonwebtoken`, `bcryptjs`), Google Gemini Vision API |
 | Kiểm thử | Node.js Test Runner, Supertest, In-Memory E2E HTTP Harness |

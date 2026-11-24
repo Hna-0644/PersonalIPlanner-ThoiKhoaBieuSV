@@ -55,7 +55,9 @@ const ApiService = {
     const url = `${API_CONFIG.BASE_URL}${endpoint}`;
     const token = this.getToken();
     const headers = {
-      'Content-Type': 'application/json',
+      ...(typeof FormData !== 'undefined' && options.body instanceof FormData
+        ? {}
+        : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers
     };
@@ -93,6 +95,59 @@ const ApiService = {
     } catch (error) {
       if (!options.silent && !options.skipErrorModal && window.UIStates) {
         UIStates.showApiError(error, error.message || 'Không thể hoàn tất yêu cầu đến máy chủ.');
+      }
+      throw error;
+    }
+  },
+  async getStudyDocuments(query = {}, options = {}) {
+    const params = new URLSearchParams();
+    if (query.q) params.set('q', query.q);
+    if (query.subjectCode) params.set('subjectCode', query.subjectCode);
+    if (query.category) params.set('category', query.category);
+    if (query.page) params.set('page', String(query.page));
+    if (query.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await this.request(`/documents${qs ? `?${qs}` : ''}`, { silent: options.silent });
+    if (!res) throw new Error('Đăng nhập bằng tài khoản máy chủ để sử dụng kho tài liệu.');
+    return res && res.data ? res.data : res;
+  },
+  async uploadStudyDocument(formData, options = {}) {
+    const res = await this.request('/documents', {
+      method: 'POST',
+      body: formData,
+      silent: options.silent
+    });
+    if (!res) throw new Error('Đăng nhập bằng tài khoản máy chủ để đăng tài liệu.');
+    return res && res.data ? res.data : res;
+  },
+  async downloadStudyDocument(id, options = {}) {
+    const url = `${API_CONFIG.BASE_URL}/documents/${encodeURIComponent(id)}/file`;
+    const token = this.getToken();
+    try {
+      const response = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (response.status === 401 && !String(token).endsWith('.local_sig')) {
+        this.removeToken();
+        if (window.AuthService) {
+          AuthService.redirectToLogin();
+        } else {
+          window.location.href = '/pages/login.html';
+        }
+        return null;
+      }
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const error = new Error(
+          payload?.error?.message || 'Không thể tải tài liệu xuống.'
+        );
+        error.status = response.status;
+        throw error;
+      }
+      return await response.blob();
+    } catch (error) {
+      if (!options.silent && window.UIStates) {
+        UIStates.showApiError(error, error.message || 'Không thể tải tài liệu xuống.');
       }
       throw error;
     }

@@ -113,7 +113,7 @@
     <main class="app-main">
       <!-- Header -->
       <header class="app-header">
-        <div class="d-flex align-items-center gap-3">
+        <div class="header-leading d-flex align-items-center gap-3">
           <button class="btn btn-light d-lg-none p-2" id="sidebarToggleBtn" aria-label="Toggle Navigation">
             <i class="bi bi-list fs-5"></i>
           </button>
@@ -121,7 +121,7 @@
             <div class="search-input-group">
               <i class="bi bi-search"></i>
               <input type="text" class="form-control" id="globalSearchInput"
-                placeholder="Tìm kiếm môn học, công việc...">
+                placeholder="Tìm môn học hoặc công việc..." aria-label="Tìm môn học hoặc công việc">
               <span class="search-kbd">Ctrl K</span>
             </div>
           </div>
@@ -200,6 +200,24 @@
             </a>
           </div>
         </div>
+
+        <section class="document-discovery mb-4" aria-labelledby="documentDiscoveryHeading">
+          <div class="mb-3">
+            <h2 class="h5 fw-bold mb-1" id="documentDiscoveryHeading">Tìm tài liệu học tập</h2>
+            <p class="text-muted small mb-0">Tra cứu theo tên tài liệu, môn học hoặc trường Đại học/Cao đẳng.</p>
+          </div>
+          <form class="document-discovery-form" action="pages/community.html#studyDocuments" method="get">
+            <div class="document-discovery-input">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <label class="visually-hidden" for="documentDiscoveryQuery">Tìm tài liệu học tập</label>
+              <input class="form-control" id="documentDiscoveryQuery" name="documentQuery" type="search"
+                maxlength="200" placeholder="VD: Cơ sở dữ liệu, Chuyên đề Oracle, Đại học..." autocomplete="off">
+            </div>
+            <button class="btn btn-primary document-discovery-button" type="submit">
+              <i class="bi bi-search me-1" aria-hidden="true"></i>Tìm tài liệu
+            </button>
+          </form>
+        </section>
 
         <!-- Daily Overview Strip (UI/UX Pro Max Summary Bar) -->
         <div class="overview-strip">

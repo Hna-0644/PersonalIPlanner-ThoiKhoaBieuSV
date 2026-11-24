@@ -8,6 +8,7 @@ const ID_PREFIXES = {
   notification: 'ntf',
   work: 'wrk',
   marketplace: 'mkt',
+  document: 'doc',
   subject: 'sub',
   review: 'rev',
   post: 'pst',

@@ -14,6 +14,7 @@ const { createWorkScheduleService } = require('./services/work-schedule-service'
 const { createNotificationService } = require('./services/notification-service');
 const { createAiVisionService } = require('./services/ai-vision-service');
 const { createMarketplaceService } = require('./services/marketplace-service');
+const { createDocumentService } = require('./services/document-service');
 const { createCommunityService } = require('./services/community-service');
 const { createAuthRouter } = require('./routes/auth-routes');
 const { createProfileRouter } = require('./routes/profile-routes');
@@ -24,6 +25,7 @@ const { createScheduleRouter } = require('./routes/schedule-routes');
 const { createNotificationRouter } = require('./routes/notification-routes');
 const { createAiRouter } = require('./routes/ai-routes');
 const { createMarketplaceRouter } = require('./routes/marketplace-routes');
+const { createDocumentRouter } = require('./routes/document-routes');
 const { createCommunityRouter } = require('./routes/community-routes');
 
 function createApp({ pool, config, redisClient }) {
@@ -45,6 +47,10 @@ function createApp({ pool, config, redisClient }) {
   const notificationService = createNotificationService({ pool, redisClient });
   const aiVisionService = createAiVisionService({ pool, config });
   const marketplaceService = createMarketplaceService({ pool, redisClient });
+  const documentService = createDocumentService({
+    pool,
+    storageDirectory: path.join(__dirname, '../uploads/documents')
+  });
   const communityService = createCommunityService({ pool, redisClient });
 
   const allowedOrigins = String(config.CORS_ORIGIN || '')
@@ -83,6 +89,7 @@ function createApp({ pool, config, redisClient }) {
   app.use('/api/notifications', createNotificationRouter(notificationService, authenticate));
   app.use('/api/ai', createAiRouter(aiVisionService, profileService, authenticate));
   app.use('/api/marketplace', createMarketplaceRouter(marketplaceService, authenticate));
+  app.use('/api/documents', createDocumentRouter(documentService, authenticate));
   app.use('/api', createCommunityRouter(communityService, authenticate));
 
   // 404 cho API routes
