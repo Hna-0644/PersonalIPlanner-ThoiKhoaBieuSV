@@ -4,10 +4,13 @@ const bcrypt = require('bcryptjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const migration = fs.readFileSync(
-  path.join(__dirname, '../src/db/migrations/001_initial_schema.sql'),
-  'utf8'
-);
+const migrationsDir = path.join(__dirname, '../src/db/migrations');
+const migration = fs
+  .readdirSync(migrationsDir)
+  .filter(file => file.endsWith('.sql'))
+  .sort()
+  .map(file => fs.readFileSync(path.join(migrationsDir, file), 'utf8'))
+  .join('\n');
 const seed = fs.readFileSync(path.join(__dirname, '../database/seed.sql'), 'utf8');
 
 test('seed insert columns exist in the current database migration', () => {
@@ -18,10 +21,19 @@ test('seed insert columns exist in the current database migration', () => {
     tableColumns.set(
       table,
       new Set(
-        [...definition.matchAll(/^\s{2}(\w+)\s+(?:BIGINT|VARCHAR|CHAR|TEXT|TINYINT|TIME|DATE|DATETIME|ENUM|DECIMAL|JSON|SMALLINT|BOOLEAN)\b/gm)]
+        [...definition.matchAll(/^\s{2}(\w+)\s+(?:BIGINT|INT|VARCHAR|CHAR|TEXT|TINYINT|TIME|DATE|DATETIME|ENUM|DECIMAL|JSON|SMALLINT|BOOLEAN)\b/gm)]
           .map(([, column]) => column)
       )
     );
+  }
+
+  for (const [, table, column] of migration.matchAll(
+    /ALTER TABLE\s+(\w+)\s+ADD COLUMN\s+(\w+)\b/gi
+  )) {
+    if (!tableColumns.has(table)) {
+      tableColumns.set(table, new Set());
+    }
+    tableColumns.get(table).add(column);
   }
 
   const inserts = [...seed.matchAll(

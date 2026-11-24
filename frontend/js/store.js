@@ -31,6 +31,25 @@ function saveAccountsRegistry(list) {
   } catch { /* ignore */ }
 }
 
+function hashLocalPassword(rawPassword, email = '') {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const payload = `pp_local_salt_v1:${cleanEmail}:${String(rawPassword ?? '')}`;
+  const seeds = [0x811c9dc5, 0x01000193, 0x9e3779b9, 0x7f4a7c15, 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a];
+  for (let i = 0; i < payload.length; i++) {
+    const ch = payload.charCodeAt(i);
+    for (let s = 0; s < seeds.length; s++) {
+      let h = seeds[s] ^ (ch + s * 31 + i * 17);
+      h = Math.imul(h, 0x01000193);
+      h ^= h >>> 13;
+      h = Math.imul(h, 0x85ebca6b);
+      h ^= h >>> 16;
+      seeds[s] = h >>> 0;
+    }
+  }
+  const hex = seeds.map(h => h.toString(16).padStart(8, '0')).join('');
+  return `pp_sha256$${hex}`;
+}
+
 function encodeBase64Url(obj) {
   const str = JSON.stringify(obj);
   const bytes = new TextEncoder().encode(str);
@@ -56,6 +75,379 @@ const DEFAULT_PREFERRED_HOURS = {
   afternoon: { start: '14:00', end: '17:30', active: true },
   evening: { start: '19:30', end: '22:00', active: true }
 };
+
+const COMMUNITY_STORAGE_KEYS = {
+  SUBJECTS: 'pp_community_subjects_v1',
+  REVIEWS: 'pp_community_course_reviews_v1',
+  POSTS: 'pp_community_class_posts_v1',
+  COMMENTS: 'pp_community_post_comments_v1',
+  POST_VOTES: 'pp_community_post_votes_v1',
+  COMMENT_VOTES: 'pp_community_comment_votes_v1',
+  MARKETPLACE: 'pp_marketplace_items_v1'
+};
+
+const DEFAULT_SUBJECTS_CATALOGUE = [
+  {
+    id: 'sub_1',
+    code: 'IT3020',
+    name: 'Lập trình Web (Node.js & React)',
+    label: 'IT3020 - Lập trình Web (Node.js & React)',
+    credits: 3,
+    department: 'Công nghệ Phần mềm',
+    defaultClassCodes: ['IT3020.01', 'IT3020.02']
+  },
+  {
+    id: 'sub_2',
+    code: 'IT3040',
+    name: 'Cơ sở dữ liệu nâng cao',
+    label: 'IT3040 - Cơ sở dữ liệu nâng cao',
+    credits: 3,
+    department: 'Hệ thống Thông tin',
+    defaultClassCodes: ['IT3040.01', 'IT3040.02']
+  },
+  {
+    id: 'sub_3',
+    code: 'IT4010',
+    name: 'Trí tuệ nhân tạo (AI)',
+    label: 'IT4010 - Trí tuệ nhân tạo (AI)',
+    credits: 3,
+    department: 'Khoa học Máy tính',
+    defaultClassCodes: ['IT4010.01', 'IT4010.02']
+  },
+  {
+    id: 'sub_4',
+    code: 'IT4080',
+    name: 'An toàn thông tin mạng',
+    label: 'IT4080 - An toàn thông tin mạng',
+    credits: 3,
+    department: 'An toàn Thông tin',
+    defaultClassCodes: ['IT4080.01', 'IT4080.02']
+  }
+];
+
+const DEFAULT_COURSE_REVIEWS = [
+  {
+    id: 'rev_101',
+    subjectId: 'sub_1',
+    userId: 'usr_seed_1',
+    authorName: 'Nguyễn Minh Quân (K66 - CNTT)',
+    lecturerName: 'TS. Hoàng Minh Đức',
+    rating: 5,
+    difficulty: 3,
+    attendanceRequired: true,
+    gradingNotes: 'Giữa kỳ 30% (Project nhóm REST API), Cuối kỳ 70% (Bảo vệ đồ án Fullstack + Vấn đáp trực tiếp).',
+    materialsNotes: 'Slide bài giảng trên LMS + Documentation chính thức của Express.js và React.',
+    content: 'Môn học cực kỳ thực tế. Thầy Đức giảng kỹ phần kiến trúc RESTful, JWT và tối ưu truy vấn. Nhóm nào làm đồ án chỉn chu, hiểu rõ luồng code của mình thì dễ đạt A/A+.',
+    createdAt: '2026-10-15T08:30:00.000Z',
+    updatedAt: '2026-10-15T08:30:00.000Z'
+  },
+  {
+    id: 'rev_102',
+    subjectId: 'sub_1',
+    userId: 'usr_seed_2',
+    authorName: 'Trần Thu Hà (K66 - KTPM)',
+    lecturerName: 'ThS. Lê Hải Đăng',
+    rating: 4,
+    difficulty: 4,
+    attendanceRequired: true,
+    gradingNotes: 'Điểm danh mỗi buổi 10%, Lab hàng tuần 20%, Đồ án cuối kỳ 70%.',
+    materialsNotes: 'Repo mẫu của giảng viên + Sách Fullstack Open.',
+    content: 'Khối lượng bài tập tuần khá nhiều nhưng giúp chắc tay code. Cần chú ý xử lý lỗi validation và phân quyền ở Backend vì thầy kiểm tra test case rất kỹ.',
+    createdAt: '2026-10-18T14:20:00.000Z',
+    updatedAt: '2026-10-18T14:20:00.000Z'
+  },
+  {
+    id: 'rev_103',
+    subjectId: 'sub_2',
+    userId: 'usr_seed_3',
+    authorName: 'Lê Hoàng Nam (K65 - HTTT)',
+    lecturerName: 'PGS. TS. Trần Văn Kiên',
+    rating: 5,
+    difficulty: 4,
+    attendanceRequired: true,
+    gradingNotes: 'Thi viết giữa kỳ 30% (Tối ưu câu lệnh SQL & Indexing), Thi cuối kỳ 70%.',
+    materialsNotes: 'Giáo trình Cơ sở dữ liệu nâng cao + Slide Transaction & Concurrency Control.',
+    content: 'Phần B-Tree Index, Query Execution Plan và Isolation Levels rất hay, đi phỏng vấn Backend gần như chắc chắn được hỏi. Nên làm hết bộ đề ôn tập các năm trước.',
+    createdAt: '2026-10-12T09:15:00.000Z',
+    updatedAt: '2026-10-12T09:15:00.000Z'
+  },
+  {
+    id: 'rev_104',
+    subjectId: 'sub_3',
+    userId: 'usr_seed_4',
+    authorName: 'Phạm Gia Bảo (K66 - KHMT)',
+    lecturerName: 'TS. Vũ Thu Hà',
+    rating: 4,
+    difficulty: 4,
+    attendanceRequired: false,
+    gradingNotes: '3 bài Lab Python (Search, Minimax, Naive Bayes) 40% + Thi cuối kỳ 60%.',
+    materialsNotes: 'Sách Artificial Intelligence: A Modern Approach (Russell & Norvig).',
+    content: 'Cô giảng dễ hiểu, không bắt buộc điểm danh nhưng nên đi học để nghe giải thuật A* và Alpha-Beta Pruning vì đề thi yêu cầu chạy tay từng bước trên cây tìm kiếm.',
+    createdAt: '2026-10-20T16:45:00.000Z',
+    updatedAt: '2026-10-20T16:45:00.000Z'
+  },
+  {
+    id: 'rev_105',
+    subjectId: 'sub_4',
+    userId: 'usr_seed_5',
+    authorName: 'Đặng Quốc Huy (K65 - ATTT)',
+    lecturerName: 'ThS. Đỗ Quang Linh',
+    rating: 5,
+    difficulty: 3,
+    attendanceRequired: true,
+    gradingNotes: 'Thực hành CTF trên phòng Lab 40%, Thi lý thuyết & phân tích gói tin Wireshark 60%.',
+    materialsNotes: 'Tài liệu Lab OWASP Top 10, Wireshark & Криптография cơ bản.',
+    content: 'Phòng Lab thực hành bắt gói tin và phòng chống SQL Injection / XSS rất cuốn. Thầy nhiệt tình giải đáp cả ngoài giờ học.',
+    createdAt: '2026-10-22T11:00:00.000Z',
+    updatedAt: '2026-10-22T11:00:00.000Z'
+  }
+];
+
+const DEFAULT_CLASS_POSTS = [
+  {
+    id: 'pst_101',
+    subjectId: 'sub_1',
+    classCode: 'IT3020.01',
+    userId: 'usr_seed_1',
+    authorName: 'Nguyễn Minh Quân',
+    title: 'Hỏi về cấu trúc thư mục nộp bài tập lớn REST API + Frontend tuần 8',
+    content: 'Mọi người cho mình hỏi nhóm mình tách riêng 2 thư mục `backend/` và `frontend/` cùng file `docker-compose.yml` ở gốc repo thì khi nộp trên LMS cần nén kèm file `.env.example` và script migrate SQL như thế nào để đúng chuẩn chấm tự động của thầy Đức ạ?',
+    upvoteCount: 7,
+    commentCount: 2,
+    createdAt: '2026-10-21T07:40:00.000Z'
+  },
+  {
+    id: 'pst_102',
+    subjectId: 'sub_1',
+    classCode: 'IT3020.01',
+    userId: 'usr_seed_2',
+    authorName: 'Trần Thu Hà',
+    title: 'Tìm thêm 1 bạn cùng nhóm Đồ án Web (ưu tiên phụ trách giao diện & kiểm thử)',
+    content: 'Nhóm mình hiện đã có 2 bạn làm Backend Node.js/MySQL và Redis cache, đang cần tìm thêm 1 bạn cùng lớp IT3020.01 phối hợp làm Frontend và viết kịch bản kiểm thử API. Bạn nào chưa có nhóm nhắn mình nhé!',
+    upvoteCount: 4,
+    commentCount: 1,
+    createdAt: '2026-10-22T13:10:00.000Z'
+  },
+  {
+    id: 'pst_103',
+    subjectId: 'sub_2',
+    classCode: 'IT3040.01',
+    userId: 'usr_seed_3',
+    authorName: 'Lê Hoàng Nam',
+    title: 'Cách đọc bảng EXPLAIN khi tối ưu Composite Index trong MySQL 8.0',
+    content: 'Ở bài Lab số 3 khi tạo index `(user_id, status, created_at)` nhưng câu truy vấn lọc theo `status` mà bỏ qua `user_id` thì MySQL báo `type: index` thay vì `ref`. Có bạn nào đã benchmark thử phương án đảo thứ tự cột trong index chưa?',
+    upvoteCount: 9,
+    commentCount: 1,
+    createdAt: '2026-10-23T09:25:00.000Z'
+  },
+  {
+    id: 'pst_104',
+    subjectId: 'sub_3',
+    classCode: 'IT4010.01',
+    userId: 'usr_seed_4',
+    authorName: 'Phạm Gia Bảo',
+    title: 'Chia sẻ bộ test case kiểm tra hàm Heuristic A* bài toán 8-Puzzle',
+    content: 'Mình vừa tổng hợp 15 trạng thái bàn cờ 8-Puzzle (gồm cả trường hợp không có lời giải và độ sâu tối ưu 24 bước) để kiểm tra thời gian chạy của Manhattan Distance vs Misplaced Tiles. Mọi người xem dưới phần bình luận nhé.',
+    upvoteCount: 6,
+    commentCount: 1,
+    createdAt: '2026-10-24T15:00:00.000Z'
+  }
+];
+
+const DEFAULT_POST_COMMENTS = [
+  {
+    id: 'cmt_101',
+    postId: 'pst_101',
+    userId: 'usr_seed_2',
+    authorName: 'Trần Thu Hà',
+    content: 'Hôm thứ 3 thầy có dặn là để file `schema.sql` trong `backend/db/` và ghi rõ các biến môi trường trong `.env.example`, tuyệt đối không nén thư mục `node_modules` vào file zip nộp bài nhé!',
+    upvoteCount: 5,
+    createdAt: '2026-10-21T08:15:00.000Z'
+  },
+  {
+    id: 'cmt_102',
+    postId: 'pst_101',
+    userId: 'usr_seed_3',
+    authorName: 'Lê Hoàng Nam',
+    content: 'Chuẩn luôn, nhóm mình nộp thêm 1 file `README.md` hướng dẫn lệnh `npm test` và `npm start` ở thư mục gốc nữa là thầy cộng điểm trình bày.',
+    upvoteCount: 3,
+    createdAt: '2026-10-21T09:05:00.000Z'
+  },
+  {
+    id: 'cmt_103',
+    postId: 'pst_102',
+    userId: 'usr_seed_5',
+    authorName: 'Đặng Quốc Huy',
+    content: 'Mình đã gửi tin nhắn qua email sinh viên cho bạn rồi nhé, mình quen làm HTML/CSS và viết unit test với Node test runner.',
+    upvoteCount: 2,
+    createdAt: '2026-10-22T14:00:00.000Z'
+  },
+  {
+    id: 'cmt_104',
+    postId: 'pst_103',
+    userId: 'usr_seed_1',
+    authorName: 'Nguyễn Minh Quân',
+    content: 'Do nguyên tắc Leftmost Prefix của B-Tree đó bạn. Nếu hay lọc theo `status` cố định rồi sắp xếp `created_at DESC` thì đặt `(status, created_at)` sẽ tận dụng được index hiệu quả hơn.',
+    upvoteCount: 4,
+    createdAt: '2026-10-23T10:12:00.000Z'
+  },
+  {
+    id: 'cmt_105',
+    postId: 'pst_104',
+    userId: 'usr_seed_2',
+    authorName: 'Trần Thu Hà',
+    content: 'Cảm ơn bạn nhiều! Bộ test case số 12 giúp mình phát hiện lỗi quên kiểm tra trạng thái đã thăm trong Priority Queue.',
+    upvoteCount: 3,
+    createdAt: '2026-10-24T16:20:00.000Z'
+  }
+];
+
+const DEFAULT_MARKETPLACE_ITEMS = [
+  {
+    id: 'mkt_101',
+    userId: 'usr_seed_1',
+    subjectId: 1,
+    subjectTag: 'IT3020 - Lập trình Web',
+    title: 'Giáo trình Phát triển Ứng dụng Web với Node.js, Express & React (Bản in màu đẹp 98%)',
+    description: 'Sách mua đầu kỳ còn mới nguyên, không viết vẽ bẩn, tặng kèm bộ sơ đồ kiến trúc REST API & JWT Auth mình tự tổng hợp khi ôn thi.',
+    category: 'textbook',
+    price: 65000,
+    isFree: false,
+    contactInfo: 'Zalo: 0912.345.678 (Quân - Giao trực tiếp tại Thư viện Tạ Quang Bửu)',
+    imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+    status: 'available',
+    seller: {
+      fullName: 'Nguyễn Minh Quân',
+      university: 'ĐH Bách Khoa'
+    },
+    createdAt: '2026-10-20T09:00:00.000Z',
+    updatedAt: '2026-10-20T09:00:00.000Z'
+  },
+  {
+    id: 'mkt_102',
+    userId: 'usr_seed_3',
+    subjectId: 2,
+    subjectTag: 'IT3040 - Cơ sở dữ liệu nâng cao',
+    title: '[TẶNG MIỄN PHÍ] Bộ Slide + Tổng hợp 50 bài tập tối ưu SQL & Indexing có lời giải chi tiết',
+    description: 'Mình đã qua môn với điểm A+ nên chia sẻ miễn phí toàn bộ bản in slide đã ghi chú kỹ các bẫy thường gặp trong đề thi giữa kỳ và cuối kỳ cho các bạn khóa sau.',
+    category: 'slides',
+    price: 0,
+    isFree: true,
+    contactInfo: 'Email: nam.lh@sis.hust.edu.vn hoặc nhận tại Sảnh nhà B1 sáng Thứ 4',
+    imageUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=600&auto=format&fit=crop&q=80',
+    status: 'available',
+    seller: {
+      fullName: 'Lê Hoàng Nam',
+      university: 'ĐH Bách Khoa'
+    },
+    createdAt: '2026-10-21T11:30:00.000Z',
+    updatedAt: '2026-10-21T11:30:00.000Z'
+  },
+  {
+    id: 'mkt_103',
+    userId: 'usr_seed_4',
+    subjectId: 3,
+    subjectTag: 'IT4010 - Trí tuệ nhân tạo (AI)',
+    title: 'Sổ tay tóm tắt giải thuật A*, Minimax, Alpha-Beta Pruning & Bài tập xác suất Bayes',
+    description: 'Vở ghi chép tay sạch đẹp 45 trang, có ví dụ minh họa từng bước duyệt cây tìm kiếm và công thức tính Entropy / Information Gain.',
+    category: 'notes',
+    price: 35000,
+    isFree: false,
+    contactInfo: 'Zalo: 0987.654.321 (Gia Bảo - KTX B9)',
+    imageUrl: 'https://images.unsplash.com/photo-1517842645767-c639042777db?w=600&auto=format&fit=crop&q=80',
+    status: 'available',
+    seller: {
+      fullName: 'Phạm Gia Bảo',
+      university: 'ĐH Bách Khoa'
+    },
+    createdAt: '2026-10-22T14:15:00.000Z',
+    updatedAt: '2026-10-22T14:15:00.000Z'
+  },
+  {
+    id: 'mkt_104',
+    userId: 'usr_seed_2',
+    subjectId: 4,
+    subjectTag: 'IT4080 - An toàn thông tin mạng',
+    title: 'Máy tính khoa học Casio fx-580VN X chính hãng + Bộ cáp mạng LAN bấm sẵn thực hành Lab',
+    description: 'Máy tính dùng giữ gìn, màn hình sắc nét, pin khỏe, dùng tính nghịch đảo modulo RSA cực nhanh. Tặng kèm 2 dây patch cord Cat6 dùng cho môn An toàn mạng.',
+    category: 'supplies',
+    price: 320000,
+    isFree: false,
+    contactInfo: 'SĐT/Zalo: 0933.112.233 (Thu Hà - Cổng Parabol Giải Phóng)',
+    imageUrl: 'https://images.unsplash.com/photo-1587145820266-a5951ee6f620?w=600&auto=format&fit=crop&q=80',
+    status: 'available',
+    seller: {
+      fullName: 'Trần Thu Hà',
+      university: 'ĐH Bách Khoa'
+    },
+    createdAt: '2026-10-23T08:00:00.000Z',
+    updatedAt: '2026-10-23T08:00:00.000Z'
+  },
+  {
+    id: 'mkt_105',
+    userId: 'usr_seed_5',
+    subjectId: 1,
+    subjectTag: 'IT3020 - Lập trình Web',
+    title: '[MIỄN PHÍ] Tài liệu Cheat Sheet HTTP Status Codes, SQL Joins & Docker Compose cho Đồ án',
+    description: 'Bộ 6 tờ A4 ép plastic tổng hợp các câu lệnh Git, Docker, MySQL và chuẩn RESTful API hay dùng khi bảo vệ đồ án môn Web.',
+    category: 'slides',
+    price: 0,
+    isFree: true,
+    contactInfo: 'Zalo: 0905.888.999 (Quốc Huy - Phòng Lab C1-302)',
+    imageUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=600&auto=format&fit=crop&q=80',
+    status: 'available',
+    seller: {
+      fullName: 'Đặng Quốc Huy',
+      university: 'ĐH Bách Khoa'
+    },
+    createdAt: '2026-10-24T10:20:00.000Z',
+    updatedAt: '2026-10-24T10:20:00.000Z'
+  }
+];
+
+function readCommunityJson(key, defaultData) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      localStorage.setItem(key, JSON.stringify(defaultData));
+      return JSON.parse(JSON.stringify(defaultData));
+    }
+    const parsed = JSON.parse(raw);
+    return parsed !== null && parsed !== undefined ? parsed : JSON.parse(JSON.stringify(defaultData));
+  } catch {
+    return JSON.parse(JSON.stringify(defaultData));
+  }
+}
+
+function writeCommunityJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.warn(`Lỗi lưu trữ dữ liệu cộng đồng [${key}]:`, err);
+  }
+}
+
+function computeReviewSummaryFromList(reviews = []) {
+  const totalReviews = reviews.length;
+  if (totalReviews === 0) {
+    return {
+      avgRating: null,
+      avgDifficulty: null,
+      totalReviews: 0,
+      attendanceRate: 0
+    };
+  }
+  const ratingSum = reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0);
+  const diffSum = reviews.reduce((sum, r) => sum + Number(r.difficulty || 0), 0);
+  const attendanceCount = reviews.filter(r => Boolean(r.attendanceRequired)).length;
+
+  return {
+    avgRating: Number((ratingSum / totalReviews).toFixed(2)),
+    avgDifficulty: Number((diffSum / totalReviews).toFixed(2)),
+    totalReviews,
+    attendanceRate: Number(((attendanceCount / totalReviews) * 100).toFixed(2))
+  };
+}
 
 // Xóa dữ liệu Mock dùng chung cũ để đảm bảo mỗi người dùng có không gian dữ liệu độc lập
 function purgeLegacyMockData() {
@@ -206,6 +598,10 @@ function triggerPageRefresh() {
 
 const AppStore = {
   // === QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG ĐỘC LẬP (HỖ TRỢ ĐỒNG BỘ SERVER & OFFLINE FALLBACK) ===
+  hashLocalPassword(rawPassword, email = '') {
+    return hashLocalPassword(rawPassword, email);
+  },
+
   registerLocalAccount({ fullName, email, studentId, password }) {
     const cleanEmail = String(email || '').trim().toLowerCase();
     const accounts = getAccountsRegistry();
@@ -234,7 +630,7 @@ const AppStore = {
     accounts.push({
       id: userId,
       email: cleanEmail,
-      password: String(password),
+      passwordHash: hashLocalPassword(password, cleanEmail),
       user: newUser
     });
     saveAccountsRegistry(accounts);
@@ -248,10 +644,25 @@ const AppStore = {
     const cleanEmail = String(email || '').trim().toLowerCase();
     const accounts = getAccountsRegistry();
     const found = accounts.find(acc => acc.email === cleanEmail);
-    if (!found || found.password !== String(password)) {
+    const expectedHash = hashLocalPassword(password, cleanEmail);
+    const matchesHash = Boolean(found && found.passwordHash && found.passwordHash === expectedHash);
+    const matchesLegacyPlaintext = Boolean(
+      found &&
+      !found.passwordHash &&
+      found.password !== undefined &&
+      found.password === String(password)
+    );
+
+    if (!found || (!matchesHash && !matchesLegacyPlaintext)) {
       const err = new Error('Email hoặc mật khẩu không chính xác.');
       err.status = 401;
       throw err;
+    }
+
+    if (matchesLegacyPlaintext || found.password !== undefined) {
+      found.passwordHash = expectedHash;
+      delete found.password;
+      saveAccountsRegistry(accounts);
     }
 
     const storedUser = readScopedJson('user', found.user);
@@ -265,20 +676,27 @@ const AppStore = {
     const cleanEmail = String(userObj.email).trim().toLowerCase();
     const accounts = getAccountsRegistry();
     const idx = accounts.findIndex(acc => acc.email === cleanEmail || acc.id === userObj.id);
+    const computedHash = rawPassword !== null && rawPassword !== undefined && rawPassword !== ''
+      ? hashLocalPassword(rawPassword, cleanEmail)
+      : null;
+
     if (idx === -1) {
-      accounts.push({
+      const record = {
         id: userObj.id,
         email: cleanEmail,
-        password: rawPassword || '',
+        ...(computedHash ? { passwordHash: computedHash } : {}),
         user: userObj
-      });
+      };
+      accounts.push(record);
     } else {
+      const existing = { ...accounts[idx] };
+      delete existing.password;
       accounts[idx] = {
-        ...accounts[idx],
-        id: userObj.id || accounts[idx].id,
+        ...existing,
+        id: userObj.id || existing.id,
         email: cleanEmail,
-        ...(rawPassword ? { password: rawPassword } : {}),
-        user: { ...accounts[idx].user, ...userObj }
+        ...(computedHash ? { passwordHash: computedHash } : {}),
+        user: { ...existing.user, ...userObj }
       };
     }
     saveAccountsRegistry(accounts);
@@ -327,10 +745,15 @@ const AppStore = {
     if (!window.ApiService || !ApiService.isAuthenticated()) return false;
     const token = ApiService.getToken();
     if (String(token).endsWith('.local_sig')) {
+      this.scanLocalDeadlineReminders(24);
       triggerPageRefresh();
       return true;
     }
     try {
+      if (typeof ApiService.scanDeadlineReminders === 'function') {
+        await ApiService.scanDeadlineReminders(24, { silent: true }).catch(() => null);
+      }
+
       const [profile, classes, tasks, events, notifications, workSchedules] = await Promise.all([
         ApiService.getProfile({ silent: true }).catch(() => null),
         ApiService.getClasses({ silent: true }).catch(() => null),
@@ -449,6 +872,19 @@ const AppStore = {
           notes: w.notes || ''
         }));
         writeScopedJson('work_schedules', mappedShifts, scope);
+      }
+
+      if (ApiService.getMarketplaceItems) {
+        ApiService.getMarketplaceItems({ page: 1, limit: 20 }, { silent: true })
+          .then(mktData => {
+            const serverItems = Array.isArray(mktData)
+              ? mktData
+              : (mktData && Array.isArray(mktData.items) ? mktData.items : null);
+            if (serverItems && serverItems.length > 0) {
+              writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, serverItems);
+            }
+          })
+          .catch(() => {});
       }
 
       triggerPageRefresh();
@@ -847,6 +1283,8 @@ const AppStore = {
           }
         })
         .catch(err => console.warn('Không thể lưu công việc lên server:', err));
+    } else {
+      this.scanLocalDeadlineReminders(24);
     }
 
     return newTask;
@@ -893,6 +1331,8 @@ const AppStore = {
           console.warn('Không thể cập nhật công việc trên server:', err)
         );
       }
+    } else if (!isBackendOnlineSession()) {
+      this.scanLocalDeadlineReminders(24);
     }
 
     return tasks[index];
@@ -916,6 +1356,49 @@ const AppStore = {
   // === NOTIFICATIONS ===
   getNotifications() {
     return readScopedJson('notifications', []);
+  },
+  scanLocalDeadlineReminders(withinHours = 24) {
+    const windowHours = Math.max(1, Number(withinHours) || 24);
+    const nowMs = Date.now();
+    const maxMs = nowMs + windowHours * 3600 * 1000;
+    const tasks = this.getTasks();
+    const notifications = this.getNotifications();
+    const created = [];
+
+    for (const task of tasks) {
+      if (!task || task.status === 'done' || !task.deadline) continue;
+      const dueMs = new Date(task.deadline).getTime();
+      if (Number.isNaN(dueMs) || dueMs <= nowMs || dueMs > maxMs) continue;
+
+      const reminderTitle = `Sắp đến hạn: ${task.title}`;
+      const alreadyExists = notifications.some(
+        n => n && (n.title === reminderTitle || (task.id && n.taskId === task.id))
+      );
+      if (alreadyExists) continue;
+
+      const hoursLeft = Math.max(1, Math.ceil((dueMs - nowMs) / (3600 * 1000)));
+      const newNotif = {
+        id: 'notif_rem_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        taskId: task.id,
+        title: reminderTitle,
+        message: `Công việc "${task.title}" sẽ đến hạn trong khoảng ${hoursLeft} giờ tới.`,
+        type: 'urgent',
+        read: false,
+        time: 'Vừa xong',
+        createdAt: new Date().toISOString()
+      };
+      notifications.unshift(newNotif);
+      created.push(newNotif);
+    }
+
+    if (created.length > 0) {
+      writeScopedJson('notifications', notifications);
+    }
+
+    return {
+      createdCount: created.length,
+      notifications: created
+    };
   },
   markNotificationRead(id) {
     const list = this.getNotifications().map(n => (n.id === id ? { ...n, read: true } : n));
@@ -1345,6 +1828,820 @@ Ví dụ: "Tiết: 14 - 14" -> start_time: "18:45", end_time: "19:30".
         }
       ]
     };
+  },
+
+  // === SUBJECTS CATALOGUE (DANH MỤC MÔN HỌC CỘNG ĐỒNG) ===
+  getSubjects() {
+    const stored = readCommunityJson(COMMUNITY_STORAGE_KEYS.SUBJECTS, DEFAULT_SUBJECTS_CATALOGUE);
+    return Array.isArray(stored) && stored.length > 0 ? stored : DEFAULT_SUBJECTS_CATALOGUE;
+  },
+  getSubjectsCatalogue() {
+    return this.getSubjects();
+  },
+  getSubjectById(subjectId) {
+    const cleanId = String(subjectId || '').trim();
+    return (
+      this.getSubjects().find(
+        s => s.id === cleanId || s.code.toLowerCase() === cleanId.toLowerCase()
+      ) || null
+    );
+  },
+
+  // === COMMUNITY COURSE REVIEWS (ĐÁNH GIÁ MÔN HỌC & GIẢNG VIÊN) ===
+  getLocalCourseReviews(subjectId = null) {
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, DEFAULT_COURSE_REVIEWS);
+    const list = Array.isArray(all) ? all : DEFAULT_COURSE_REVIEWS;
+    if (!subjectId) return list;
+    return list.filter(r => r.subjectId === subjectId);
+  },
+
+  async fetchCourseReviews(subjectId = 'sub_1', query = {}) {
+    const targetSubjectId = String(subjectId || 'sub_1').trim();
+    const page = Number(query.page) > 0 ? Number(query.page) : 1;
+    const limit = Number(query.limit) > 0 ? Number(query.limit) : 20;
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.getCourseReviews === 'function') {
+      try {
+        const res = await ApiService.getCourseReviews(targetSubjectId, { page, limit }, { silent: true });
+        if (res && Array.isArray(res.reviews)) {
+          // Đồng bộ vào kho local cho môn học tương ứng nếu server có dữ liệu
+          if (res.reviews.length > 0) {
+            const existingOther = this.getLocalCourseReviews().filter(r => r.subjectId !== targetSubjectId);
+            writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, [...res.reviews, ...existingOther]);
+          }
+          const summary = res.summary || computeReviewSummaryFromList(res.reviews);
+          return {
+            summary: {
+              ...summary,
+              avgDifficulty:
+                summary.avgDifficulty !== undefined
+                  ? summary.avgDifficulty
+                  : computeReviewSummaryFromList(res.reviews).avgDifficulty
+            },
+            reviews: res.reviews,
+            pagination: res.pagination || {
+              page,
+              limit,
+              total: res.reviews.length,
+              totalPages: 1
+            }
+          };
+        }
+      } catch {
+        // Fallback sang dữ liệu localStorage khi offline hoặc DB chưa seed subject
+      }
+    }
+
+    const filtered = this.getLocalCourseReviews(targetSubjectId).sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
+    const summary = computeReviewSummaryFromList(filtered);
+    const offset = (page - 1) * limit;
+    const paged = filtered.slice(offset, offset + limit);
+
+    return {
+      summary,
+      reviews: paged,
+      pagination: {
+        page,
+        limit,
+        total: filtered.length,
+        totalPages: Math.ceil(filtered.length / limit) || 1
+      }
+    };
+  },
+
+  async getCourseReviews(subjectId = 'sub_1', query = {}) {
+    return this.fetchCourseReviews(subjectId, query);
+  },
+
+  async submitCourseReview(subjectId, reviewData) {
+    const targetSubjectId = String(subjectId || 'sub_1').trim();
+    const user = this.getUser();
+    const currentUserId = user.id || getCurrentUserScope();
+
+    const cleanInput = {
+      lecturerName: reviewData.lecturerName ? String(reviewData.lecturerName).trim() : null,
+      rating: Math.min(5, Math.max(1, Number(reviewData.rating || 5))),
+      difficulty: Math.min(5, Math.max(1, Number(reviewData.difficulty || 3))),
+      attendanceRequired: Boolean(reviewData.attendanceRequired),
+      gradingNotes: reviewData.gradingNotes ? String(reviewData.gradingNotes).trim() : null,
+      materialsNotes: reviewData.materialsNotes ? String(reviewData.materialsNotes).trim() : null,
+      content: String(reviewData.content || '').trim()
+    };
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.createCourseReview === 'function') {
+      try {
+        const created = await ApiService.createCourseReview(targetSubjectId, cleanInput, { silent: true });
+        if (created && created.id) {
+          const all = this.getLocalCourseReviews().filter(
+            r => !(r.subjectId === targetSubjectId && r.userId === currentUserId) && r.id !== created.id
+          );
+          const enriched = {
+            ...created,
+            authorName: created.authorName || user.fullName || 'Sinh viên'
+          };
+          all.unshift(enriched);
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, all);
+          return enriched;
+        }
+      } catch (err) {
+        if (err && err.status === 409 && typeof ApiService.updateMyCourseReview === 'function') {
+          try {
+            const updated = await ApiService.updateMyCourseReview(targetSubjectId, cleanInput, { silent: true });
+            if (updated && updated.id) {
+              const all = this.getLocalCourseReviews().filter(
+                r => !(r.subjectId === targetSubjectId && r.userId === currentUserId) && r.id !== updated.id
+              );
+              const enriched = {
+                ...updated,
+                authorName: updated.authorName || user.fullName || 'Sinh viên'
+              };
+              all.unshift(enriched);
+              writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, all);
+              return enriched;
+            }
+          } catch {
+            // Tiếp tục fallback local
+          }
+        }
+      }
+    }
+
+    const all = this.getLocalCourseReviews();
+    const existingIdx = all.findIndex(
+      r => r.subjectId === targetSubjectId && r.userId === currentUserId
+    );
+    const nowIso = new Date().toISOString();
+
+    if (existingIdx !== -1) {
+      const updatedReview = {
+        ...all[existingIdx],
+        ...cleanInput,
+        authorName: user.fullName || all[existingIdx].authorName || 'Sinh viên',
+        updatedAt: nowIso
+      };
+      all[existingIdx] = updatedReview;
+      writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, all);
+      return updatedReview;
+    }
+
+    const newReview = {
+      id: 'rev_' + Date.now(),
+      subjectId: targetSubjectId,
+      userId: currentUserId,
+      authorName: user.fullName || 'Sinh viên',
+      ...cleanInput,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+    all.unshift(newReview);
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, all);
+    return newReview;
+  },
+
+  async createCourseReview(subjectId, reviewData) {
+    return this.submitCourseReview(subjectId, reviewData);
+  },
+
+  async updateMyCourseReview(subjectId, reviewData) {
+    return this.submitCourseReview(subjectId, reviewData);
+  },
+
+  async deleteMyCourseReview(subjectId) {
+    const targetSubjectId = String(subjectId || 'sub_1').trim();
+    const currentUserId = this.getUser().id || getCurrentUserScope();
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.deleteMyCourseReview === 'function') {
+      try {
+        await ApiService.deleteMyCourseReview(targetSubjectId, { silent: true });
+      } catch {
+        // Fallback xóa local
+      }
+    }
+
+    const all = this.getLocalCourseReviews().filter(
+      r => !(r.subjectId === targetSubjectId && r.userId === currentUserId)
+    );
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.REVIEWS, all);
+    return { subjectId: targetSubjectId, deleted: true };
+  },
+
+  // === COMMUNITY CLASS Q&A (HỎI ĐÁP THEO MÃ LỚP HỌC PHẦN) ===
+  getLocalClassPosts(classCode = null) {
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, DEFAULT_CLASS_POSTS);
+    const list = Array.isArray(all) ? all : DEFAULT_CLASS_POSTS;
+    if (!classCode) return list;
+    const norm = String(classCode).trim().toUpperCase();
+    return list.filter(p => String(p.classCode || '').trim().toUpperCase() === norm);
+  },
+
+  getLocalPostComments(postId = null) {
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENTS, DEFAULT_POST_COMMENTS);
+    const list = Array.isArray(all) ? all : DEFAULT_POST_COMMENTS;
+    if (!postId) return list;
+    return list.filter(c => c.postId === postId);
+  },
+
+  async fetchClassPosts(classCode = 'IT3020.01', query = {}) {
+    const normalizedCode = String(classCode || 'IT3020.01').trim().toUpperCase();
+    const page = Number(query.page) > 0 ? Number(query.page) : 1;
+    const limit = Number(query.limit) > 0 ? Number(query.limit) : 20;
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.getClassPosts === 'function') {
+      try {
+        const res = await ApiService.getClassPosts(normalizedCode, { page, limit }, { silent: true });
+        if (res && Array.isArray(res.posts)) {
+          if (res.posts.length > 0) {
+            const others = this.getLocalClassPosts().filter(
+              p => String(p.classCode || '').trim().toUpperCase() !== normalizedCode
+            );
+            writeCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, [...res.posts, ...others]);
+          }
+          return {
+            posts: res.posts,
+            pagination: res.pagination || {
+              page,
+              limit,
+              total: res.posts.length,
+              totalPages: 1
+            }
+          };
+        }
+      } catch {
+        // Fallback sang dữ liệu localStorage
+      }
+    }
+
+    const allComments = this.getLocalPostComments();
+    const voteMap = readCommunityJson(COMMUNITY_STORAGE_KEYS.POST_VOTES, {});
+    const currentUserId = this.getUser().id || getCurrentUserScope();
+
+    const filtered = this.getLocalClassPosts(normalizedCode)
+      .map(p => ({
+        ...p,
+        commentCount:
+          p.commentCount !== undefined
+            ? p.commentCount
+            : allComments.filter(c => c.postId === p.id).length,
+        upvoted: Boolean(voteMap[`${currentUserId}:${p.id}`])
+      }))
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    const offset = (page - 1) * limit;
+    const paged = filtered.slice(offset, offset + limit);
+
+    return {
+      posts: paged,
+      pagination: {
+        page,
+        limit,
+        total: filtered.length,
+        totalPages: Math.ceil(filtered.length / limit) || 1
+      }
+    };
+  },
+
+  async getClassPosts(classCode = 'IT3020.01', query = {}) {
+    return this.fetchClassPosts(classCode, query);
+  },
+
+  async createClassPost(classCode, postData) {
+    const normalizedCode = String(classCode || postData?.classCode || 'IT3020.01').trim().toUpperCase();
+    const user = this.getUser();
+    const currentUserId = user.id || getCurrentUserScope();
+    const subjectId = String(postData.subjectId || postData.subject_id || 'sub_1').trim();
+    const title = String(postData.title || '').trim();
+    const content = String(postData.content || '').trim();
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.createClassPost === 'function') {
+      try {
+        const created = await ApiService.createClassPost(
+          normalizedCode,
+          { subjectId, title, content },
+          { silent: true }
+        );
+        if (created && created.id) {
+          const all = this.getLocalClassPosts().filter(p => p.id !== created.id);
+          const enriched = {
+            ...created,
+            authorName: created.authorName || user.fullName || 'Sinh viên',
+            commentCount: 0
+          };
+          all.unshift(enriched);
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, all);
+          return enriched;
+        }
+      } catch {
+        // Fallback lưu local
+      }
+    }
+
+    const newPost = {
+      id: 'pst_' + Date.now(),
+      subjectId,
+      classCode: normalizedCode,
+      userId: currentUserId,
+      authorName: user.fullName || 'Sinh viên',
+      title,
+      content,
+      upvoteCount: 0,
+      commentCount: 0,
+      createdAt: new Date().toISOString()
+    };
+
+    const all = this.getLocalClassPosts();
+    all.unshift(newPost);
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, all);
+    return newPost;
+  },
+
+  async deleteClassPost(postId) {
+    const targetId = String(postId || '').trim();
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.deleteMyPost === 'function') {
+      try {
+        await ApiService.deleteMyPost(targetId, { silent: true });
+      } catch {
+        // Fallback xóa local
+      }
+    }
+
+    const posts = this.getLocalClassPosts().filter(p => p.id !== targetId);
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, posts);
+
+    const comments = this.getLocalPostComments().filter(c => c.postId !== targetId);
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENTS, comments);
+
+    return { id: targetId, deleted: true };
+  },
+
+  async deleteMyPost(postId) {
+    return this.deleteClassPost(postId);
+  },
+
+  async fetchPostComments(postId, query = {}) {
+    const targetPostId = String(postId || '').trim();
+    const page = Number(query.page) > 0 ? Number(query.page) : 1;
+    const limit = Number(query.limit) > 0 ? Number(query.limit) : 20;
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.getPostComments === 'function') {
+      try {
+        const res = await ApiService.getPostComments(targetPostId, { page, limit }, { silent: true });
+        if (res && Array.isArray(res.comments)) {
+          if (res.comments.length > 0) {
+            const others = this.getLocalPostComments().filter(c => c.postId !== targetPostId);
+            writeCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENTS, [...others, ...res.comments]);
+          }
+          return {
+            comments: res.comments,
+            pagination: res.pagination || {
+              page,
+              limit,
+              total: res.comments.length,
+              totalPages: 1
+            }
+          };
+        }
+      } catch {
+        // Fallback sang dữ liệu localStorage
+      }
+    }
+
+    const voteMap = readCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENT_VOTES, {});
+    const currentUserId = this.getUser().id || getCurrentUserScope();
+
+    const filtered = this.getLocalPostComments(targetPostId)
+      .map(c => ({
+        ...c,
+        upvoted: Boolean(voteMap[`${currentUserId}:${c.id}`])
+      }))
+      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+
+    const offset = (page - 1) * limit;
+    const paged = filtered.slice(offset, offset + limit);
+
+    return {
+      comments: paged,
+      pagination: {
+        page,
+        limit,
+        total: filtered.length,
+        totalPages: Math.ceil(filtered.length / limit) || 1
+      }
+    };
+  },
+
+  async getPostComments(postId, query = {}) {
+    return this.fetchPostComments(postId, query);
+  },
+
+  async createPostComment(postId, commentData) {
+    const targetPostId = String(postId || '').trim();
+    const content = String(
+      typeof commentData === 'string' ? commentData : (commentData?.content || '')
+    ).trim();
+    const user = this.getUser();
+    const currentUserId = user.id || getCurrentUserScope();
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.createPostComment === 'function') {
+      try {
+        const created = await ApiService.createPostComment(targetPostId, { content }, { silent: true });
+        if (created && created.id) {
+          const all = this.getLocalPostComments().filter(c => c.id !== created.id);
+          const enriched = {
+            ...created,
+            authorName: created.authorName || user.fullName || 'Sinh viên'
+          };
+          all.push(enriched);
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENTS, all);
+          return enriched;
+        }
+      } catch {
+        // Fallback lưu local
+      }
+    }
+
+    const newComment = {
+      id: 'cmt_' + Date.now(),
+      postId: targetPostId,
+      userId: currentUserId,
+      authorName: user.fullName || 'Sinh viên',
+      content,
+      upvoteCount: 0,
+      createdAt: new Date().toISOString()
+    };
+
+    const allComments = this.getLocalPostComments();
+    allComments.push(newComment);
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENTS, allComments);
+
+    const posts = this.getLocalClassPosts().map(p =>
+      p.id === targetPostId
+        ? { ...p, commentCount: Number(p.commentCount || 0) + 1 }
+        : p
+    );
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, posts);
+
+    return newComment;
+  },
+
+  async togglePostUpvote(postId) {
+    const targetPostId = String(postId || '').trim();
+    const currentUserId = this.getUser().id || getCurrentUserScope();
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.togglePostUpvote === 'function') {
+      try {
+        const res = await ApiService.togglePostUpvote(targetPostId, { silent: true });
+        if (res && typeof res.upvoteCount === 'number') {
+          const posts = this.getLocalClassPosts().map(p =>
+            p.id === targetPostId ? { ...p, upvoteCount: res.upvoteCount, upvoted: res.upvoted } : p
+          );
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, posts);
+          return res;
+        }
+      } catch {
+        // Fallback toggle local
+      }
+    }
+
+    const voteMap = readCommunityJson(COMMUNITY_STORAGE_KEYS.POST_VOTES, {});
+    const voteKey = `${currentUserId}:${targetPostId}`;
+    const alreadyUpvoted = Boolean(voteMap[voteKey]);
+    const nextUpvoted = !alreadyUpvoted;
+    if (nextUpvoted) {
+      voteMap[voteKey] = true;
+    } else {
+      delete voteMap[voteKey];
+    }
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.POST_VOTES, voteMap);
+
+    let nextCount = 0;
+    const posts = this.getLocalClassPosts().map(p => {
+      if (p.id !== targetPostId) return p;
+      const baseCount = Number(p.upvoteCount || 0);
+      nextCount = Math.max(0, baseCount + (nextUpvoted ? 1 : -1));
+      return { ...p, upvoteCount: nextCount, upvoted: nextUpvoted };
+    });
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.POSTS, posts);
+
+    return { upvoted: nextUpvoted, upvoteCount: nextCount };
+  },
+
+  async toggleCommentUpvote(commentId) {
+    const targetCommentId = String(commentId || '').trim();
+    const currentUserId = this.getUser().id || getCurrentUserScope();
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.toggleCommentUpvote === 'function') {
+      try {
+        const res = await ApiService.toggleCommentUpvote(targetCommentId, { silent: true });
+        if (res && typeof res.upvoteCount === 'number') {
+          const comments = this.getLocalPostComments().map(c =>
+            c.id === targetCommentId ? { ...c, upvoteCount: res.upvoteCount, upvoted: res.upvoted } : c
+          );
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENTS, comments);
+          return res;
+        }
+      } catch {
+        // Fallback toggle local
+      }
+    }
+
+    const voteMap = readCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENT_VOTES, {});
+    const voteKey = `${currentUserId}:${targetCommentId}`;
+    const alreadyUpvoted = Boolean(voteMap[voteKey]);
+    const nextUpvoted = !alreadyUpvoted;
+    if (nextUpvoted) {
+      voteMap[voteKey] = true;
+    } else {
+      delete voteMap[voteKey];
+    }
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENT_VOTES, voteMap);
+
+    let nextCount = 0;
+    const comments = this.getLocalPostComments().map(c => {
+      if (c.id !== targetCommentId) return c;
+      const baseCount = Number(c.upvoteCount || 0);
+      nextCount = Math.max(0, baseCount + (nextUpvoted ? 1 : -1));
+      return { ...c, upvoteCount: nextCount, upvoted: nextUpvoted };
+    });
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.COMMENTS, comments);
+
+    return { upvoted: nextUpvoted, upvoteCount: nextCount };
+  },
+
+  // === MARKETPLACE (CHỢ GIÁO TRÌNH & ĐỒ DÙNG HỌC TẬP SINH VIÊN) ===
+  getMarketplaceItems(filters = {}) {
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+    let items = Array.isArray(all) ? [...all] : [...DEFAULT_MARKETPLACE_ITEMS];
+
+    const statusFilter = filters.status || 'available';
+    if (statusFilter !== 'all') {
+      items = items.filter(item => (item.status || 'available') === statusFilter);
+    }
+
+    if (filters.category && filters.category !== 'all') {
+      items = items.filter(item => item.category === filters.category);
+    }
+
+    const subjectTagFilter = filters.subjectTag || filters.subject_tag;
+    if (subjectTagFilter && subjectTagFilter !== 'all') {
+      const needle = String(subjectTagFilter).trim().toLowerCase();
+      items = items.filter(item =>
+        String(item.subjectTag || '').toLowerCase().includes(needle)
+      );
+    }
+
+    if (filters.q) {
+      const q = String(filters.q).trim().toLowerCase();
+      items = items.filter(
+        item =>
+          String(item.title || '').toLowerCase().includes(q) ||
+          String(item.description || '').toLowerCase().includes(q) ||
+          String(item.subjectTag || '').toLowerCase().includes(q)
+      );
+    }
+
+    const maxPrice = filters.maxPrice !== undefined ? filters.maxPrice : filters.max_price;
+    if (maxPrice !== undefined && maxPrice !== null && maxPrice !== '') {
+      const maxVal = Number(maxPrice);
+      if (!Number.isNaN(maxVal)) {
+        items = items.filter(item => Number(item.price || 0) <= maxVal);
+      }
+    }
+
+    if (filters.onlyFree) {
+      items = items.filter(item => Number(item.price || 0) === 0);
+    }
+
+    return items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  },
+
+  async fetchMarketplaceItems(filters = {}) {
+    const page = Number(filters.page) > 0 ? Number(filters.page) : 1;
+    const limit = Number(filters.limit) > 0 ? Number(filters.limit) : 20;
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.getMarketplaceItems === 'function') {
+      try {
+        const res = await ApiService.getMarketplaceItems({ ...filters, page, limit }, { silent: true });
+        const serverItems = Array.isArray(res) ? res : (res && Array.isArray(res.items) ? res.items : null);
+        if (serverItems) {
+          if (serverItems.length > 0 && page === 1 && !filters.q && !filters.category && !filters.subjectTag) {
+            writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, serverItems);
+          }
+          if (serverItems.length > 0 || filters.q || filters.category || filters.subjectTag || filters.maxPrice !== undefined) {
+            return {
+              items: serverItems,
+              pagination: (res && res.pagination) || {
+                page,
+                limit,
+                total: serverItems.length,
+                totalPages: 1
+              }
+            };
+          }
+        }
+      } catch {
+        // Fallback sang dữ liệu localStorage
+      }
+    }
+
+    const filtered = this.getMarketplaceItems(filters);
+    const offset = (page - 1) * limit;
+    const paged = filtered.slice(offset, offset + limit);
+    return {
+      items: paged,
+      pagination: {
+        page,
+        limit,
+        total: filtered.length,
+        totalPages: Math.ceil(filtered.length / limit) || 1
+      }
+    };
+  },
+
+  getMyMarketplaceItems() {
+    const currentUserId = this.getUser().id || getCurrentUserScope();
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+    const list = Array.isArray(all) ? all : DEFAULT_MARKETPLACE_ITEMS;
+    return list
+      .filter(item => item.userId === currentUserId)
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  },
+
+  async fetchMyMarketplaceItems() {
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.getMyMarketplaceItems === 'function') {
+      try {
+        const res = await ApiService.getMyMarketplaceItems({ silent: true });
+        if (Array.isArray(res)) {
+          return res;
+        }
+      } catch {
+        // Fallback local
+      }
+    }
+    return this.getMyMarketplaceItems();
+  },
+
+  getMarketplaceItemById(id) {
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+    const list = Array.isArray(all) ? all : DEFAULT_MARKETPLACE_ITEMS;
+    return list.find(item => item.id === id) || null;
+  },
+
+  async fetchMarketplaceItemById(id) {
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.getMarketplaceItemById === 'function') {
+      try {
+        const item = await ApiService.getMarketplaceItemById(id, { silent: true });
+        if (item && item.id) return item;
+      } catch {
+        // Fallback local
+      }
+    }
+    return this.getMarketplaceItemById(id);
+  },
+
+  async createMarketplaceItem(itemData) {
+    const user = this.getUser();
+    const currentUserId = user.id || getCurrentUserScope();
+    const price = Math.max(0, Math.round(Number(itemData.price || 0)));
+    const payload = {
+      title: String(itemData.title || '').trim(),
+      subjectTag: String(itemData.subjectTag || itemData.subject_tag || 'Đại cương').trim(),
+      category: itemData.category || 'textbook',
+      price,
+      contactInfo: String(itemData.contactInfo || itemData.contact_info || user.email || '').trim(),
+      description: itemData.description ? String(itemData.description).trim() : null,
+      imageUrl: itemData.imageUrl || itemData.image_url || null
+    };
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.createMarketplaceItem === 'function') {
+      try {
+        const created = await ApiService.createMarketplaceItem(payload, { silent: true });
+        if (created && created.id) {
+          const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+          const list = Array.isArray(all) ? all.filter(i => i.id !== created.id) : [];
+          list.unshift(created);
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, list);
+          return created;
+        }
+      } catch {
+        // Fallback tạo trong localStorage
+      }
+    }
+
+    const nowIso = new Date().toISOString();
+    const newItem = {
+      id: 'mkt_' + Date.now(),
+      userId: currentUserId,
+      subjectId: itemData.subjectId || null,
+      subjectTag: payload.subjectTag,
+      title: payload.title,
+      description: payload.description,
+      category: payload.category,
+      price: payload.price,
+      isFree: payload.price === 0,
+      contactInfo: payload.contactInfo,
+      imageUrl: payload.imageUrl,
+      status: 'available',
+      seller: {
+        fullName: user.fullName || 'Sinh viên',
+        university: user.university || 'Đại học'
+      },
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+    const list = Array.isArray(all) ? all : [...DEFAULT_MARKETPLACE_ITEMS];
+    list.unshift(newItem);
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, list);
+    return newItem;
+  },
+
+  async addMarketplaceItem(itemData) {
+    return this.createMarketplaceItem(itemData);
+  },
+
+  async updateMarketplaceItem(id, patchData) {
+    const targetId = String(id || '').trim();
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.updateMarketplaceItem === 'function') {
+      try {
+        const updated = await ApiService.updateMarketplaceItem(targetId, patchData, { silent: true });
+        if (updated && updated.id) {
+          const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+          const list = (Array.isArray(all) ? all : []).map(item =>
+            item.id === targetId ? { ...item, ...updated } : item
+          );
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, list);
+          return updated;
+        }
+      } catch {
+        // Fallback local
+      }
+    }
+
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+    const list = Array.isArray(all) ? all : [...DEFAULT_MARKETPLACE_ITEMS];
+    const idx = list.findIndex(item => item.id === targetId);
+    if (idx === -1) return null;
+
+    const nextPrice =
+      patchData.price !== undefined ? Math.max(0, Math.round(Number(patchData.price))) : list[idx].price;
+    const merged = {
+      ...list[idx],
+      ...patchData,
+      price: nextPrice,
+      isFree: nextPrice === 0,
+      updatedAt: new Date().toISOString()
+    };
+    list[idx] = merged;
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, list);
+    return merged;
+  },
+
+  async updateMarketplaceItemStatus(id, status = 'sold') {
+    const targetId = String(id || '').trim();
+    const nextStatus = status === 'available' ? 'available' : 'sold';
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.updateMarketplaceItemStatus === 'function') {
+      try {
+        const updated = await ApiService.updateMarketplaceItemStatus(targetId, nextStatus, { silent: true });
+        if (updated && updated.id) {
+          const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+          const list = (Array.isArray(all) ? all : []).map(item =>
+            item.id === targetId ? { ...item, status: updated.status || nextStatus } : item
+          );
+          writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, list);
+          return updated;
+        }
+      } catch {
+        // Fallback local
+      }
+    }
+
+    return this.updateMarketplaceItem(targetId, { status: nextStatus });
+  },
+
+  async markMarketplaceItemSold(id) {
+    return this.updateMarketplaceItemStatus(id, 'sold');
+  },
+
+  async deleteMarketplaceItem(id) {
+    const targetId = String(id || '').trim();
+
+    if (isBackendOnlineSession() && window.ApiService && typeof ApiService.deleteMarketplaceItem === 'function') {
+      try {
+        await ApiService.deleteMarketplaceItem(targetId, { silent: true });
+      } catch {
+        // Fallback local
+      }
+    }
+
+    const all = readCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, DEFAULT_MARKETPLACE_ITEMS);
+    const list = (Array.isArray(all) ? all : []).filter(item => item.id !== targetId);
+    writeCommunityJson(COMMUNITY_STORAGE_KEYS.MARKETPLACE, list);
+    return { id: targetId, deleted: true };
   }
 };
 

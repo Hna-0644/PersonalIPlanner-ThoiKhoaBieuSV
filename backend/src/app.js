@@ -38,7 +38,7 @@ function createApp({ pool, config, redisClient }) {
     jwtExpiresIn: config.JWT_EXPIRES_IN
   });
   const profileService = createProfileService({ pool });
-  const classService = createClassService({ pool });
+  const classService = createClassService({ pool, redisClient });
   const taskService = createTaskService({ pool, redisClient });
   const workScheduleService = createWorkScheduleService({ pool, redisClient });
   const scheduleService = createScheduleService({ pool, redisClient });

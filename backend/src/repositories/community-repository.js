@@ -1,38 +1,48 @@
 const { AppError } = require('../utils/app-error');
 
 const REVIEW_COLUMNS = `
-  id,
-  subject_id,
-  user_id,
-  lecturer_name,
-  rating,
-  difficulty,
-  attendance_required,
-  grading_notes,
-  materials_notes,
-  content,
-  created_at,
-  updated_at
+  course_reviews.id,
+  course_reviews.subject_id,
+  course_reviews.user_id,
+  course_reviews.lecturer_name,
+  course_reviews.rating,
+  course_reviews.difficulty,
+  course_reviews.attendance_required,
+  course_reviews.grading_notes,
+  course_reviews.materials_notes,
+  course_reviews.content,
+  course_reviews.created_at,
+  course_reviews.updated_at,
+  u.full_name AS author_name,
+  u.university AS author_university
 `;
 
 const POST_COLUMNS = `
-  id,
-  subject_id,
-  class_code,
-  user_id,
-  title,
-  content,
-  upvote_count,
-  created_at
+  class_posts.id,
+  class_posts.subject_id,
+  class_posts.class_code,
+  class_posts.user_id,
+  class_posts.title,
+  class_posts.content,
+  class_posts.upvote_count,
+  class_posts.created_at
+`;
+
+const POST_WITH_AUTHOR_COLUMNS = `
+  ${POST_COLUMNS},
+  u.full_name AS author_name,
+  u.university AS author_university
 `;
 
 const COMMENT_COLUMNS = `
-  id,
-  post_id,
-  user_id,
-  content,
-  upvote_count,
-  created_at
+  post_comments.id,
+  post_comments.post_id,
+  post_comments.user_id,
+  post_comments.content,
+  post_comments.upvote_count,
+  post_comments.created_at,
+  u.full_name AS author_name,
+  u.university AS author_university
 `;
 
 const REVIEW_UPDATE_COLUMNS = {
@@ -92,8 +102,9 @@ function createCommunityRepository({ pool }) {
     const [rows] = await pool.execute(
       `SELECT ${REVIEW_COLUMNS}
        FROM course_reviews
-       WHERE subject_id = ?
-       ORDER BY created_at DESC, id DESC
+       LEFT JOIN users u ON u.id = course_reviews.user_id
+       WHERE course_reviews.subject_id = ?
+       ORDER BY course_reviews.created_at DESC, course_reviews.id DESC
        LIMIT ? OFFSET ?`,
       [subjectId, String(limit), String(offset)]
     );
@@ -158,10 +169,11 @@ function createCommunityRepository({ pool }) {
       [classCode]
     );
     const [rows] = await pool.execute(
-      `SELECT ${POST_COLUMNS}
+      `SELECT ${POST_WITH_AUTHOR_COLUMNS}
        FROM class_posts
-       WHERE class_code = ?
-       ORDER BY created_at DESC, id DESC
+       LEFT JOIN users u ON u.id = class_posts.user_id
+       WHERE class_posts.class_code = ?
+       ORDER BY class_posts.created_at DESC, class_posts.id DESC
        LIMIT ? OFFSET ?`,
       [classCode, String(limit), String(offset)]
     );
@@ -197,9 +209,10 @@ function createCommunityRepository({ pool }) {
         [input.subjectId, classCode, userId, input.title, input.content]
       );
       const [rows] = await connection.execute(
-        `SELECT ${POST_COLUMNS}
+        `SELECT ${POST_WITH_AUTHOR_COLUMNS}
          FROM class_posts
-         WHERE id = ?
+         LEFT JOIN users u ON u.id = class_posts.user_id
+         WHERE class_posts.id = ?
          LIMIT 1`,
         [result.insertId]
       );
@@ -238,8 +251,9 @@ function createCommunityRepository({ pool }) {
     const [rows] = await pool.execute(
       `SELECT ${COMMENT_COLUMNS}
        FROM post_comments
-       WHERE post_id = ?
-       ORDER BY created_at ASC, id ASC
+       LEFT JOIN users u ON u.id = post_comments.user_id
+       WHERE post_comments.post_id = ?
+       ORDER BY post_comments.created_at ASC, post_comments.id ASC
        LIMIT ? OFFSET ?`,
       [postId, String(limit), String(offset)]
     );
@@ -267,7 +281,8 @@ function createCommunityRepository({ pool }) {
       const [rows] = await connection.execute(
         `SELECT ${COMMENT_COLUMNS}
          FROM post_comments
-         WHERE id = ?
+         LEFT JOIN users u ON u.id = post_comments.user_id
+         WHERE post_comments.id = ?
          LIMIT 1`,
         [result.insertId]
       );
@@ -385,7 +400,8 @@ function createCommunityRepository({ pool }) {
     const [rows] = await pool.execute(
       `SELECT ${REVIEW_COLUMNS}
        FROM course_reviews
-       WHERE id = ?
+       LEFT JOIN users u ON u.id = course_reviews.user_id
+       WHERE course_reviews.id = ?
        LIMIT 1`,
       [reviewId]
     );
@@ -396,7 +412,8 @@ function createCommunityRepository({ pool }) {
     const [rows] = await pool.execute(
       `SELECT ${REVIEW_COLUMNS}
        FROM course_reviews
-       WHERE user_id = ? AND subject_id = ?
+       LEFT JOIN users u ON u.id = course_reviews.user_id
+       WHERE course_reviews.user_id = ? AND course_reviews.subject_id = ?
        LIMIT 1`,
       [userId, subjectId]
     );

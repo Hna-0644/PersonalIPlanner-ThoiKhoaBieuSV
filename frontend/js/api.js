@@ -294,6 +294,14 @@ const ApiService = {
     const res = await this.request('/notifications', { silent: options.silent });
     return res && res.data ? res.data : res;
   },
+  async scanDeadlineReminders(withinHours = 24, options = {}) {
+    const res = await this.request('/notifications/reminders/scan', {
+      method: 'POST',
+      body: JSON.stringify({ withinHours }),
+      silent: options.silent !== false
+    });
+    return res && res.data ? res.data : res;
+  },
   async markNotificationRead(id, options = {}) {
     const res = await this.request(`/notifications/${id}/read`, {
       method: 'PUT',
@@ -371,6 +379,197 @@ const ApiService = {
   },
   async batchAddClasses(classList) {
     return AppStore.batchAddClasses(classList);
+  },
+
+  // === MARKETPLACE (CHỢ GIÁO TRÌNH & ĐỒ DÙNG HỌC TẬP) ===
+  async getMarketplaceItems(query = {}, options = {}) {
+    const params = new URLSearchParams();
+    if (query.subjectTag || query.subject_tag) params.set('subjectTag', query.subjectTag || query.subject_tag);
+    if (query.category && query.category !== 'all') params.set('category', query.category);
+    if (query.q) params.set('q', query.q);
+    if (query.maxPrice !== undefined && query.maxPrice !== null && query.maxPrice !== '') {
+      params.set('maxPrice', String(query.maxPrice));
+    } else if (query.max_price !== undefined && query.max_price !== null && query.max_price !== '') {
+      params.set('maxPrice', String(query.max_price));
+    }
+    if (query.status && query.status !== 'all') params.set('status', query.status);
+    if (query.page) params.set('page', String(query.page));
+    if (query.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await this.request(`/marketplace/items${qs ? `?${qs}` : ''}`, { silent: options.silent });
+    return res && res.data ? res.data : res;
+  },
+  async getMyMarketplaceItems(options = {}) {
+    const res = await this.request('/marketplace/my-items', { silent: options.silent });
+    return res && res.data ? res.data : res;
+  },
+  async getMarketplaceItemById(id, options = {}) {
+    const res = await this.request(`/marketplace/items/${encodeURIComponent(id)}`, { silent: options.silent });
+    return res && res.data ? res.data : res;
+  },
+  async getMarketplaceItemDetail(id, options = {}) {
+    return this.getMarketplaceItemById(id, options);
+  },
+  async createMarketplaceItem(itemData, options = {}) {
+    const payload = {
+      title: itemData.title,
+      subjectTag: itemData.subjectTag ?? itemData.subject_tag,
+      category: itemData.category || 'textbook',
+      price: Number(itemData.price ?? 0),
+      contactInfo: itemData.contactInfo ?? itemData.contact_info,
+      description: itemData.description ?? null,
+      imageUrl: itemData.imageUrl ?? itemData.image_url ?? null,
+      ...(itemData.subjectId !== undefined ? { subjectId: itemData.subjectId } : {})
+    };
+    const res = await this.request('/marketplace/items', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async updateMarketplaceItem(id, itemData, options = {}) {
+    const res = await this.request(`/marketplace/items/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(itemData),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async updateMarketplaceItemStatus(id, status, options = {}) {
+    const statusVal = typeof status === 'object' && status !== null ? status.status : status;
+    const res = await this.request(`/marketplace/items/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: statusVal }),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async deleteMarketplaceItem(id, options = {}) {
+    const res = await this.request(`/marketplace/items/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+
+  // === COMMUNITY COURSE REVIEWS & CLASS Q&A (ĐÁNH GIÁ MÔN HỌC & HỎI ĐÁP LỚP HỌC) ===
+  async getCourseReviews(subjectId, query = {}, options = {}) {
+    const params = new URLSearchParams();
+    if (query.page) params.set('page', String(query.page));
+    if (query.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await this.request(
+      `/courses/${encodeURIComponent(subjectId)}/reviews${qs ? `?${qs}` : ''}`,
+      { silent: options.silent }
+    );
+    return res && res.data ? res.data : res;
+  },
+  async createCourseReview(subjectId, reviewData, options = {}) {
+    const payload = {
+      lecturerName: reviewData.lecturerName ?? reviewData.lecturer_name ?? null,
+      rating: Number(reviewData.rating),
+      difficulty: Number(reviewData.difficulty),
+      attendanceRequired: Boolean(reviewData.attendanceRequired ?? reviewData.attendance_required),
+      gradingNotes: reviewData.gradingNotes ?? reviewData.grading_notes ?? null,
+      materialsNotes: reviewData.materialsNotes ?? reviewData.materials_notes ?? null,
+      content: reviewData.content
+    };
+    const res = await this.request(`/courses/${encodeURIComponent(subjectId)}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async updateMyCourseReview(subjectId, reviewData, options = {}) {
+    const res = await this.request(`/courses/${encodeURIComponent(subjectId)}/reviews/me`, {
+      method: 'PUT',
+      body: JSON.stringify(reviewData),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async deleteMyCourseReview(subjectId, options = {}) {
+    const res = await this.request(`/courses/${encodeURIComponent(subjectId)}/reviews/me`, {
+      method: 'DELETE',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async getClassPosts(classCode, query = {}, options = {}) {
+    const params = new URLSearchParams();
+    if (query.page) params.set('page', String(query.page));
+    if (query.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await this.request(
+      `/classes/${encodeURIComponent(classCode)}/posts${qs ? `?${qs}` : ''}`,
+      { silent: options.silent }
+    );
+    return res && res.data ? res.data : res;
+  },
+  async createClassPost(classCode, postData, options = {}) {
+    const payload = {
+      subjectId: postData.subjectId ?? postData.subject_id,
+      title: postData.title,
+      content: postData.content
+    };
+    const res = await this.request(`/classes/${encodeURIComponent(classCode)}/posts`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async deleteMyPost(postId, options = {}) {
+    const res = await this.request(`/posts/${encodeURIComponent(postId)}/me`, {
+      method: 'DELETE',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async deleteClassPost(postId, options = {}) {
+    return this.deleteMyPost(postId, options);
+  },
+  async getPostComments(postId, query = {}, options = {}) {
+    const params = new URLSearchParams();
+    if (query.page) params.set('page', String(query.page));
+    if (query.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await this.request(
+      `/posts/${encodeURIComponent(postId)}/comments${qs ? `?${qs}` : ''}`,
+      { silent: options.silent }
+    );
+    return res && res.data ? res.data : res;
+  },
+  async createPostComment(postId, commentData, options = {}) {
+    const content = typeof commentData === 'string' ? commentData : commentData?.content;
+    const res = await this.request(`/posts/${encodeURIComponent(postId)}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async togglePostUpvote(postId, options = {}) {
+    const res = await this.request(`/posts/${encodeURIComponent(postId)}/upvote`, {
+      method: 'POST',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async upvotePost(postId, options = {}) {
+    return this.togglePostUpvote(postId, options);
+  },
+  async toggleCommentUpvote(commentId, options = {}) {
+    const res = await this.request(`/comments/${encodeURIComponent(commentId)}/upvote`, {
+      method: 'POST',
+      silent: options.silent
+    });
+    return res && res.data ? res.data : res;
+  },
+  async upvoteComment(commentId, options = {}) {
+    return this.toggleCommentUpvote(commentId, options);
   }
 };
 

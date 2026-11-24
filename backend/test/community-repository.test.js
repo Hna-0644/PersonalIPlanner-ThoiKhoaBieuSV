@@ -49,7 +49,13 @@ test('findPost binds the post ID and returns null for an unknown post', async ()
 
 test('listReviews binds subject and pagination and returns newest rows with a count', async () => {
   const calls = [];
-  const rows = [{ id: '18', subject_id: '7', user_id: '42' }];
+  const rows = [{
+    id: '18',
+    subject_id: '7',
+    user_id: '42',
+    author_name: 'Nguyen Van A',
+    author_university: 'UIT'
+  }];
   const repository = createRepository({
     async execute(sql, params) {
       calls.push({ sql, params });
@@ -63,7 +69,9 @@ test('listReviews binds subject and pagination and returns newest rows with a co
 
   assert.equal(calls.length, 2);
   assert.deepEqual(calls[0].params, ['7']);
-  assert.match(calls[1].sql, /ORDER BY created_at DESC, id DESC/);
+  assert.match(calls[1].sql, /LEFT JOIN users u ON u\.id = course_reviews\.user_id/);
+  assert.match(calls[1].sql, /u\.full_name AS author_name/);
+  assert.match(calls[1].sql, /ORDER BY (?:course_reviews\.)?created_at DESC, (?:course_reviews\.)?id DESC/);
   assert.deepEqual(calls[1].params, ['7', '20', '20']);
   assert.deepEqual(result, { rows, total: 25 });
 });
@@ -113,7 +121,7 @@ test('createReview binds the authenticated owner and all review values', async (
 
 test('updateMyReview and deleteMyReview restrict mutations to user and subject', async () => {
   const calls = [];
-  const row = { id: '18', subject_id: '7', user_id: '42', content: 'Updated' };
+  const row = { id: '18', subject_id: '7', user_id: '42', content: 'Updated', author_name: 'Nguyen Van A' };
   const repository = createRepository({
     async execute(sql, params) {
       calls.push({ sql, params });
@@ -131,7 +139,8 @@ test('updateMyReview and deleteMyReview restrict mutations to user and subject',
 
   assert.match(calls[0].sql, /WHERE user_id = \? AND subject_id = \?/);
   assert.deepEqual(calls[0].params, ['Updated', '42', '7']);
-  assert.match(calls[1].sql, /WHERE user_id = \? AND subject_id = \?/);
+  assert.match(calls[1].sql, /LEFT JOIN users u ON u\.id = course_reviews\.user_id/);
+  assert.match(calls[1].sql, /WHERE (?:course_reviews\.)?user_id = \? AND (?:course_reviews\.)?subject_id = \?/);
   assert.deepEqual(calls[1].params, ['42', '7']);
 });
 
@@ -144,6 +153,8 @@ test('createPost locks the class mapping and inserts the authenticated owner tra
     subject_id: '7',
     class_code: '23DTH1A',
     user_id: '42',
+    author_name: 'Nguyen Van A',
+    author_university: 'UIT',
     title: 'Find a project group',
     content: 'Looking for teammates.',
     upvote_count: 0,
@@ -161,7 +172,7 @@ test('createPost locks the class mapping and inserts the authenticated owner tra
       }
       if (sql.includes('INSERT INTO class_sections')) return [{ affectedRows: 1 }, []];
       if (sql.includes('INSERT INTO class_posts')) return [{ insertId: '51' }, []];
-      if (sql.includes('FROM class_posts') && sql.includes('WHERE id = ?')) {
+      if (sql.includes('FROM class_posts') && /WHERE (?:class_posts\.)?id = \?/.test(sql)) {
         return [[row], []];
       }
       throw new Error(`Unexpected SQL: ${sql}`);
@@ -187,6 +198,7 @@ test('createPost locks the class mapping and inserts the authenticated owner tra
   assert.deepEqual(calls[1].params, ['23DTH1A']);
   assert.match(calls[2].sql, /INSERT INTO class_posts/);
   assert.deepEqual(calls[2].params, ['7', '23DTH1A', '42', row.title, row.content]);
+  assert.match(calls[3].sql, /LEFT JOIN users u ON u\.id = class_posts\.user_id/);
 });
 
 test('createPost rolls back when a class code is already mapped to another subject', async () => {
@@ -302,7 +314,7 @@ test('togglePostVote removes an existing vote without making the counter negativ
 
 test('listComments sorts oldest first and binds post pagination', async () => {
   const calls = [];
-  const rows = [{ id: '61', post_id: '51', user_id: '42' }];
+  const rows = [{ id: '61', post_id: '51', user_id: '42', author_name: 'Nguyen Van A', author_university: 'UIT' }];
   const repository = createRepository({
     async execute(sql, params) {
       calls.push({ sql, params });
@@ -315,7 +327,8 @@ test('listComments sorts oldest first and binds post pagination', async () => {
 
   const result = await repository.listComments('51', 0, 20);
 
-  assert.match(calls[1].sql, /ORDER BY created_at ASC, id ASC/);
+  assert.match(calls[1].sql, /LEFT JOIN users u ON u\.id = post_comments\.user_id/);
+  assert.match(calls[1].sql, /ORDER BY (?:post_comments\.)?created_at ASC, (?:post_comments\.)?id ASC/);
   assert.deepEqual(calls[1].params, ['51', '20', '0']);
   assert.deepEqual(result, { rows, total: 1 });
 });
@@ -327,6 +340,8 @@ test('createComment rechecks and locks the post before inserting the caller-owne
     id: '61',
     post_id: '51',
     user_id: '42',
+    author_name: 'Nguyen Van A',
+    author_university: 'UIT',
     content: 'I can join.',
     upvote_count: 0,
     created_at: '2026-11-18 11:00:00.000'
@@ -342,7 +357,7 @@ test('createComment rechecks and locks the post before inserting the caller-owne
         return [[{ id: '51' }], []];
       }
       if (sql.includes('INSERT INTO post_comments')) return [{ insertId: '61' }, []];
-      if (sql.includes('FROM post_comments') && sql.includes('WHERE id = ?')) {
+      if (sql.includes('FROM post_comments') && /WHERE (?:post_comments\.)?id = \?/.test(sql)) {
         return [[row], []];
       }
       throw new Error(`Unexpected SQL: ${sql}`);
@@ -360,6 +375,7 @@ test('createComment rechecks and locks the post before inserting the caller-owne
   assert.match(calls[0].sql, /WHERE id = \?\s+FOR UPDATE/);
   assert.deepEqual(calls[0].params, ['51']);
   assert.deepEqual(calls[1].params, ['51', '42', row.content]);
+  assert.match(calls[2].sql, /LEFT JOIN users u ON u\.id = post_comments\.user_id/);
 });
 
 test('toggleCommentVote writes the vote and count in one locked transaction', async () => {
@@ -422,4 +438,34 @@ test('deleteMyPost requires the authenticated owner and returns the section code
   assert.deepEqual(calls[0].params, ['51', '42']);
   assert.match(calls[0].sql, /WHERE id = \? AND user_id = \?\s+FOR UPDATE/);
   assert.deepEqual(calls[1].params, ['51', '42']);
+});
+
+test('listPosts joins users for authorName and authorUniversity and binds class pagination', async () => {
+  const calls = [];
+  const rows = [{
+    id: '51',
+    subject_id: '7',
+    class_code: '23DTH1A',
+    user_id: '42',
+    author_name: 'Nguyen Van A',
+    author_university: 'UIT'
+  }];
+  const repository = createRepository({
+    async execute(sql, params) {
+      calls.push({ sql, params });
+      return calls.length === 1
+        ? [[{ total: 3 }], []]
+        : [rows, []];
+    }
+  });
+
+  const result = await repository.listPosts('23DTH1A', 0, 20);
+
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0].params, ['23DTH1A']);
+  assert.match(calls[1].sql, /LEFT JOIN users u ON u\.id = class_posts\.user_id/);
+  assert.match(calls[1].sql, /u\.full_name AS author_name/);
+  assert.match(calls[1].sql, /u\.university AS author_university/);
+  assert.deepEqual(calls[1].params, ['23DTH1A', '20', '0']);
+  assert.deepEqual(result, { rows, total: 3 });
 });

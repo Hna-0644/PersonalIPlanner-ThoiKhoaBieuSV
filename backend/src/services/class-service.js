@@ -11,7 +11,7 @@ const {
   deleteClassById
 } = require('../repositories/timetable-repository');
 
-function createClassService({ pool }) {
+function createClassService({ pool, redisClient }) {
   async function list(userId) {
     const rows = await listClassesByUser(pool, userId);
     return rows.map(mapClass);
@@ -25,6 +25,7 @@ function createClassService({ pool }) {
       await ensureNoConflict(connection, userId, input);
       const insertId = await insertClass(connection, userId, input);
       await connection.commit();
+      await invalidateScheduleCache(redisClient, userId);
       return {
         id: toPublicId('class', insertId),
         ...Object.fromEntries(CLASS_FIELDS.map(field => [field, input[field] ?? null]))
@@ -54,6 +55,7 @@ function createClassService({ pool }) {
       await ensureNoConflict(connection, userId, merged, classId);
       await updateClassById(connection, userId, classId, input);
       await connection.commit();
+      await invalidateScheduleCache(redisClient, userId);
       return { ...merged, id: toPublicId('class', classId) };
     } catch (error) {
       await connection.rollback();
@@ -66,10 +68,24 @@ function createClassService({ pool }) {
   async function remove(userId, classId) {
     const affectedRows = await deleteClassById(pool, userId, classId);
     if (!affectedRows) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy thời khóa biểu.');
+    await invalidateScheduleCache(redisClient, userId);
     return { id: toPublicId('class', classId), deleted: true };
   }
 
   return { list, create, update, remove };
+}
+
+async function invalidateScheduleCache(redisClient, userId) {
+  if (redisClient && redisClient.isReady === false) {
+    console.error('Failed to invalidate schedule events cache: Redis client is not ready.');
+  } else if (redisClient) {
+    try {
+      const nextVersion = await redisClient.incr(`schedule:events:version:${userId}`);
+      await redisClient.del(`schedule:events:${userId}:${nextVersion - 1}`);
+    } catch (error) {
+      console.error('Failed to invalidate schedule events cache:', error);
+    }
+  }
 }
 
 async function ensureNoConflict(connection, userId, entry, excludeId = null) {

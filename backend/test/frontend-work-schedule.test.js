@@ -87,6 +87,7 @@ function setupFrontendEnvironment({ token = null, fetchHandler = null } = {}) {
     localStorage,
     sessionStorage: localStorage,
     fetch: fetchFn,
+    TextEncoder,
     atob: (str) => Buffer.from(str, 'base64').toString('utf8'),
     btoa: (str) => Buffer.from(str, 'utf8').toString('base64'),
     console,
@@ -566,4 +567,167 @@ test('AppStore.generateAutoSchedule reports unscheduled tasks with reason when i
   assert.equal(result.unscheduled.length, 1);
   assert.equal(result.unscheduled[0].taskId, addedTaskId);
   assert.equal(result.unscheduled[0].reason, 'DURATION_EXCEEDS_WINDOW');
+});
+
+// ==========================================
+// 6. Local Account Password Hashing Security Tests
+// ==========================================
+
+test('AppStore.registerLocalAccount and syncAccountRegistryUser store passwordHash and never plaintext password', () => {
+  const { store, localStorage } = setupFrontendEnvironment();
+  const rawSecret = 'MySuperSecretPassword!2026';
+
+  const regRes = store.registerLocalAccount({
+    fullName: 'Nguyễn Bảo Mật',
+    email: 'security.student@hust.edu.vn',
+    studentId: '20261234',
+    password: rawSecret
+  });
+
+  assert.ok(regRes.user);
+  assert.ok(regRes.accessToken.endsWith('.local_sig'));
+
+  const rawRegistry = localStorage.getItem('pp_accounts_registry');
+  assert.ok(rawRegistry);
+  assert.equal(rawRegistry.includes(rawSecret), false, 'Raw plaintext password must NEVER appear in localStorage');
+
+  const registry = JSON.parse(rawRegistry);
+  assert.equal(registry.length, 1);
+  assert.equal(registry[0].email, 'security.student@hust.edu.vn');
+  assert.equal(registry[0].password, undefined);
+  assert.ok(registry[0].passwordHash);
+  assert.ok(registry[0].passwordHash.startsWith('pp_sha256$'));
+
+  // Wrong password must fail
+  assert.throws(
+    () => store.loginLocalAccount('security.student@hust.edu.vn', 'WrongPassword123'),
+    (err) => err && err.status === 401
+  );
+
+  // Correct password must succeed
+  const loginRes = store.loginLocalAccount('security.student@hust.edu.vn', rawSecret);
+  assert.equal(loginRes.user.email, 'security.student@hust.edu.vn');
+  assert.ok(loginRes.accessToken.endsWith('.local_sig'));
+
+  // Also test syncAccountRegistryUser
+  const syncedSecret = 'SyncedServerPass#99';
+  store.syncAccountRegistryUser(
+    { id: 'usr_99', fullName: 'Trần Đồng Bộ', email: 'synced@hust.edu.vn' },
+    syncedSecret
+  );
+
+  const afterSyncRaw = localStorage.getItem('pp_accounts_registry');
+  assert.equal(afterSyncRaw.includes(syncedSecret), false, 'Synced password must also be hashed and never stored in plaintext');
+  const afterSyncRegistry = JSON.parse(afterSyncRaw);
+  const syncedAcc = afterSyncRegistry.find(a => a.email === 'synced@hust.edu.vn');
+  assert.ok(syncedAcc);
+  assert.equal(syncedAcc.password, undefined);
+  assert.ok(syncedAcc.passwordHash.startsWith('pp_sha256$'));
+});
+
+// ==========================================
+// 7. Deadline Reminders Sync & Offline Scan Tests
+// ==========================================
+
+test('AppStore.syncFromServer invokes ApiService.scanDeadlineReminders before fetching notifications', async () => {
+  const userId = 'usr_reminder_sync';
+  const calledEndpoints = [];
+
+  const { store } = setupFrontendEnvironment({
+    token: createMockJwt(userId),
+    async fetchHandler(url, options) {
+      calledEndpoints.push({ url, method: options?.method || 'GET' });
+      if (url.includes('/notifications/reminders/scan')) {
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return { data: { scannedCount: 1, createdCount: 1, notifications: [] } };
+          }
+        };
+      }
+      if (url.includes('/notifications')) {
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return {
+              data: [
+                {
+                  id: 'ntf_1',
+                  title: 'Sắp đến hạn: Nộp báo cáo Đồ án',
+                  message: 'Còn 5 giờ',
+                  type: 'urgent',
+                  read: false,
+                  createdAt: new Date().toISOString()
+                }
+              ]
+            };
+          }
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return { data: [] };
+        }
+      };
+    }
+  });
+
+  const ok = await store.syncFromServer();
+  assert.equal(ok, true);
+
+  const scanCallIndex = calledEndpoints.findIndex(c => c.url.includes('/notifications/reminders/scan') && c.method === 'POST');
+  const getNotifIndex = calledEndpoints.findIndex(c => c.url.endsWith('/notifications') && c.method === 'GET');
+
+  assert.notEqual(scanCallIndex, -1, 'Should invoke POST /notifications/reminders/scan');
+  assert.notEqual(getNotifIndex, -1, 'Should invoke GET /notifications');
+  assert.ok(scanCallIndex < getNotifIndex, 'Should scan deadline reminders before fetching notifications');
+
+  const notifs = store.getNotifications();
+  assert.equal(notifs.length, 1);
+  assert.equal(notifs[0].title, 'Sắp đến hạn: Nộp báo cáo Đồ án');
+  assert.equal(notifs[0].type, 'urgent');
+});
+
+test('AppStore.scanLocalDeadlineReminders generates non-duplicate urgent reminders for offline tasks due within 24h', () => {
+  const { store } = setupFrontendEnvironment();
+
+  store.registerLocalAccount({
+    fullName: 'Lê Offline',
+    email: 'offline@hust.edu.vn',
+    password: 'OfflinePassword123'
+  });
+
+  const dueIn6Hours = new Date(Date.now() + 6 * 3600 * 1000).toISOString();
+  const dueIn48Hours = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+
+  store.addTask({
+    title: 'Bài tập lớn Giải thuật',
+    subject: 'IT3010',
+    priority: 'high',
+    status: 'todo',
+    deadline: dueIn6Hours
+  });
+
+  store.addTask({
+    title: 'Đọc sách tham khảo tuần sau',
+    subject: 'IT3010',
+    priority: 'low',
+    status: 'todo',
+    deadline: dueIn48Hours
+  });
+
+  const notifsAfterAdd = store.getNotifications();
+  const urgentReminders = notifsAfterAdd.filter(n => n.title === 'Sắp đến hạn: Bài tập lớn Giải thuật');
+  assert.equal(urgentReminders.length, 1);
+  assert.equal(urgentReminders[0].type, 'urgent');
+
+  // Re-running scanLocalDeadlineReminders must not create duplicates
+  const secondScan = store.scanLocalDeadlineReminders(24);
+  assert.equal(secondScan.createdCount, 0);
+  const notifsAfterSecondScan = store.getNotifications().filter(n => n.title === 'Sắp đến hạn: Bài tập lớn Giải thuật');
+  assert.equal(notifsAfterSecondScan.length, 1);
 });

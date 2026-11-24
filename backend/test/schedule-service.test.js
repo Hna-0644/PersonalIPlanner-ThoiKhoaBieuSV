@@ -599,6 +599,7 @@ test('schedule generation avoids work shifts and respects break time', async () 
 });
 
 test('schedule application rejects plan that overlaps with active work shifts', async () => {
+  const futureDate = DateTime.now().setZone('Asia/Ho_Chi_Minh').plus({ days: 2 }).toISODate();
   const connection = {
     async beginTransaction() {},
     async commit() {},
@@ -634,7 +635,7 @@ test('schedule application rejects plan that overlaps with active work shifts', 
           title: 'Afternoon work shift',
           workplace: 'Cafe',
           day_of_week: null,
-          work_date: '2026-11-20',
+          work_date: futureDate,
           start_time: '13:00',
           end_time: '17:00',
           start_date: null,
@@ -655,7 +656,7 @@ test('schedule application rejects plan that overlaps with active work shifts', 
   await assert.rejects(
     service.apply('5', [{
       taskId: 'tsk_18',
-      date: '2026-11-20',
+      date: futureDate,
       startTime: '14:00',
       endTime: '15:00',
       durationMinutes: 60

@@ -18,6 +18,8 @@ const reviewRow = {
   id: '18',
   subject_id: '7',
   user_id: '42',
+  author_name: 'Nguyen Van A',
+  author_university: 'UIT - VNUHCM',
   lecturer_name: 'Dr. Nguyen',
   rating: 5,
   difficulty: 3,
@@ -34,6 +36,8 @@ const postRow = {
   subject_id: '7',
   class_code: '23DTH1A',
   user_id: '42',
+  author_name: 'Nguyen Van A',
+  author_university: 'UIT - VNUHCM',
   title: 'Find a project group',
   content: 'Looking for two teammates.',
   upvote_count: 3,
@@ -44,6 +48,8 @@ const commentRow = {
   id: '61',
   post_id: '51',
   user_id: '42',
+  author_name: 'Tran Thi B',
+  author_university: 'HCMUT',
   content: 'I can join.',
   upvote_count: 1,
   created_at: '2026-11-18 11:00:00.000'
@@ -118,6 +124,8 @@ test('review GET uses cached summary and still returns paginated review rows', a
   });
   assert.equal(result.reviews[0].id, 'rev_18');
   assert.equal(result.reviews[0].userId, 'usr_42');
+  assert.equal(result.reviews[0].authorName, 'Nguyen Van A');
+  assert.equal(result.reviews[0].authorUniversity, 'UIT - VNUHCM');
   assert.deepEqual(result.pagination, {
     page: 2,
     limit: 20,
@@ -339,6 +347,8 @@ test('latest class post cache miss stores page one for five minutes', async () =
 
   assert.equal(result.cacheStatus, 'MISS');
   assert.equal(result.posts[0].id, 'pst_51');
+  assert.equal(result.posts[0].authorName, 'Nguyen Van A');
+  assert.equal(result.posts[0].authorUniversity, 'UIT - VNUHCM');
   assert.deepEqual(writes, [{
     key: 'qa:class:23DTH1A:latest',
     ttl: 300,
@@ -526,4 +536,29 @@ test('post vote toggles return the count and invalidate the class cache', async 
     upvoteCount: 2
   });
   assert.deepEqual(invalidations, ['qa:class:23DTH1A:latest']);
+});
+
+test('getComments and createComment map authorName and authorUniversity from joined user rows', async () => {
+  const repository = createRepository({
+    async findPost() {
+      return postRow;
+    },
+    async listComments() {
+      return { rows: [commentRow], total: 1 };
+    },
+    async createComment() {
+      return commentRow;
+    }
+  });
+  const service = createService({ repository });
+
+  const listed = await service.getComments('51', 1, 20);
+  assert.equal(listed.comments[0].id, 'cmt_61');
+  assert.equal(listed.comments[0].authorName, 'Tran Thi B');
+  assert.equal(listed.comments[0].authorUniversity, 'HCMUT');
+
+  const created = await service.createComment('42', '51', { content: 'I can join.' });
+  assert.equal(created.id, 'cmt_61');
+  assert.equal(created.authorName, 'Tran Thi B');
+  assert.equal(created.authorUniversity, 'HCMUT');
 });
