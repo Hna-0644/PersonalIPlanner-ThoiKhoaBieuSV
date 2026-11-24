@@ -104,6 +104,7 @@ const ApiService = {
     if (query.q) params.set('q', query.q);
     if (query.subjectCode) params.set('subjectCode', query.subjectCode);
     if (query.university) params.set('university', query.university);
+    if (query.academicYear) params.set('academicYear', query.academicYear);
     if (query.studentYear) params.set('studentYear', String(query.studentYear));
     if (query.category) params.set('category', query.category);
     if (query.savedOnly) params.set('savedOnly', 'true');

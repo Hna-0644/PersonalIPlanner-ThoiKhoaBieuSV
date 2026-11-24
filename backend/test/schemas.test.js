@@ -37,6 +37,8 @@ test('document query accepts an empty year filter and rejects years outside one 
   assert.equal(documentListQuerySchema.parse({ studentYear: '' }).studentYear, undefined);
   assert.equal(documentListQuerySchema.parse({ studentYear: '2' }).studentYear, 2);
   assert.equal(documentListQuerySchema.safeParse({ studentYear: '5' }).success, false);
+  assert.equal(documentListQuerySchema.parse({ academicYear: '2025-2026' }).academicYear, '2025-2026');
+  assert.equal(documentListQuerySchema.safeParse({ academicYear: '2025-2027' }).success, false);
   assert.equal(documentListQuerySchema.parse({ savedOnly: 'true' }).savedOnly, true);
   assert.equal(documentListQuerySchema.parse({}).savedOnly, false);
   assert.equal(documentListQuerySchema.safeParse({ savedOnly: 'yes' }).success, false);
@@ -49,8 +51,20 @@ test('document categories use the academic taxonomy and normalize legacy values'
     subjectCode: 'IT3020',
     subjectName: 'Lập trình Web',
     title: 'Tài liệu học tập',
+    university: 'Trường Đại học FPT',
+    academicYear: '2025-2026',
+    sourceUrl: 'https://drive.google.com/file/d/123',
     category: 'past_exams'
   }).success, true);
+  assert.equal(documentCreateSchema.safeParse({
+    subjectCode: 'IT3020',
+    subjectName: 'Lập trình Web',
+    title: 'Tài liệu học tập',
+    university: 'Trường Đại học FPT',
+    academicYear: '2025-2026',
+    sourceUrl: 'http://example.com/file',
+    category: 'past_exams'
+  }).success, false);
   assert.equal(documentCreateSchema.safeParse({
     subjectCode: 'IT3020',
     subjectName: 'Lập trình Web',

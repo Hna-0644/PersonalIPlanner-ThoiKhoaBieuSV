@@ -270,9 +270,9 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 | `GET` | `/notifications` | Có | Trả tối đa 100 thông báo gần nhất của user. |
 | `PATCH` | `/notifications/{id}` | Có | Request `{ read: true }`; đánh dấu đã đọc, thao tác lặp lại thành công. `PUT /notifications/{id}/read` là alias cũ. |
 | `PATCH` | `/notifications` | Có | Request `{ readAll: true }`; đánh dấu toàn bộ đã đọc, trả số bản ghi thực sự thay đổi. `PUT /notifications/read-all` là alias cũ. |
-| `GET` | `/documents` | Có | Query `q?`, `subjectCode?`, `university?`, `studentYear?` (1–4), `category?` (`lecture_notes`, `summaries`, `assignments`, `past_exams`), `savedOnly?` (`true`), `page?`, `limit?`; trả `{ data: { documents, pagination } }`, sắp xếp mới nhất trước. Các category cũ được chuẩn hóa tương thích. |
-| `GET` | `/documents/filters` | Có | Trả các trường và môn học hiện có trong thư viện cùng năm sinh viên 1–4. |
-| `POST` | `/documents` | Có | `multipart/form-data`: `file` (PDF/DOC/DOCX, tối đa 15 MiB), `subjectCode`, `subjectName`, `title`, `category` (`lecture_notes`, `summaries`, `assignments`, `past_exams`), `description?`; trả `{ data: StudyDocument }`. Giới hạn 5 lần đăng/phút/user. |
+| `GET` | `/documents` | Có | Query `q?`, `subjectCode?`, `university?`, `academicYear?` (YYYY-YYYY), `studentYear?` (1–4, tương thích cũ), `category?` (`lecture_notes`, `summaries`, `assignments`, `past_exams`), `savedOnly?` (`true`), `page?`, `limit?`; trả `{ data: { documents, pagination } }`, sắp xếp mới nhất trước. Các category cũ được chuẩn hóa tương thích. |
+| `GET` | `/documents/filters` | Có | Trả trường, môn học và niên khóa hiện có trong thư viện; `studentYears` 1–4 vẫn có để tương thích client cũ. |
+| `POST` | `/documents` | Có | `multipart/form-data`: chọn đúng một trong `file` (PDF/DOC/DOCX/PPTX, tối đa 15 MiB) hoặc `sourceUrl` (URL HTTPS), cùng `university`, `academicYear` (YYYY-YYYY liền kề), `subjectCode`, `subjectName`, `title`, `category` (`lecture_notes`, `summaries`, `assignments`, `past_exams`), `description?`; trả `{ data: StudyDocument }`. Giới hạn 5 lần đăng/phút/user. |
 | `PUT` | `/documents/{id}/bookmark` | Có | Lưu tài liệu vào thư viện của user hiện tại; thao tác lặp lại thành công. |
 | `DELETE` | `/documents/{id}/bookmark` | Có | Gỡ tài liệu khỏi thư viện của user hiện tại; thao tác lặp lại thành công. |
 | `GET` | `/documents/{id}/file` | Có | Tải file dưới dạng binary attachment; ID dạng `doc_123`. PDF hỗ trợ byte-range để tạo thumbnail, đếm trang và xem trước. |
@@ -292,11 +292,11 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 
 - Mọi response API dạng JSON thành công dùng `{ "data": ... }`, bao gồm list, auth, update và delete; endpoint tải tài liệu trả binary attachment. Request body mặc định là JSON UTF-8, riêng `POST /documents` dùng multipart; endpoint được bảo vệ dùng `Authorization: Bearer <accessToken>`.
 - Lỗi dùng cấu trúc `{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [] } }`.
-- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `REVIEW_ALREADY_EXISTS`, `CLASS_SUBJECT_CONFLICT`, `RATE_LIMIT_EXCEEDED`, `FILE_TOO_LARGE`, `INVALID_DOCUMENT_FILE`, `INTERNAL_ERROR`.
+- Mã lỗi chuẩn ban đầu: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `REVIEW_ALREADY_EXISTS`, `CLASS_SUBJECT_CONFLICT`, `RATE_LIMIT_EXCEEDED`, `FILE_TOO_LARGE`, `INVALID_DOCUMENT_FILE`, `RESOURCE_CONFLICT`, `EXTERNAL_DOCUMENT`, `INTERNAL_ERROR`.
 - HTTP status tương ứng: `400`, `401`, `403`, `404`, `409`, `429`, `500`; `409` dùng cho xung đột lịch hoặc trạng thái tài nguyên. Không biến lỗi thành response thành công giả.
 - Community áp dụng `409 REVIEW_ALREADY_EXISTS` khi user gửi review trùng môn và `409 CLASS_SUBJECT_CONFLICT` khi `classCode` đã gắn với môn khác. Subject/post/comment hoặc review/bài viết không thuộc user hiện tại trả `404 NOT_FOUND`.
 - Community dùng `429 RATE_LIMIT_EXCEEDED` khi vượt giới hạn ghi: tối đa 5 lần tạo review/bài viết/bình luận mỗi phút và 30 lần upvote mỗi phút cho mỗi user đã xác thực. Bộ đếm tạo dùng chung giữa ba endpoint tạo; bộ đếm vote dùng chung giữa hai endpoint vote.
-- Tài liệu được lưu trong `backend/uploads/documents` với tên nội bộ ngẫu nhiên; thư mục bị loại khỏi Git. MVP lưu file trên ổ đĩa local, giới hạn mỗi file 15 MiB và chỉ chấp nhận PDF/DOC/DOCX. Triển khai nhiều instance cần chuyển sang object storage dùng chung.
+- Tệp tài liệu được lưu trong `backend/uploads/documents` với tên nội bộ ngẫu nhiên; thư mục bị loại khỏi Git. MVP lưu file trên ổ đĩa local, giới hạn mỗi file 15 MiB và chấp nhận PDF/DOC/DOCX/PPTX; tài liệu có thể dùng URL HTTPS thay tệp. Trường, môn học và niên khóa là metadata của từng tài liệu. Triển khai nhiều instance cần chuyển file sang object storage dùng chung.
 - `GET /courses/{subjectId}/reviews` và `GET /classes/{classCode}/posts` đặt `X-Cache` thành `HIT` hoặc `MISS`. Redis lỗi không làm lỗi đọc MySQL; trang bài viết chỉ cache `page=1&limit=20`.
 - `classCode` chỉ phân vùng nội dung theo lớp học phần; mọi endpoint Community yêu cầu JWT nhưng hiện không xác minh user thuộc roster/đã đăng ký lớp đó. Không dùng mã lớp như bằng chứng quyền riêng tư.
 - Mọi truy vấn tài nguyên phải giới hạn theo user đã xác thực; không tin `userId` gửi từ client.

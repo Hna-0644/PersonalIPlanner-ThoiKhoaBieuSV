@@ -50,7 +50,7 @@ test('document API serializes filters and uploads multipart data without setting
     q: 'database notes',
     subjectCode: 'IT3040',
     university: 'Trường Đại học FPT',
-    studentYear: 2,
+    academicYear: '2025-2026',
     category: 'lecture_notes',
     savedOnly: true,
     page: 2,
@@ -69,7 +69,7 @@ test('document API serializes filters and uploads multipart data without setting
 
   assert.equal(
     calls[0].url,
-    'http://localhost:5000/api/documents?q=database+notes&subjectCode=IT3040&university=Tr%C6%B0%E1%BB%9Dng+%C4%90%E1%BA%A1i+h%E1%BB%8Dc+FPT&studentYear=2&category=lecture_notes&savedOnly=true&page=2&limit=12'
+    'http://localhost:5000/api/documents?q=database+notes&subjectCode=IT3040&university=Tr%C6%B0%E1%BB%9Dng+%C4%90%E1%BA%A1i+h%E1%BB%8Dc+FPT&academicYear=2025-2026&category=lecture_notes&savedOnly=true&page=2&limit=12'
   );
   assert.equal(calls[1].url, 'http://localhost:5000/api/documents/filters');
   assert.equal(calls[2].url, 'http://localhost:5000/api/documents/doc_17/bookmark');

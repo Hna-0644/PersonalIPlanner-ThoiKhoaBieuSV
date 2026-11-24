@@ -21,6 +21,7 @@ function createRepository(overrides = {}) {
     async findDocumentFilters() {
       return {
         universities: ['Trường Đại học Nguyễn Tất Thành'],
+        academicYears: ['2025-2026'],
         subjects: [{ code: 'IT3020', name: 'Lập trình Web' }]
       };
     },
@@ -28,6 +29,8 @@ function createRepository(overrides = {}) {
       const row = {
         id: nextId++,
         user_id: userId,
+        university: input.university,
+        academic_year: input.academicYear,
         subject_code: input.subjectCode,
         subject_name: input.subjectName,
         title: input.title,
@@ -37,6 +40,7 @@ function createRepository(overrides = {}) {
         storage_name: file.storageName,
         mime_type: file.mimeType,
         file_size: file.size,
+        source_url: file.sourceUrl,
         created_at: new Date('2026-11-24T05:00:00.000Z'),
         uploader_name: 'Nguyen Van A',
         uploader_university: 'Trường Đại học Nguyễn Tất Thành',
@@ -69,6 +73,8 @@ test('Document service stores a validated file and returns list/download metadat
     subjectCode: 'IT3020',
     subjectName: 'Lập trình Web',
     title: 'Đề cương ôn tập',
+    university: 'Trường Đại học Nguyễn Tất Thành',
+    academicYear: '2025-2026',
     description: 'Cuối kỳ',
     category: 'summaries'
   }, {
@@ -94,6 +100,7 @@ test('Document service stores a validated file and returns list/download metadat
   assert.equal(list.pagination.total, 1);
   assert.deepEqual(await service.getDocumentFilters(), {
     universities: ['Trường Đại học Nguyễn Tất Thành'],
+    academicYears: ['2025-2026'],
     subjects: [{ code: 'IT3020', name: 'Lập trình Web' }],
     studentYears: [1, 2, 3, 4]
   });
@@ -135,6 +142,8 @@ test('Document service rejects a file whose content does not match its extension
       subjectCode: 'IT3020',
       subjectName: 'Lập trình Web',
       title: 'Tài liệu giả mạo',
+      university: 'Trường Đại học Nguyễn Tất Thành',
+      academicYear: '2025-2026',
       category: 'lecture_notes'
     }, {
       originalname: 'malware.pdf',
@@ -169,6 +178,8 @@ test('Document service removes a stored file if database insertion fails', async
       subjectCode: 'IT3020',
       subjectName: 'Lập trình Web',
       title: 'Ghi chú tuần 1',
+      university: 'Trường Đại học Nguyễn Tất Thành',
+      academicYear: '2025-2026',
       category: 'lecture_notes'
     }, {
       originalname: 'notes.pdf',
@@ -179,4 +190,59 @@ test('Document service removes a stored file if database insertion fails', async
     /database unavailable/
   );
   assert.deepEqual(await fs.readdir(storageDirectory), []);
+});
+
+test('Document service stores a PPTX and external HTTPS link without local files', async t => {
+  const storageDirectory = await createStorageDirectory(t);
+  const repository = createRepository();
+  const service = createDocumentService({ repository, storageDirectory });
+
+  const pptx = await service.createDocument('17', {
+    subjectCode: 'IT3020',
+    subjectName: 'Lập trình Web',
+    title: 'Slide bài giảng',
+    university: 'Trường Đại học Nguyễn Tất Thành',
+    academicYear: '2025-2026',
+    category: 'lecture_notes'
+  }, {
+    originalname: 'slides.pptx',
+    mimetype: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    size: 5,
+    buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00])
+  });
+  assert.equal(pptx.fileName, 'slides.pptx');
+  assert.equal(pptx.mimeType, 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+  const pptxFile = await service.getDocumentFile(pptx.id);
+  assert.equal(pptxFile.fileName, 'slides.pptx');
+
+  const link = await service.createDocument('17', {
+    subjectCode: 'IT3020',
+    subjectName: 'Lập trình Web',
+    title: 'Tài liệu trực tuyến',
+    university: 'Trường Đại học Nguyễn Tất Thành',
+    academicYear: '2025-2026',
+    sourceUrl: 'https://example.com/notes',
+    category: 'lecture_notes'
+  });
+  assert.equal(link.sourceUrl, 'https://example.com/notes');
+  assert.equal(link.downloadUrl, 'https://example.com/notes');
+  assert.equal(link.fileSize, null);
+  assert.equal((await fs.readdir(storageDirectory)).length, 1);
+  await assert.rejects(
+    () => service.createDocument('17', {
+      subjectCode: 'IT3020',
+      subjectName: 'Lập trình Web',
+      title: 'Nguồn không hợp lệ',
+      university: 'Trường Đại học Nguyễn Tất Thành',
+      academicYear: '2025-2026',
+      sourceUrl: 'https://example.com/notes',
+      category: 'lecture_notes'
+    }, {
+      originalname: 'notes.pdf',
+      mimetype: 'application/pdf',
+      size: 12,
+      buffer: Buffer.from('%PDF-1.7 data')
+    }),
+    error => error.code === 'RESOURCE_CONFLICT' && error.status === 400
+  );
 });

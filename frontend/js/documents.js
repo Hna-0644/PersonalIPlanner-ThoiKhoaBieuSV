@@ -57,9 +57,10 @@
     }
 
     populateSubjectOptions(queryParams.get('subjectCode') || '');
-    populateStudentYearOptions(queryParams.get('studentYear') || '');
+    populateAcademicYearOptions([], queryParams.get('academicYear') || '');
     window.addEventListener('pp:store-synced', populateSubjectOptions);
     document.getElementById('openStudyDocumentModal').addEventListener('click', openUploadModal);
+    document.getElementById('studyDocumentSourceType').addEventListener('change', updateDocumentSourceFields);
     document.getElementById('studyDocumentSearch').addEventListener('input', () => {
       window.clearTimeout(searchTimer);
       searchTimer = window.setTimeout(() => {
@@ -69,7 +70,7 @@
     });
     document.getElementById('studyDocumentUniversityFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentSubjectFilter').addEventListener('change', resetAndLoad);
-    document.getElementById('studyDocumentStudentYearFilter').addEventListener('change', resetAndLoad);
+    document.getElementById('studyDocumentAcademicYearFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentCategoryFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentsSavedToggle').addEventListener('click', toggleSavedDocuments);
     document.getElementById('studyDocumentsPrevious').addEventListener('click', () => changePage(-1));
@@ -107,6 +108,10 @@
       populateUniversityOptions(
         filters.universities || [],
         queryParams.get('university') || ''
+      );
+      populateAcademicYearOptions(
+        filters.academicYears || [],
+        queryParams.get('academicYear') || ''
       );
       populateSubjectOptions(queryParams.get('subjectCode') || '');
     } catch (error) {
@@ -159,11 +164,14 @@
     filter.value = selectedUniversity;
   }
 
-  function populateStudentYearOptions(selectedYear = '') {
-    const filter = document.getElementById('studyDocumentStudentYearFilter');
+  function populateAcademicYearOptions(academicYears = [], selectedYear = '') {
+    const filter = document.getElementById('studyDocumentAcademicYearFilter');
     const selected = selectedYear || filter.value;
-    filter.replaceChildren(new Option('Tất cả năm', ''));
-    [1, 2, 3, 4].forEach(year => filter.add(new Option(`Năm ${year}`, String(year))));
+    filter.replaceChildren(new Option('Tất cả niên khóa', ''));
+    academicYears.forEach(year => filter.add(new Option(year, year)));
+    if (selected && !academicYears.includes(selected)) {
+      filter.add(new Option(selected, selected));
+    }
     filter.value = selected;
   }
 
@@ -226,7 +234,7 @@
         q: document.getElementById('studyDocumentSearch').value.trim(),
         university: document.getElementById('studyDocumentUniversityFilter').value,
         subjectCode: document.getElementById('studyDocumentSubjectFilter').value,
-        studentYear: document.getElementById('studyDocumentStudentYearFilter').value,
+        academicYear: document.getElementById('studyDocumentAcademicYearFilter').value,
         category: document.getElementById('studyDocumentCategoryFilter').value,
         savedOnly,
         page,
@@ -265,10 +273,17 @@
 
   function renderDocumentCard(item) {
     const category = CATEGORY_META[item.category] || CATEGORY_META.other;
-    const fileSize = formatFileSize(item.fileSize);
-    const fileName = item.fileName || '';
+    const isExternal = Boolean(item.sourceUrl);
+    const fileSize = isExternal ? 'Liên kết HTTPS' : formatFileSize(item.fileSize);
+    const fileName = item.fileName || (isExternal ? 'Tài liệu trực tuyến' : '');
     const isPdf = item.mimeType === 'application/pdf' || /\.pdf$/i.test(fileName);
-    const fileTypeLabel = /\.docx?$/i.test(fileName) ? 'WORD' : 'PDF';
+    const fileTypeLabel = isExternal
+      ? 'LINK'
+      : /\.pptx$/i.test(fileName)
+        ? 'PPTX'
+        : /\.docx?$/i.test(fileName)
+          ? 'WORD'
+          : 'PDF';
     const createdAt = item.createdAt
       ? new Date(item.createdAt).toLocaleDateString('vi-VN')
       : 'Vừa đăng';
@@ -286,11 +301,11 @@
           <div class="study-document-cover" data-document-cover-id="${escapeHtml(item.id)}">
             ${isPdf ? '<canvas class="d-none" aria-label="Ảnh bìa tài liệu PDF"></canvas>' : ''}
             <div class="study-document-cover-placeholder">
-              <i class="bi ${isPdf ? 'bi-file-earmark-pdf' : 'bi-file-earmark-word'}" aria-hidden="true"></i>
+              <i class="bi ${isExternal ? 'bi-link-45deg' : isPdf ? 'bi-file-earmark-pdf' : 'bi-file-earmark-word'}" aria-hidden="true"></i>
               <span>${fileTypeLabel}</span>
             </div>
             <span class="study-document-page-count" data-page-count>
-              ${isPdf ? 'Đang đọc số trang...' : 'Xem trước PDF không hỗ trợ'}
+              ${isPdf ? 'Đang đọc số trang...' : isExternal ? 'Mở tài liệu trực tuyến' : 'Xem trước PDF không hỗ trợ'}
             </span>
           </div>
           <h6 class="fw-bold mb-1">${escapeHtml(item.title)}</h6>
@@ -298,11 +313,11 @@
           <p class="small text-muted flex-grow-1 mb-3">${escapeHtml(item.description || 'Chưa có mô tả.')}</p>
           <div class="small text-muted border-top pt-2 mb-3">
             <div class="text-truncate" title="${escapeHtml(fileName)}">
-              <i class="bi bi-file-earmark me-1"></i>${escapeHtml(fileName)}
+              <i class="bi ${isExternal ? 'bi-link-45deg' : 'bi-file-earmark me-1'}"></i>${escapeHtml(fileName)}
             </div>
             <div class="mt-1">${escapeHtml(item.uploaderName)} · ${escapeHtml(createdAt)}</div>
-            ${item.uploaderUniversity ? `<div class="mt-1"><i class="bi bi-mortarboard me-1"></i>${escapeHtml(item.uploaderUniversity)}</div>` : ''}
-            ${item.uploaderStudentYear ? `<div class="mt-1">Sinh viên năm ${escapeHtml(item.uploaderStudentYear)}</div>` : ''}
+            ${item.university ? `<div class="mt-1"><i class="bi bi-mortarboard me-1"></i>${escapeHtml(item.university)}</div>` : ''}
+            ${item.academicYear ? `<div class="mt-1">Niên khóa ${escapeHtml(item.academicYear)}</div>` : ''}
           </div>
           <div class="d-flex flex-wrap gap-2">
             ${isPdf ? `<button class="btn btn-outline-primary btn-sm" type="button"
@@ -310,11 +325,16 @@
               data-document-title="${escapeHtml(item.title)}">
               <i class="bi bi-eye me-1"></i>Xem trước
             </button>` : ''}
-            <button class="btn btn-outline-secondary btn-sm" type="button"
-              data-document-action="download" data-document-id="${escapeHtml(item.id)}"
-              data-document-name="${escapeHtml(fileName)}">
-              <i class="bi bi-download me-1"></i>${isPdf ? 'Tải xuống PDF' : 'Mở tài liệu'}
-            </button>
+            ${isExternal
+              ? `<a class="btn btn-outline-secondary btn-sm" href="${escapeHtml(item.sourceUrl)}"
+                  target="_blank" rel="noopener noreferrer">
+                  <i class="bi bi-box-arrow-up-right me-1"></i>Mở liên kết
+                </a>`
+              : `<button class="btn btn-outline-secondary btn-sm" type="button"
+                  data-document-action="download" data-document-id="${escapeHtml(item.id)}"
+                  data-document-name="${escapeHtml(fileName)}">
+                  <i class="bi bi-download me-1"></i>${isPdf ? 'Tải xuống PDF' : 'Mở tài liệu'}
+                </button>`}
             <button class="btn ${item.isBookmarked ? 'btn-primary' : 'btn-outline-primary'} btn-sm"
               type="button" data-document-action="bookmark" data-document-id="${escapeHtml(item.id)}"
               aria-pressed="${item.isBookmarked ? 'true' : 'false'}">
@@ -446,6 +466,11 @@
   }
 
   async function openDocumentPreview(item) {
+    if (item.sourceUrl) {
+      window.open(item.sourceUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     const documentId = String(item.id);
     if (activePreviewId && activePreviewId !== documentId) {
       releasePdfDocument(activePreviewId);
@@ -534,6 +559,7 @@
   }
 
   function formatFileSize(size) {
+    if (size === null || size === undefined) return '—';
     const bytes = Number(size) || 0;
     if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -548,22 +574,36 @@
     const form = document.getElementById('studyDocumentForm');
     form.reset();
     document.getElementById('studyDocumentFormError').textContent = '';
+    updateDocumentSourceFields();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('studyDocumentModal')).show();
+  }
+
+  function updateDocumentSourceFields() {
+    const useLink = document.getElementById('studyDocumentSourceType').value === 'link';
+    const fileInput = document.getElementById('studyDocumentFile');
+    const urlInput = document.getElementById('studyDocumentSourceUrl');
+    document.getElementById('studyDocumentFileGroup').classList.toggle('d-none', useLink);
+    document.getElementById('studyDocumentLinkGroup').classList.toggle('d-none', !useLink);
+    fileInput.disabled = useLink;
+    fileInput.required = !useLink;
+    urlInput.disabled = !useLink;
+    urlInput.required = useLink;
   }
 
   async function submitDocument(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const useLink = document.getElementById('studyDocumentSourceType').value === 'link';
     const file = document.getElementById('studyDocumentFile').files[0];
     const errorEl = document.getElementById('studyDocumentFormError');
     const submitButton = document.getElementById('studyDocumentSubmit');
     errorEl.textContent = '';
 
-    if (!file) {
+    if (!useLink && !file) {
       errorEl.textContent = 'Vui lòng chọn tệp tài liệu.';
       return;
     }
-    if (file.size > MAX_FILE_SIZE) {
+    if (!useLink && file.size > MAX_FILE_SIZE) {
       errorEl.textContent = 'Tệp tải lên không được vượt quá 15 MB.';
       return;
     }
@@ -576,10 +616,18 @@
     formData.set('subjectName', subject ? subject.name : selectedSubject.textContent);
 
     submitButton.disabled = true;
-    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Đang tải lên...';
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Đang chia sẻ...';
 
     try {
       await ApiService.uploadStudyDocument(formData, { silent: true });
+      const universityFilter = document.getElementById('studyDocumentUniversityFilter');
+      const academicYearFilter = document.getElementById('studyDocumentAcademicYearFilter');
+      const universities = [...universityFilter.options].map(option => option.value).filter(Boolean);
+      const academicYears = [...academicYearFilter.options].map(option => option.value).filter(Boolean);
+      universities.push(formData.get('university'));
+      academicYears.push(formData.get('academicYear'));
+      populateUniversityOptions([...new Set(universities)], universityFilter.value);
+      populateAcademicYearOptions([...new Set(academicYears)], academicYearFilter.value);
       bootstrap.Modal.getInstance(document.getElementById('studyDocumentModal')).hide();
       showToast('Đăng tài liệu thành công', 'Tài liệu đã được thêm vào thư viện môn học.', 'success');
       page = 1;

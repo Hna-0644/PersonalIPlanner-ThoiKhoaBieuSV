@@ -1,6 +1,9 @@
 const DOCUMENT_SELECT_COLUMNS = `
   d.id,
   d.user_id,
+  d.university,
+  d.academic_year,
+  d.source_url,
   d.subject_code,
   d.subject_name,
   d.title,
@@ -27,8 +30,13 @@ function createDocumentRepository({ pool }) {
     }
 
     if (filters.university) {
-      conditions.push('TRIM(u.university) = ?');
+      conditions.push(`COALESCE(NULLIF(TRIM(d.university), ''), TRIM(u.university)) = ?`);
       values.push(filters.university);
+    }
+
+    if (filters.academicYear) {
+      conditions.push('d.academic_year = ?');
+      values.push(filters.academicYear);
     }
 
     if (filters.studentYear) {
@@ -48,10 +56,12 @@ function createDocumentRepository({ pool }) {
         d.subject_code LIKE ? OR
         d.subject_name LIKE ? OR
         d.original_name LIKE ? OR
+        d.university LIKE ? OR
+        d.academic_year LIKE ? OR
         u.university LIKE ?
       )`);
       const keyword = `%${filters.q}%`;
-      values.push(keyword, keyword, keyword, keyword, keyword, keyword);
+      values.push(keyword, keyword, keyword, keyword, keyword, keyword, keyword, keyword);
     }
 
     if (filters.savedOnly) {
@@ -100,11 +110,17 @@ function createDocumentRepository({ pool }) {
 
   async function findDocumentFilters() {
     const [universityRows] = await pool.execute(
-      `SELECT DISTINCT TRIM(u.university) AS university
+      `SELECT DISTINCT COALESCE(NULLIF(TRIM(d.university), ''), TRIM(u.university)) AS university
        FROM study_documents d
        JOIN users u ON u.id = d.user_id
-       WHERE u.university IS NOT NULL AND TRIM(u.university) <> ''
+       WHERE COALESCE(NULLIF(TRIM(d.university), ''), NULLIF(TRIM(u.university), '')) IS NOT NULL
        ORDER BY university`
+    );
+    const [academicYearRows] = await pool.execute(
+      `SELECT DISTINCT academic_year
+       FROM study_documents
+       WHERE academic_year IS NOT NULL AND TRIM(academic_year) <> ''
+       ORDER BY academic_year DESC`
     );
     const [subjectRows] = await pool.execute(
       `SELECT subject_code AS code, MAX(subject_name) AS name
@@ -115,7 +131,8 @@ function createDocumentRepository({ pool }) {
 
     return {
       universities: universityRows.map(row => row.university),
-      subjects: subjectRows
+      subjects: subjectRows,
+      academicYears: academicYearRows.map(row => row.academic_year)
     };
   }
 
@@ -123,11 +140,13 @@ function createDocumentRepository({ pool }) {
     return withTransaction(pool, async connection => {
       const [result] = await connection.execute(
         `INSERT INTO study_documents (
-          user_id, subject_code, subject_name, title, description, category,
-          original_name, storage_name, mime_type, file_size
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          user_id, university, academic_year, subject_code, subject_name, title, description,
+          category, original_name, storage_name, mime_type, file_size, source_url
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
+          input.university,
+          input.academicYear,
           input.subjectCode,
           input.subjectName,
           input.title,
@@ -136,7 +155,8 @@ function createDocumentRepository({ pool }) {
           file.originalName,
           file.storageName,
           file.mimeType,
-          file.size
+          file.size,
+          file.sourceUrl
         ]
       );
       const row = await findById(result.insertId, connection);

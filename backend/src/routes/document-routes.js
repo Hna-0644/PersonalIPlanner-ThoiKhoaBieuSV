@@ -15,7 +15,8 @@ const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 const ACCEPTED_TYPES = new Map([
   ['.pdf', 'application/pdf'],
   ['.doc', 'application/msword'],
-  ['.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+  ['.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  ['.pptx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation']
 ]);
 
 function createDocumentRouter(documentService, authenticate, options = {}) {
@@ -30,13 +31,13 @@ function createDocumentRouter(documentService, authenticate, options = {}) {
     limits: {
       fileSize: MAX_UPLOAD_BYTES,
       files: 1,
-      fields: 5,
+      fields: 8,
       fieldSize: 8000
     },
     fileFilter(req, file, callback) {
       const extension = path.extname(file.originalname || '').toLowerCase();
       if (ACCEPTED_TYPES.get(extension) !== file.mimetype) {
-        callback(new AppError(400, 'INVALID_DOCUMENT_FILE', 'Chỉ chấp nhận tệp PDF, DOC hoặc DOCX.'));
+        callback(new AppError(400, 'INVALID_DOCUMENT_FILE', 'Chỉ chấp nhận tệp PDF, DOC, DOCX hoặc PPTX.'));
         return;
       }
       callback(null, true);

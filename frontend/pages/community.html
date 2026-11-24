@@ -455,7 +455,7 @@
               <span>Thư viện tài liệu học tập</span>
               <span class="badge bg-light text-dark border" id="studyDocumentsCount">0</span>
             </h5>
-            <p class="text-muted small mb-0">Tìm và chia sẻ ghi chú, slide, đề thi theo môn học.</p>
+            <p class="text-muted small mb-0">Tìm và chia sẻ tài liệu theo trường, môn học và niên khóa.</p>
           </div>
           <div class="d-flex flex-wrap gap-2">
             <button class="btn btn-outline-primary d-flex align-items-center gap-2" type="button"
@@ -472,7 +472,7 @@
 
         <div class="card-custom p-3 mb-3">
           <div class="row g-2 align-items-center">
-            <div class="col-12 col-xl-4">
+            <div class="col-12 col-xl-3">
               <label class="visually-hidden" for="studyDocumentSearch">Tìm tài liệu</label>
               <div class="input-group">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
@@ -491,14 +491,10 @@
                 <option value="">Tất cả môn học</option>
               </select>
             </div>
-            <div class="col-12 col-sm-6 col-xl-1">
-              <label class="visually-hidden" for="studyDocumentStudentYearFilter">Lọc theo năm học sinh viên</label>
-              <select class="form-select" id="studyDocumentStudentYearFilter">
-                <option value="">Năm</option>
-                <option value="1">Năm 1</option>
-                <option value="2">Năm 2</option>
-                <option value="3">Năm 3</option>
-                <option value="4">Năm 4</option>
+            <div class="col-12 col-sm-6 col-xl-2">
+              <label class="visually-hidden" for="studyDocumentAcademicYearFilter">Lọc theo niên khóa</label>
+              <select class="form-select" id="studyDocumentAcademicYearFilter">
+                <option value="">Niên khóa</option>
               </select>
             </div>
             <div class="col-12 col-sm-6 col-xl-2">
@@ -583,14 +579,42 @@
               </select>
             </div>
           </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-7">
+              <label class="form-label fw-semibold" for="studyDocumentUniversity">Trường</label>
+              <input class="form-control" id="studyDocumentUniversity" name="university"
+                maxlength="500" required placeholder="Tên trường đại học/cao đẳng">
+            </div>
+            <div class="col-12 col-sm-5">
+              <label class="form-label fw-semibold" for="studyDocumentAcademicYear">Niên khóa</label>
+              <input class="form-control" id="studyDocumentAcademicYear" name="academicYear"
+                maxlength="9" required pattern="\d{4}-\d{4}" placeholder="2025-2026"
+                title="Nhập theo định dạng YYYY-YYYY, ví dụ 2025-2026">
+            </div>
+          </div>
           <div class="mb-3">
             <label class="form-label fw-semibold" for="studyDocumentDescription">Mô tả <span class="text-muted fw-normal">(không bắt buộc)</span></label>
             <textarea class="form-control" id="studyDocumentDescription" name="description" rows="3" maxlength="2000" placeholder="Nội dung, chương hoặc học kỳ liên quan"></textarea>
           </div>
-          <div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="studyDocumentSourceType">Nguồn tài liệu</label>
+            <select class="form-select" id="studyDocumentSourceType">
+              <option value="file">Tải tệp từ máy</option>
+              <option value="link">Chia sẻ link HTTPS</option>
+            </select>
+          </div>
+          <div id="studyDocumentFileGroup">
             <label class="form-label fw-semibold" for="studyDocumentFile">Tệp tài liệu</label>
-            <input class="form-control" id="studyDocumentFile" name="file" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
-            <div class="form-text">Chấp nhận PDF, DOC hoặc DOCX; tối đa 15 MB. Chỉ đăng tài liệu bạn có quyền chia sẻ.</div>
+            <input class="form-control" id="studyDocumentFile" name="file" type="file"
+              accept=".pdf,.doc,.docx,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation" required>
+            <div class="form-text">Chấp nhận PDF, DOC, DOCX hoặc PPTX; tối đa 15 MB. Chỉ đăng tài liệu bạn có quyền chia sẻ.</div>
+          </div>
+          <div class="d-none" id="studyDocumentLinkGroup">
+            <label class="form-label fw-semibold" for="studyDocumentSourceUrl">Link tài liệu (HTTPS)</label>
+            <input class="form-control" id="studyDocumentSourceUrl" name="sourceUrl" type="url"
+              inputmode="url" pattern="https://.+" maxlength="2048"
+              placeholder="https://drive.google.com/..." disabled>
+            <div class="form-text">Kiểm tra quyền truy cập link trước khi chia sẻ.</div>
           </div>
           <div class="small text-danger mt-2" id="studyDocumentFormError" role="alert"></div>
         </div>

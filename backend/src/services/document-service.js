@@ -25,6 +25,12 @@ const FILE_TYPES = {
     matches(buffer) {
       return buffer.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
     }
+  },
+  '.pptx': {
+    mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    matches(buffer) {
+      return buffer.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+    }
   }
 };
 
@@ -50,7 +56,12 @@ function mapDocument(row) {
     category: row.category,
     fileName: row.original_name,
     mimeType: row.mime_type,
-    fileSize: Number(row.file_size),
+    fileSize: row.file_size === null || row.file_size === undefined
+      ? null
+      : Number(row.file_size),
+    university: row.university || row.uploader_university || '',
+    academicYear: row.academic_year || '',
+    sourceUrl: row.source_url || null,
     uploaderName: row.uploader_name || 'Sinh viên',
     uploaderUniversity: row.uploader_university || '',
     uploaderStudentYear: row.uploader_student_year === null || row.uploader_student_year === undefined
@@ -58,7 +69,7 @@ function mapDocument(row) {
       : Number(row.uploader_student_year),
     isBookmarked: Boolean(row.is_bookmarked),
     createdAt: toIsoUtcString(row.created_at),
-    downloadUrl: `/api/documents/${toPublicId('document', row.id)}/file`
+    downloadUrl: row.source_url || `/api/documents/${toPublicId('document', row.id)}/file`
   };
 }
 
@@ -91,8 +102,27 @@ function createDocumentService({
   }
 
   async function createDocument(userId, input, upload) {
-    if (!upload || !Buffer.isBuffer(upload.buffer)) {
-      throw new AppError(400, 'FILE_REQUIRED', 'Vui lòng chọn một tệp PDF, DOC hoặc DOCX.');
+    if (upload && input.sourceUrl) {
+      throw new AppError(400, 'RESOURCE_CONFLICT', 'Chọn tệp tải lên hoặc link HTTPS, không thể dùng cả hai.');
+    }
+
+    if (!upload && !input.sourceUrl) {
+      throw new AppError(400, 'FILE_REQUIRED', 'Vui lòng chọn tệp tài liệu hoặc nhập link HTTPS.');
+    }
+
+    if (input.sourceUrl) {
+      const row = await repo.create(userId, input, {
+        originalName: null,
+        storageName: null,
+        mimeType: null,
+        size: null,
+        sourceUrl: input.sourceUrl
+      });
+      return mapDocument(row);
+    }
+
+    if (!Buffer.isBuffer(upload.buffer)) {
+      throw new AppError(400, 'FILE_REQUIRED', 'Vui lòng chọn tệp tài liệu hoặc nhập link HTTPS.');
     }
     if (upload.size > MAX_DOCUMENT_SIZE_BYTES) {
       throw new AppError(413, 'FILE_TOO_LARGE', 'Tệp tải lên không được vượt quá 15 MB.');
@@ -101,7 +131,7 @@ function createDocumentService({
     const extension = path.extname(upload.originalname || '').toLowerCase();
     const fileType = FILE_TYPES[extension];
     if (!fileType || upload.mimetype !== fileType.mimeType || !fileType.matches(upload.buffer)) {
-      throw new AppError(400, 'INVALID_DOCUMENT_FILE', 'Tệp không đúng định dạng PDF, DOC hoặc DOCX.');
+      throw new AppError(400, 'INVALID_DOCUMENT_FILE', 'Tệp không đúng định dạng PDF, DOC, DOCX hoặc PPTX.');
     }
 
     const safeOriginalName = sanitizeOriginalName(upload.originalname);
@@ -116,7 +146,8 @@ function createDocumentService({
         originalName: safeOriginalName,
         storageName,
         mimeType: fileType.mimeType,
-        size: upload.size
+        size: upload.size,
+        sourceUrl: null
       });
     } catch (error) {
       try {
@@ -138,7 +169,10 @@ function createDocumentService({
       throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy tài liệu.');
     }
 
-    if (!/^[a-f0-9-]{36}\.(pdf|doc|docx)$/.test(row.storage_name)) {
+    if (row.source_url) {
+      throw new AppError(400, 'EXTERNAL_DOCUMENT', 'Tài liệu này được chia sẻ bằng liên kết ngoài.');
+    }
+    if (!/^[a-f0-9-]{36}\.(pdf|doc|docx|pptx)$/.test(row.storage_name || '')) {
       throw new AppError(500, 'INVALID_DOCUMENT_STORAGE', 'Không thể xác định tệp tài liệu.');
     }
 

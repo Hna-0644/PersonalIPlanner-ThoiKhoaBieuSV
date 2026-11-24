@@ -55,8 +55,8 @@ Danh sách endpoint hiện thực:
 - `GET /api/schedule/events`
 - `POST /api/schedule/auto-generate`, `POST /api/schedule/apply`
 - `GET /api/notifications`, `PUT /api/notifications/read-all`, `PUT /api/notifications/{id}/read`
-- `GET /api/documents` — tìm kiếm/lọc tài liệu theo môn và loại.
-- `POST /api/documents` — multipart upload PDF/DOC/DOCX tối đa 15 MiB; lưu file trong `backend/uploads/documents`.
+- `GET /api/documents` — tìm kiếm/lọc tài liệu theo trường, môn, niên khóa và loại.
+- `POST /api/documents` — chia sẻ tệp PDF/DOC/DOCX/PPTX tối đa 15 MiB hoặc URL HTTPS; yêu cầu gắn trường, môn học và niên khóa. Tệp được lưu trong `backend/uploads/documents`.
 - `GET /api/documents/{id}/file` — tải tài liệu đã đăng.
 - `POST /api/ai/scan-schedule` — gửi ảnh dưới dạng data URL/base64 trong JSON; giờ tiết được quy đổi theo trường trong hồ sơ tài khoản.
 
