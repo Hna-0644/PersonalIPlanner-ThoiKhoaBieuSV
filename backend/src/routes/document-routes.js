@@ -66,6 +66,18 @@ function createDocumentRouter(documentService, authenticate, options = {}) {
     validate(documentCreateSchema),
     controller.createDocument
   );
+  router.put(
+    '/:id/bookmark',
+    authenticate,
+    validate(documentIdParamsSchema, 'params'),
+    controller.setBookmark
+  );
+  router.delete(
+    '/:id/bookmark',
+    authenticate,
+    validate(documentIdParamsSchema, 'params'),
+    controller.removeBookmark
+  );
   router.get(
     '/:id/file',
     authenticate,

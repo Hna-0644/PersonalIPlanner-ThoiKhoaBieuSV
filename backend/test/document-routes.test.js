@@ -32,11 +32,14 @@ function authHeader(userId = 'usr_17') {
 
 function createService(overrides = {}) {
   return {
-    async listDocuments(query) {
+    async listDocuments(_userId, query) {
       return {
         documents: [],
         pagination: { page: query.page, limit: query.limit, total: 0, totalPages: 1 }
       };
+    },
+    async setBookmark(_userId, id, isBookmarked) {
+      return { id, isBookmarked };
     },
     async getDocumentFilters() {
       return { universities: [], subjects: [], studentYears: [1, 2, 3, 4] };
@@ -57,8 +60,8 @@ function createService(overrides = {}) {
 test('document listing requires authentication and forwards filters', async () => {
   let received;
   const app = createApp(createService({
-    async listDocuments(query) {
-      received = query;
+    async listDocuments(userId, query) {
+      received = { userId, query };
       return { documents: [], pagination: { page: 2, limit: 12, total: 0, totalPages: 1 } };
     }
   }));
@@ -66,25 +69,53 @@ test('document listing requires authentication and forwards filters', async () =
   assert.equal((await request(app).get('/api/documents')).status, 401);
   assert.equal((await request(app).get('/api/documents/filters')).status, 401);
   const response = await request(app)
-    .get('/api/documents?q=exam&subjectCode=it3020&university=UIT&studentYear=2&category=exam&page=2')
+    .get('/api/documents?q=exam&subjectCode=it3020&university=UIT&studentYear=2&category=past_exams&savedOnly=true&page=2')
     .set('Authorization', authHeader());
 
   assert.equal(response.status, 200);
   assert.deepEqual(received, {
-    q: 'exam',
-    subjectCode: 'IT3020',
-    university: 'UIT',
-    studentYear: 2,
-    category: 'exam',
-    page: 2,
-    limit: 12
+    userId: '17',
+    query: {
+      q: 'exam',
+      subjectCode: 'IT3020',
+      university: 'UIT',
+      studentYear: 2,
+      category: 'past_exams',
+      savedOnly: true,
+      page: 2,
+      limit: 12
+    }
   });
 
   const allYearsResponse = await request(app)
     .get('/api/documents?studentYear=')
     .set('Authorization', authHeader());
   assert.equal(allYearsResponse.status, 200);
-  assert.equal(received.studentYear, undefined);
+  assert.equal(received.query.studentYear, undefined);
+});
+
+test('document bookmarks require authentication and are scoped to the current user', async () => {
+  const calls = [];
+  const app = createApp(createService({
+    async setBookmark(...args) {
+      calls.push(args);
+      return { id: args[1], isBookmarked: args[2] };
+    }
+  }));
+
+  assert.equal((await request(app).put('/api/documents/doc_21/bookmark')).status, 401);
+  const saved = await request(app)
+    .put('/api/documents/doc_21/bookmark')
+    .set('Authorization', authHeader('usr_17'));
+  const removed = await request(app)
+    .delete('/api/documents/doc_21/bookmark')
+    .set('Authorization', authHeader('usr_17'));
+
+  assert.equal(saved.status, 200);
+  assert.deepEqual(saved.body.data, { id: 'doc_21', isBookmarked: true });
+  assert.equal(removed.status, 200);
+  assert.deepEqual(removed.body.data, { id: 'doc_21', isBookmarked: false });
+  assert.deepEqual(calls, [['17', 'doc_21', true], ['17', 'doc_21', false]]);
 });
 
 test('document filters require authentication and return available filter values', async () => {
@@ -121,7 +152,7 @@ test('document upload passes authenticated user, metadata, and the uploaded file
     .field('subjectCode', 'it3020')
     .field('subjectName', 'Lập trình Web')
     .field('title', 'Tài liệu ôn tập')
-    .field('category', 'summary')
+    .field('category', 'summaries')
     .field('description', 'Ôn tập cuối kỳ')
     .attach('file', Buffer.from('%PDF-1.7\nsample'), {
       filename: 'on-tap.pdf',
@@ -143,7 +174,7 @@ test('document upload rejects missing or unsupported files', async () => {
     .field('subjectCode', 'IT3020')
     .field('subjectName', 'Lập trình Web')
     .field('title', 'Tài liệu ôn tập')
-    .field('category', 'summary');
+    .field('category', 'summaries');
   assert.equal(missing.status, 400);
   assert.equal(missing.body.error.code, 'FILE_REQUIRED');
 
@@ -153,7 +184,7 @@ test('document upload rejects missing or unsupported files', async () => {
     .field('subjectCode', 'IT3020')
     .field('subjectName', 'Lập trình Web')
     .field('title', 'Tài liệu ôn tập')
-    .field('category', 'summary')
+    .field('category', 'summaries')
     .attach('file', Buffer.from('script'), {
       filename: 'script.exe',
       contentType: 'application/octet-stream'
@@ -185,4 +216,12 @@ test('document file route returns an authenticated attachment', async t => {
   assert.equal(response.headers['content-disposition'], 'attachment; filename="lecture-notes.pdf"');
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
   assert.deepEqual(response.body, bytes);
+
+  const rangeResponse = await request(app)
+    .get('/api/documents/doc_9/file')
+    .set('Authorization', authHeader())
+    .set('Range', 'bytes=0-4');
+  assert.equal(rangeResponse.status, 206);
+  assert.equal(rangeResponse.headers['content-range'], `bytes 0-4/${bytes.length}`);
+  assert.deepEqual(rangeResponse.body, bytes.subarray(0, 5));
 });

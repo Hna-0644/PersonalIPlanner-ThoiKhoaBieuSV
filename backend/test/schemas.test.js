@@ -10,7 +10,7 @@ const {
   workScheduleSchema,
   workScheduleUpdateSchema
 } = require('../src/schemas');
-const { documentListQuerySchema } = require('../src/schemas/document-schemas');
+const { documentCreateSchema, documentListQuerySchema } = require('../src/schemas/document-schemas');
 
 test('registration normalizes email and requires a strong minimum password length', () => {
   const result = registerSchema.parse({
@@ -37,6 +37,26 @@ test('document query accepts an empty year filter and rejects years outside one 
   assert.equal(documentListQuerySchema.parse({ studentYear: '' }).studentYear, undefined);
   assert.equal(documentListQuerySchema.parse({ studentYear: '2' }).studentYear, 2);
   assert.equal(documentListQuerySchema.safeParse({ studentYear: '5' }).success, false);
+  assert.equal(documentListQuerySchema.parse({ savedOnly: 'true' }).savedOnly, true);
+  assert.equal(documentListQuerySchema.parse({}).savedOnly, false);
+  assert.equal(documentListQuerySchema.safeParse({ savedOnly: 'yes' }).success, false);
+});
+
+test('document categories use the academic taxonomy and normalize legacy values', () => {
+  assert.equal(documentListQuerySchema.parse({ category: 'exam' }).category, 'past_exams');
+  assert.equal(documentListQuerySchema.parse({ category: 'notes' }).category, 'lecture_notes');
+  assert.equal(documentCreateSchema.safeParse({
+    subjectCode: 'IT3020',
+    subjectName: 'Lập trình Web',
+    title: 'Tài liệu học tập',
+    category: 'past_exams'
+  }).success, true);
+  assert.equal(documentCreateSchema.safeParse({
+    subjectCode: 'IT3020',
+    subjectName: 'Lập trình Web',
+    title: 'Tài liệu học tập',
+    category: 'other'
+  }).success, false);
 });
 
 test('class validation rejects invalid weekday and overlapping interval shape', () => {

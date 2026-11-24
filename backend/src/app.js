@@ -71,7 +71,8 @@ function createApp({ pool, config, redisClient }) {
       }
       return callback(null, false);
     },
-    credentials: false
+    credentials: false,
+    exposedHeaders: ['Accept-Ranges', 'Content-Range', 'Content-Length']
   }));
   app.use(express.json({ limit: '10mb' }));
 

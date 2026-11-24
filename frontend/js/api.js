@@ -106,6 +106,7 @@ const ApiService = {
     if (query.university) params.set('university', query.university);
     if (query.studentYear) params.set('studentYear', String(query.studentYear));
     if (query.category) params.set('category', query.category);
+    if (query.savedOnly) params.set('savedOnly', 'true');
     if (query.page) params.set('page', String(query.page));
     if (query.limit) params.set('limit', String(query.limit));
     const qs = params.toString();
@@ -118,6 +119,18 @@ const ApiService = {
     if (!res) throw new Error('Đăng nhập bằng tài khoản máy chủ để sử dụng bộ lọc tài liệu.');
     return res && res.data ? res.data : res;
   },
+  getStudyDocumentFileUrl(id) {
+    return `${API_CONFIG.BASE_URL}/documents/${encodeURIComponent(id)}/file`;
+  },
+  async setStudyDocumentBookmark(id, isBookmarked, options = {}) {
+    const method = isBookmarked ? 'PUT' : 'DELETE';
+    const res = await this.request(
+      `/documents/${encodeURIComponent(id)}/bookmark`,
+      { method, silent: options.silent }
+    );
+    if (!res) throw new Error('Đăng nhập bằng tài khoản máy chủ để lưu tài liệu.');
+    return res && res.data ? res.data : res;
+  },
   async uploadStudyDocument(formData, options = {}) {
     const res = await this.request('/documents', {
       method: 'POST',
@@ -128,7 +141,7 @@ const ApiService = {
     return res && res.data ? res.data : res;
   },
   async downloadStudyDocument(id, options = {}) {
-    const url = `${API_CONFIG.BASE_URL}/documents/${encodeURIComponent(id)}/file`;
+    const url = this.getStudyDocumentFileUrl(id);
     const token = this.getToken();
     try {
       const response = await fetch(url, {

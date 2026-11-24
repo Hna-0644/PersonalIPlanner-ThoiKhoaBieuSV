@@ -76,6 +76,75 @@
       border-color: var(--hairline-strong);
       box-shadow: var(--shadow-md);
     }
+    .study-document-card[tabindex="0"] {
+      cursor: pointer;
+    }
+    .study-document-card[tabindex="0"]:focus-visible {
+      outline: 3px solid rgba(13, 116, 128, 0.3);
+      outline-offset: 2px;
+    }
+    .study-document-cover {
+      position: relative;
+      display: grid;
+      min-height: 220px;
+      place-items: center;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      border: 1px solid var(--hairline);
+      border-radius: var(--r-sm);
+      background: linear-gradient(145deg, #f3f8f8, #e8f0f2);
+    }
+    .study-document-cover canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 260px;
+      background: #ffffff;
+      box-shadow: 0 4px 14px rgba(31, 48, 56, 0.14);
+    }
+    .study-document-cover-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--p-action);
+      font-weight: 600;
+    }
+    .study-document-cover-placeholder i {
+      font-size: 2rem;
+    }
+    .study-document-page-count {
+      position: absolute;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      padding: 0.2rem 0.45rem;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--p-ink);
+      font-size: 0.72rem;
+    }
+    .study-document-reader-stage {
+      display: grid;
+      min-height: 60vh;
+      place-items: center;
+      overflow: auto;
+      padding: 1rem;
+      background: #e9eef0;
+    }
+    .study-document-reader-stage canvas {
+      max-width: 100%;
+      background: #ffffff;
+      box-shadow: 0 4px 20px rgba(31, 48, 56, 0.16);
+    }
+    @media (max-width: 575.98px) {
+      .study-document-cover {
+        min-height: 180px;
+      }
+      .study-document-reader-stage {
+        min-height: 55vh;
+        padding: 0.5rem;
+      }
+    }
 
     .star-rating {
       color: #d97706;
@@ -388,10 +457,17 @@
             </h5>
             <p class="text-muted small mb-0">Tìm và chia sẻ ghi chú, slide, đề thi theo môn học.</p>
           </div>
-          <button class="btn btn-primary d-flex align-items-center gap-2" type="button" id="openStudyDocumentModal">
-            <i class="bi bi-cloud-arrow-up"></i>
-            <span>Đăng tài liệu</span>
-          </button>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary d-flex align-items-center gap-2" type="button"
+              id="studyDocumentsSavedToggle" aria-pressed="false">
+              <i class="bi bi-bookmark-heart"></i>
+              <span>Thư viện của tôi</span>
+            </button>
+            <button class="btn btn-primary d-flex align-items-center gap-2" type="button" id="openStudyDocumentModal">
+              <i class="bi bi-cloud-arrow-up"></i>
+              <span>Đăng tài liệu</span>
+            </button>
+          </div>
         </div>
 
         <div class="card-custom p-3 mb-3">
@@ -428,13 +504,11 @@
             <div class="col-12 col-sm-6 col-xl-2">
               <label class="visually-hidden" for="studyDocumentCategoryFilter">Lọc theo loại tài liệu</label>
               <select class="form-select" id="studyDocumentCategoryFilter">
-                <option value="">Tất cả loại tài liệu</option>
-                <option value="notes">Ghi chú</option>
-                <option value="slides">Slide bài giảng</option>
-                <option value="exam">Đề thi</option>
-                <option value="assignment">Bài tập</option>
-                <option value="summary">Đề cương / Tóm tắt</option>
-                <option value="other">Khác</option>
+                <option value="">Tất cả danh mục</option>
+                <option value="lecture_notes">Bài giảng (Lecture notes)</option>
+                <option value="summaries">Tóm tắt / Đề cương (Summaries)</option>
+                <option value="assignments">Bài tập bắt buộc &amp; Đồ án (Assignments)</option>
+                <option value="past_exams">Đề thi các năm (Past exams)</option>
               </select>
             </div>
           </div>
@@ -502,12 +576,10 @@
             <div class="col-12 col-sm-5">
               <label class="form-label fw-semibold" for="studyDocumentCategory">Loại tài liệu</label>
               <select class="form-select" id="studyDocumentCategory" name="category" required>
-                <option value="notes">Ghi chú</option>
-                <option value="slides">Slide bài giảng</option>
-                <option value="exam">Đề thi</option>
-                <option value="assignment">Bài tập</option>
-                <option value="summary">Đề cương / Tóm tắt</option>
-                <option value="other">Khác</option>
+                <option value="lecture_notes">Bài giảng (Lecture notes)</option>
+                <option value="summaries">Tóm tắt / Đề cương (Summaries)</option>
+                <option value="assignments">Bài tập bắt buộc &amp; Đồ án (Assignments)</option>
+                <option value="past_exams">Đề thi các năm (Past exams)</option>
               </select>
             </div>
           </div>
@@ -529,6 +601,45 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="studyDocumentPreviewModal" tabindex="-1" aria-labelledby="studyDocumentPreviewTitle" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="min-w-0">
+          <h5 class="modal-title fw-bold text-truncate" id="studyDocumentPreviewTitle">Xem trước tài liệu</h5>
+          <div class="small text-muted" id="studyDocumentPreviewPageCount"></div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="study-document-reader-stage">
+          <div class="small text-muted text-center" id="studyDocumentPreviewStatus" role="status" aria-live="polite">
+            Đang tải tài liệu...
+          </div>
+          <canvas id="studyDocumentPreviewCanvas" class="d-none" aria-label="Trang tài liệu PDF đang xem"></canvas>
+        </div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <span class="small text-muted" id="studyDocumentPreviewPosition"></span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" type="button" id="studyDocumentPreviewPrevious" disabled>Trang trước</button>
+            <button class="btn btn-outline-primary btn-sm" type="button" id="studyDocumentPreviewNext" disabled>Trang tiếp</button>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" type="button" id="studyDocumentPreviewBookmark">
+            <i class="bi bi-bookmark me-1"></i>Lưu vào Thư viện của tôi
+          </button>
+          <button class="btn btn-primary btn-sm" type="button" id="studyDocumentPreviewDownload">
+            <i class="bi bi-download me-1"></i>Tải xuống PDF
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -793,6 +904,7 @@
 <script src="../js/auth.js"></script>
 <script src="../js/ui-states.js"></script>
 <script src="../js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="../js/documents.js"></script>
 
 <script>

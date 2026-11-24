@@ -270,10 +270,12 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 | `GET` | `/notifications` | Có | Trả tối đa 100 thông báo gần nhất của user. |
 | `PATCH` | `/notifications/{id}` | Có | Request `{ read: true }`; đánh dấu đã đọc, thao tác lặp lại thành công. `PUT /notifications/{id}/read` là alias cũ. |
 | `PATCH` | `/notifications` | Có | Request `{ readAll: true }`; đánh dấu toàn bộ đã đọc, trả số bản ghi thực sự thay đổi. `PUT /notifications/read-all` là alias cũ. |
-| `GET` | `/documents` | Có | Query `q?`, `subjectCode?`, `university?`, `studentYear?` (1–4), `category?`, `page?`, `limit?`; trả `{ data: { documents, pagination } }`, sắp xếp mới nhất trước. |
+| `GET` | `/documents` | Có | Query `q?`, `subjectCode?`, `university?`, `studentYear?` (1–4), `category?` (`lecture_notes`, `summaries`, `assignments`, `past_exams`), `savedOnly?` (`true`), `page?`, `limit?`; trả `{ data: { documents, pagination } }`, sắp xếp mới nhất trước. Các category cũ được chuẩn hóa tương thích. |
 | `GET` | `/documents/filters` | Có | Trả các trường và môn học hiện có trong thư viện cùng năm sinh viên 1–4. |
-| `POST` | `/documents` | Có | `multipart/form-data`: `file` (PDF/DOC/DOCX, tối đa 15 MiB), `subjectCode`, `subjectName`, `title`, `category`, `description?`; trả `{ data: StudyDocument }`. Giới hạn 5 lần đăng/phút/user. |
-| `GET` | `/documents/{id}/file` | Có | Tải file dưới dạng binary attachment; ID dạng `doc_123`. |
+| `POST` | `/documents` | Có | `multipart/form-data`: `file` (PDF/DOC/DOCX, tối đa 15 MiB), `subjectCode`, `subjectName`, `title`, `category` (`lecture_notes`, `summaries`, `assignments`, `past_exams`), `description?`; trả `{ data: StudyDocument }`. Giới hạn 5 lần đăng/phút/user. |
+| `PUT` | `/documents/{id}/bookmark` | Có | Lưu tài liệu vào thư viện của user hiện tại; thao tác lặp lại thành công. |
+| `DELETE` | `/documents/{id}/bookmark` | Có | Gỡ tài liệu khỏi thư viện của user hiện tại; thao tác lặp lại thành công. |
+| `GET` | `/documents/{id}/file` | Có | Tải file dưới dạng binary attachment; ID dạng `doc_123`. PDF hỗ trợ byte-range để tạo thumbnail, đếm trang và xem trước. |
 | `GET` | `/courses/{subjectId}/reviews` | Có | Query `page`, `limit`; trả `{ data: { summary, reviews, pagination } }` và `X-Cache: HIT|MISS`. Summary: `avgRating`, `totalReviews`, `attendanceRate`. |
 | `POST` | `/courses/{subjectId}/reviews` | Có | Nhận `rating`, `difficulty`, `attendanceRequired`, `content` và các ghi chú nullable tùy chọn; trả `{ data: CourseReview }`. Review trùng của user/môn trả `409 REVIEW_ALREADY_EXISTS`. |
 | `PUT` | `/courses/{subjectId}/reviews/me` | Có | Partial update review của user hiện tại; trả `{ data: CourseReview }`; không có review trả `404 NOT_FOUND`. |

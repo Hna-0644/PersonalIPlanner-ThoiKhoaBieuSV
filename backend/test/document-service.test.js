@@ -48,6 +48,7 @@ function createRepository(overrides = {}) {
     async findById(id) {
       return rows.find(row => String(row.id) === String(id)) || null;
     },
+    async setBookmark() {},
     ...overrides
   };
 }
@@ -69,7 +70,7 @@ test('Document service stores a validated file and returns list/download metadat
     subjectName: 'Lập trình Web',
     title: 'Đề cương ôn tập',
     description: 'Cuối kỳ',
-    category: 'summary'
+    category: 'summaries'
   }, {
     originalname: 'de-cuong.pdf',
     mimetype: 'application/pdf',
@@ -88,7 +89,7 @@ test('Document service stores a validated file and returns list/download metadat
   assert.equal(file.fileName, 'de-cuong.pdf');
   assert.deepEqual(await fs.readFile(file.filePath), fileBuffer);
 
-  const list = await service.listDocuments({ page: 1, limit: 12 });
+  const list = await service.listDocuments('17', { page: 1, limit: 12 });
   assert.equal(list.documents.length, 1);
   assert.equal(list.pagination.total, 1);
   assert.deepEqual(await service.getDocumentFilters(), {
@@ -96,6 +97,33 @@ test('Document service stores a validated file and returns list/download metadat
     subjects: [{ code: 'IT3020', name: 'Lập trình Web' }],
     studentYears: [1, 2, 3, 4]
   });
+});
+
+test('Document service stores and removes bookmarks for an existing document', async () => {
+  const calls = [];
+  const repository = createRepository({
+    async findById(id) {
+      return id === '31' ? { id, title: 'Tài liệu' } : null;
+    },
+    async setBookmark(...args) {
+      calls.push(args);
+    }
+  });
+  const service = createDocumentService({ repository });
+
+  assert.deepEqual(await service.setBookmark('17', 'doc_31', true), {
+    id: 'doc_31',
+    isBookmarked: true
+  });
+  assert.deepEqual(await service.setBookmark('17', 'doc_31', false), {
+    id: 'doc_31',
+    isBookmarked: false
+  });
+  assert.deepEqual(calls, [['17', '31', true], ['17', '31', false]]);
+  await assert.rejects(
+    () => service.setBookmark('17', 'doc_99', true),
+    error => error.code === 'NOT_FOUND' && error.status === 404
+  );
 });
 
 test('Document service rejects a file whose content does not match its extension', async t => {
@@ -107,7 +135,7 @@ test('Document service rejects a file whose content does not match its extension
       subjectCode: 'IT3020',
       subjectName: 'Lập trình Web',
       title: 'Tài liệu giả mạo',
-      category: 'notes'
+      category: 'lecture_notes'
     }, {
       originalname: 'malware.pdf',
       mimetype: 'application/pdf',
@@ -141,7 +169,7 @@ test('Document service removes a stored file if database insertion fails', async
       subjectCode: 'IT3020',
       subjectName: 'Lập trình Web',
       title: 'Ghi chú tuần 1',
-      category: 'notes'
+      category: 'lecture_notes'
     }, {
       originalname: 'notes.pdf',
       mimetype: 'application/pdf',

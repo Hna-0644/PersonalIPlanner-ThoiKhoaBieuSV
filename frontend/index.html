@@ -240,6 +240,16 @@
                 <option value="4">Năm 4</option>
               </select>
             </div>
+            <div class="document-discovery-field">
+              <label for="documentDiscoveryCategory">Danh mục học thuật</label>
+              <select class="form-select" id="documentDiscoveryCategory" name="category" form="documentDiscoveryForm">
+                <option value="">Tất cả danh mục</option>
+                <option value="lecture_notes">Bài giảng (Lecture notes)</option>
+                <option value="summaries">Tóm tắt / Đề cương (Summaries)</option>
+                <option value="assignments">Bài tập bắt buộc &amp; Đồ án (Assignments)</option>
+                <option value="past_exams">Đề thi các năm (Past exams)</option>
+              </select>
+            </div>
           </div>
           <div class="small text-muted mt-2" id="documentDiscoveryStatus" role="status" aria-live="polite">
             Năm học dựa trên hồ sơ của người đăng tài liệu.
@@ -512,6 +522,13 @@
 
     function initializeDocumentDiscoveryFilters() {
       const status = document.getElementById('documentDiscoveryStatus');
+      const queryParams = new URLSearchParams(window.location.search);
+      const selectedCategory = queryParams.get('category') || '';
+      const categorySelect = document.getElementById('documentDiscoveryCategory');
+      if ([...categorySelect.options].some(option => option.value === selectedCategory)) {
+        categorySelect.value = selectedCategory;
+      }
+
       ApiService.getStudyDocumentFilters({ silent: true })
         .then(filters => {
           const universitySelect = document.getElementById('documentDiscoveryUniversity');

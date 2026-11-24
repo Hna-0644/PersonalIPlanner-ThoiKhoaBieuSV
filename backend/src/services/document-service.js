@@ -56,6 +56,7 @@ function mapDocument(row) {
     uploaderStudentYear: row.uploader_student_year === null || row.uploader_student_year === undefined
       ? null
       : Number(row.uploader_student_year),
+    isBookmarked: Boolean(row.is_bookmarked),
     createdAt: toIsoUtcString(row.created_at),
     downloadUrl: `/api/documents/${toPublicId('document', row.id)}/file`
   };
@@ -68,8 +69,8 @@ function createDocumentService({
 } = {}) {
   const repo = repository || createDocumentRepository({ pool });
 
-  async function listDocuments(query = {}) {
-    const { rows, total, page, limit } = await repo.findDocuments(query);
+  async function listDocuments(userId, query = {}) {
+    const { rows, total, page, limit } = await repo.findDocuments(query, userId);
     return {
       documents: rows.map(mapDocument),
       pagination: {
@@ -158,7 +159,20 @@ function createDocumentService({
     };
   }
 
-  return { listDocuments, getDocumentFilters, createDocument, getDocumentFile };
+  async function setBookmark(userId, rawDocumentId, isBookmarked) {
+    const documentId = normalizeDocumentId(rawDocumentId);
+    const document = await repo.findById(documentId);
+    if (!document) {
+      throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy tài liệu.');
+    }
+    await repo.setBookmark(userId, documentId, isBookmarked);
+    return {
+      id: toPublicId('document', documentId),
+      isBookmarked
+    };
+  }
+
+  return { listDocuments, getDocumentFilters, createDocument, getDocumentFile, setBookmark };
 }
 
 module.exports = {

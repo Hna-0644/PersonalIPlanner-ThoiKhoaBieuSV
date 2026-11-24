@@ -17,7 +17,7 @@ const DOCUMENT_SELECT_COLUMNS = `
 `;
 
 function createDocumentRepository({ pool }) {
-  async function findDocuments(filters = {}) {
+  async function findDocuments(filters = {}, userId) {
     const conditions = [];
     const values = [];
 
@@ -54,6 +54,15 @@ function createDocumentRepository({ pool }) {
       values.push(keyword, keyword, keyword, keyword, keyword, keyword);
     }
 
+    if (filters.savedOnly) {
+      conditions.push(`EXISTS (
+        SELECT 1
+        FROM study_document_bookmarks b
+        WHERE b.user_id = ? AND b.document_id = d.id
+      )`);
+      values.push(userId);
+    }
+
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const page = Math.max(1, Number(filters.page || 1));
     const limit = Math.min(50, Math.max(1, Number(filters.limit || 12)));
@@ -67,13 +76,18 @@ function createDocumentRepository({ pool }) {
       values
     );
     const [rows] = await pool.execute(
-      `SELECT ${DOCUMENT_SELECT_COLUMNS}
+      `SELECT ${DOCUMENT_SELECT_COLUMNS},
+       EXISTS (
+         SELECT 1
+         FROM study_document_bookmarks b
+         WHERE b.user_id = ? AND b.document_id = d.id
+       ) AS is_bookmarked
        FROM study_documents d
        JOIN users u ON u.id = d.user_id
        ${whereClause}
        ORDER BY d.created_at DESC, d.id DESC
        LIMIT ? OFFSET ?`,
-      [...values, String(limit), String(offset)]
+      [userId, ...values, String(limit), String(offset)]
     );
 
     return {
@@ -143,7 +157,24 @@ function createDocumentRepository({ pool }) {
     return rows[0] || null;
   }
 
-  return { findDocuments, findDocumentFilters, create, findById };
+  async function setBookmark(userId, documentId, isBookmarked) {
+    if (isBookmarked) {
+      await pool.execute(
+        `INSERT INTO study_document_bookmarks (user_id, document_id)
+         VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE created_at = study_document_bookmarks.created_at`,
+        [userId, documentId]
+      );
+      return;
+    }
+
+    await pool.execute(
+      'DELETE FROM study_document_bookmarks WHERE user_id = ? AND document_id = ?',
+      [userId, documentId]
+    );
+  }
+
+  return { findDocuments, findDocumentFilters, create, findById, setBookmark };
 }
 
 async function withTransaction(pool, operation) {

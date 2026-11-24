@@ -3,7 +3,7 @@ const { toDatabaseId } = require('../utils/public-id');
 
 function createDocumentController(documentService) {
   const listDocuments = asyncHandler(async (req, res) => {
-    const data = await documentService.listDocuments(req.query);
+    const data = await documentService.listDocuments(req.user.id, req.query);
     res.json({ data });
   });
 
@@ -17,6 +17,15 @@ function createDocumentController(documentService) {
     res.status(201).json({ data });
   });
 
+  const setBookmark = isBookmarked => asyncHandler(async (req, res) => {
+    const data = await documentService.setBookmark(
+      req.user.id,
+      req.params.id,
+      isBookmarked
+    );
+    res.json({ data });
+  });
+
   const downloadDocument = asyncHandler(async (req, res, next) => {
     const file = await documentService.getDocumentFile(
       toDatabaseId(req.params.id, 'document')
@@ -28,7 +37,14 @@ function createDocumentController(documentService) {
     });
   });
 
-  return { listDocuments, listDocumentFilters, createDocument, downloadDocument };
+  return {
+    listDocuments,
+    listDocumentFilters,
+    createDocument,
+    setBookmark: setBookmark(true),
+    removeBookmark: setBookmark(false),
+    downloadDocument
+  };
 }
 
 module.exports = { createDocumentController };

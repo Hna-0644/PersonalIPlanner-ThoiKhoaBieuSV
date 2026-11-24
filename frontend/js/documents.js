@@ -1,12 +1,18 @@
 (() => {
   const PAGE_SIZE = 12;
   const MAX_FILE_SIZE = 15 * 1024 * 1024;
+  const CATEGORY_ALIASES = {
+    notes: 'lecture_notes',
+    slides: 'lecture_notes',
+    summary: 'summaries',
+    assignment: 'assignments',
+    exam: 'past_exams'
+  };
   const CATEGORY_META = {
-    notes: { label: 'Ghi chú', icon: 'bi-journal-text' },
-    slides: { label: 'Slide bài giảng', icon: 'bi-easel2' },
-    exam: { label: 'Đề thi', icon: 'bi-file-earmark-check' },
-    assignment: { label: 'Bài tập', icon: 'bi-pencil-square' },
-    summary: { label: 'Đề cương / Tóm tắt', icon: 'bi-card-text' },
+    lecture_notes: { label: 'Bài giảng (Lecture notes)', icon: 'bi-easel2' },
+    summaries: { label: 'Tóm tắt / Đề cương (Summaries)', icon: 'bi-card-text' },
+    assignments: { label: 'Bài tập bắt buộc & Đồ án (Assignments)', icon: 'bi-pencil-square' },
+    past_exams: { label: 'Đề thi các năm (Past exams)', icon: 'bi-file-earmark-check' },
     other: { label: 'Khác', icon: 'bi-folder2-open' }
   };
 
@@ -15,6 +21,22 @@
   let searchTimer;
   let requestSequence = 0;
   let documentSubjects = [];
+  let documentItemsById = new Map();
+  let thumbnailObserver;
+  let thumbnailQueue = [];
+  let activeThumbnailCount = 0;
+  let activePreviewId = '';
+  let activePreviewItem = null;
+  let activePreviewDocument = null;
+  let activePreviewPage = 1;
+  let previewRequestSequence = 0;
+  let savedOnly = false;
+  const pdfDocuments = new Map();
+
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
 
   document.addEventListener('DOMContentLoaded', initializeStudyDocuments);
 
@@ -24,8 +46,14 @@
 
     const queryParams = new URLSearchParams(window.location.search);
     const initialQuery = queryParams.get('documentQuery');
+    const requestedCategory = queryParams.get('category') || '';
+    const initialCategory = CATEGORY_ALIASES[requestedCategory] || requestedCategory;
     if (initialQuery) {
       document.getElementById('studyDocumentSearch').value = initialQuery.slice(0, 200);
+    }
+    if ([...document.getElementById('studyDocumentCategoryFilter').options]
+      .some(option => option.value === initialCategory)) {
+      document.getElementById('studyDocumentCategoryFilter').value = initialCategory;
     }
 
     populateSubjectOptions(queryParams.get('subjectCode') || '');
@@ -43,9 +71,34 @@
     document.getElementById('studyDocumentSubjectFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentStudentYearFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentCategoryFilter').addEventListener('change', resetAndLoad);
+    document.getElementById('studyDocumentsSavedToggle').addEventListener('click', toggleSavedDocuments);
     document.getElementById('studyDocumentsPrevious').addEventListener('click', () => changePage(-1));
     document.getElementById('studyDocumentsNext').addEventListener('click', () => changePage(1));
-    document.getElementById('studyDocumentsGrid').addEventListener('click', handleDocumentAction);
+    const documentGrid = document.getElementById('studyDocumentsGrid');
+    documentGrid.addEventListener('click', handleDocumentAction);
+    documentGrid.addEventListener('keydown', handleDocumentCardKeydown);
+    document.getElementById('studyDocumentPreviewPrevious').addEventListener('click', () => {
+      if (activePreviewPage <= 1) return;
+      activePreviewPage -= 1;
+      renderPreviewPage();
+    });
+    document.getElementById('studyDocumentPreviewNext').addEventListener('click', () => {
+      if (!activePreviewDocument || activePreviewPage >= activePreviewDocument.numPages) return;
+      activePreviewPage += 1;
+      renderPreviewPage();
+    });
+    document.getElementById('studyDocumentPreviewBookmark').addEventListener('click', event => {
+      if (activePreviewItem) toggleBookmark(activePreviewItem, event.currentTarget);
+    });
+    document.getElementById('studyDocumentPreviewDownload').addEventListener('click', event => {
+      if (activePreviewItem) {
+        downloadDocumentFile(event.currentTarget, activePreviewItem.id, activePreviewItem.fileName);
+      }
+    });
+    document.getElementById('studyDocumentPreviewModal').addEventListener(
+      'hidden.bs.modal',
+      closeDocumentPreview
+    );
     form.addEventListener('submit', submitDocument);
 
     try {
@@ -142,6 +195,17 @@
     loadDocuments();
   }
 
+  function toggleSavedDocuments() {
+    savedOnly = !savedOnly;
+    const button = document.getElementById('studyDocumentsSavedToggle');
+    button.setAttribute('aria-pressed', String(savedOnly));
+    button.classList.toggle('btn-primary', savedOnly);
+    button.classList.toggle('btn-outline-primary', !savedOnly);
+    button.querySelector('span').textContent = savedOnly ? 'Tất cả tài liệu' : 'Thư viện của tôi';
+    page = 1;
+    loadDocuments();
+  }
+
   function changePage(delta) {
     const nextPage = page + delta;
     if (nextPage < 1 || nextPage > totalPages) return;
@@ -164,6 +228,7 @@
         subjectCode: document.getElementById('studyDocumentSubjectFilter').value,
         studentYear: document.getElementById('studyDocumentStudentYearFilter').value,
         category: document.getElementById('studyDocumentCategoryFilter').value,
+        savedOnly,
         page,
         limit: PAGE_SIZE
       }, { silent: true });
@@ -179,12 +244,15 @@
       updatePaginationButtons();
 
       if (!documents.length) {
-        status.textContent = 'Chưa có tài liệu phù hợp. Hãy thử đổi từ khóa/bộ lọc hoặc đăng tài liệu đầu tiên.';
+        status.textContent = savedOnly
+          ? 'Thư viện của bạn chưa có tài liệu đã lưu.'
+          : 'Chưa có tài liệu phù hợp. Hãy thử đổi từ khóa/bộ lọc hoặc đăng tài liệu đầu tiên.';
         return;
       }
 
       status.textContent = '';
       grid.innerHTML = documents.map(renderDocumentCard).join('');
+      observeDocumentThumbnails(documents);
     } catch (error) {
       if (sequence !== requestSequence) return;
       document.getElementById('studyDocumentsCount').textContent = '0';
@@ -198,37 +266,271 @@
   function renderDocumentCard(item) {
     const category = CATEGORY_META[item.category] || CATEGORY_META.other;
     const fileSize = formatFileSize(item.fileSize);
+    const fileName = item.fileName || '';
+    const isPdf = item.mimeType === 'application/pdf' || /\.pdf$/i.test(fileName);
+    const fileTypeLabel = /\.docx?$/i.test(fileName) ? 'WORD' : 'PDF';
     const createdAt = item.createdAt
       ? new Date(item.createdAt).toLocaleDateString('vi-VN')
       : 'Vừa đăng';
 
     return `
       <div class="col-12 col-md-6 col-xl-4">
-        <article class="study-document-card d-flex flex-column">
+        <article class="study-document-card d-flex flex-column" data-document-card-id="${escapeHtml(item.id)}"
+          tabindex="0" aria-label="Mở tài liệu ${escapeHtml(item.title)}">
           <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
               <i class="bi ${category.icon} me-1"></i>${category.label}
             </span>
             <span class="small text-muted">${escapeHtml(fileSize)}</span>
           </div>
+          <div class="study-document-cover" data-document-cover-id="${escapeHtml(item.id)}">
+            ${isPdf ? '<canvas class="d-none" aria-label="Ảnh bìa tài liệu PDF"></canvas>' : ''}
+            <div class="study-document-cover-placeholder">
+              <i class="bi ${isPdf ? 'bi-file-earmark-pdf' : 'bi-file-earmark-word'}" aria-hidden="true"></i>
+              <span>${fileTypeLabel}</span>
+            </div>
+            <span class="study-document-page-count" data-page-count>
+              ${isPdf ? 'Đang đọc số trang...' : 'Xem trước PDF không hỗ trợ'}
+            </span>
+          </div>
           <h6 class="fw-bold mb-1">${escapeHtml(item.title)}</h6>
           <div class="small text-primary fw-semibold mb-2">${escapeHtml(item.subjectCode)} · ${escapeHtml(item.subjectName)}</div>
           <p class="small text-muted flex-grow-1 mb-3">${escapeHtml(item.description || 'Chưa có mô tả.')}</p>
           <div class="small text-muted border-top pt-2 mb-3">
-            <div class="text-truncate" title="${escapeHtml(item.fileName)}">
-              <i class="bi bi-file-earmark me-1"></i>${escapeHtml(item.fileName)}
+            <div class="text-truncate" title="${escapeHtml(fileName)}">
+              <i class="bi bi-file-earmark me-1"></i>${escapeHtml(fileName)}
             </div>
             <div class="mt-1">${escapeHtml(item.uploaderName)} · ${escapeHtml(createdAt)}</div>
             ${item.uploaderUniversity ? `<div class="mt-1"><i class="bi bi-mortarboard me-1"></i>${escapeHtml(item.uploaderUniversity)}</div>` : ''}
-            ${item.uploaderStudentYear ? `<div class="mt-1">Năm học ${escapeHtml(item.uploaderStudentYear)}</div>` : ''}
+            ${item.uploaderStudentYear ? `<div class="mt-1">Sinh viên năm ${escapeHtml(item.uploaderStudentYear)}</div>` : ''}
           </div>
-          <button class="btn btn-outline-primary btn-sm align-self-start" type="button"
-            data-document-id="${escapeHtml(item.id)}" data-document-name="${escapeHtml(item.fileName)}">
-            <i class="bi bi-download me-1"></i>Tải tài liệu
-          </button>
+          <div class="d-flex flex-wrap gap-2">
+            ${isPdf ? `<button class="btn btn-outline-primary btn-sm" type="button"
+              data-document-action="preview" data-document-id="${escapeHtml(item.id)}"
+              data-document-title="${escapeHtml(item.title)}">
+              <i class="bi bi-eye me-1"></i>Xem trước
+            </button>` : ''}
+            <button class="btn btn-outline-secondary btn-sm" type="button"
+              data-document-action="download" data-document-id="${escapeHtml(item.id)}"
+              data-document-name="${escapeHtml(fileName)}">
+              <i class="bi bi-download me-1"></i>${isPdf ? 'Tải xuống PDF' : 'Mở tài liệu'}
+            </button>
+            <button class="btn ${item.isBookmarked ? 'btn-primary' : 'btn-outline-primary'} btn-sm"
+              type="button" data-document-action="bookmark" data-document-id="${escapeHtml(item.id)}"
+              aria-pressed="${item.isBookmarked ? 'true' : 'false'}">
+              <i class="bi ${item.isBookmarked ? 'bi-bookmark-check-fill' : 'bi-bookmark'} me-1"></i>
+              ${item.isBookmarked ? 'Đã lưu' : 'Lưu vào Thư viện của tôi'}
+            </button>
+          </div>
         </article>
       </div>
     `;
+  }
+
+  function observeDocumentThumbnails(documents) {
+    documentItemsById = new Map(documents.map(item => [String(item.id), item]));
+    if (thumbnailObserver) thumbnailObserver.disconnect();
+    const covers = document.querySelectorAll('#studyDocumentsGrid [data-document-cover-id]');
+    if (typeof IntersectionObserver !== 'function') {
+      covers.forEach(cover => queueDocumentThumbnail(cover));
+      return;
+    }
+
+    if (!thumbnailObserver) {
+      thumbnailObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          thumbnailObserver.unobserve(entry.target);
+          queueDocumentThumbnail(entry.target);
+        });
+      }, { rootMargin: '160px' });
+    }
+    covers.forEach(cover => thumbnailObserver.observe(cover));
+  }
+
+  function queueDocumentThumbnail(cover) {
+    const item = documentItemsById.get(cover.dataset.documentCoverId);
+    if (!item || !cover.querySelector('canvas')) return;
+    thumbnailQueue.push({ item, cover });
+    processThumbnailQueue();
+  }
+
+  function processThumbnailQueue() {
+    while (activeThumbnailCount < 2 && thumbnailQueue.length) {
+      const { item, cover } = thumbnailQueue.shift();
+      if (!cover.isConnected) continue;
+      activeThumbnailCount += 1;
+      renderDocumentThumbnail(item, cover)
+        .catch(() => {
+          const pageCount = cover.querySelector('[data-page-count]');
+          if (pageCount) pageCount.textContent = 'Ảnh bìa không khả dụng';
+        })
+        .finally(() => {
+          activeThumbnailCount -= 1;
+          processThumbnailQueue();
+        });
+    }
+  }
+
+  async function renderDocumentThumbnail(item, cover) {
+    try {
+      const pdfDocument = await getPdfDocument(item.id);
+      if (!cover.isConnected) return;
+
+      const pageCount = cover.querySelector('[data-page-count]');
+      const canvas = cover.querySelector('canvas');
+      pageCount.textContent = `${pdfDocument.numPages} trang`;
+      await renderPdfPage(pdfDocument, 1, canvas, 210, 250);
+      canvas.classList.remove('d-none');
+      cover.querySelector('.study-document-cover-placeholder').classList.add('d-none');
+    } finally {
+      if (activePreviewId !== String(item.id)) releasePdfDocument(item.id);
+    }
+  }
+
+  function getPdfDocument(documentId) {
+    const id = String(documentId);
+    const cached = pdfDocuments.get(id);
+    if (cached) return cached.promise;
+
+    if (!window.pdfjsLib) {
+      return Promise.reject(new Error('Trình đọc PDF chưa sẵn sàng. Kiểm tra kết nối mạng rồi tải lại trang.'));
+    }
+
+    const token = ApiService.getToken();
+    const loadingTask = window.pdfjsLib.getDocument({
+      url: ApiService.getStudyDocumentFileUrl(id),
+      httpHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      rangeChunkSize: 65536,
+      disableStream: true,
+      disableAutoFetch: true
+    });
+    const entry = { loadingTask, document: null, promise: null };
+    entry.promise = loadingTask.promise
+      .then(pdfDocument => {
+        entry.document = pdfDocument;
+        return pdfDocument;
+      })
+      .catch(error => {
+        if (pdfDocuments.get(id) === entry) pdfDocuments.delete(id);
+        throw error;
+      });
+    pdfDocuments.set(id, entry);
+    return entry.promise;
+  }
+
+  function releasePdfDocument(documentId) {
+    const id = String(documentId);
+    const entry = pdfDocuments.get(id);
+    if (!entry) return;
+    pdfDocuments.delete(id);
+    const resource = entry.document || entry.loadingTask;
+    if (resource && typeof resource.destroy === 'function') {
+      resource.destroy().catch(error => console.error('PDF preview cleanup failed:', error));
+    }
+  }
+
+  async function renderPdfPage(pdfDocument, pageNumber, canvas, maxWidth, maxHeight) {
+    const page = await pdfDocument.getPage(pageNumber);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = Math.min(maxWidth / baseViewport.width, maxHeight / baseViewport.height);
+    const viewport = page.getViewport({ scale });
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    const context = canvas.getContext('2d');
+    canvas.width = Math.ceil(viewport.width * outputScale);
+    canvas.height = Math.ceil(viewport.height * outputScale);
+    canvas.style.width = `${Math.ceil(viewport.width)}px`;
+    canvas.style.height = `${Math.ceil(viewport.height)}px`;
+    context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+    await page.render({ canvasContext: context, viewport }).promise;
+  }
+
+  async function openDocumentPreview(item) {
+    const documentId = String(item.id);
+    if (activePreviewId && activePreviewId !== documentId) {
+      releasePdfDocument(activePreviewId);
+    }
+    activePreviewId = documentId;
+    activePreviewItem = item;
+    activePreviewDocument = null;
+    const requestId = ++previewRequestSequence;
+    const modalElement = document.getElementById('studyDocumentPreviewModal');
+    const canvas = document.getElementById('studyDocumentPreviewCanvas');
+    const status = document.getElementById('studyDocumentPreviewStatus');
+    const isPdf = item.mimeType === 'application/pdf' || /\.pdf$/i.test(item.fileName || '');
+    document.getElementById('studyDocumentPreviewTitle').textContent = item.title || 'Xem trước tài liệu';
+    document.getElementById('studyDocumentPreviewPageCount').textContent =
+      isPdf ? 'Đang tải số trang...' : '';
+    document.getElementById('studyDocumentPreviewDownload').innerHTML = isPdf
+      ? '<i class="bi bi-download me-1"></i>Tải xuống PDF'
+      : '<i class="bi bi-box-arrow-up-right me-1"></i>Mở tài liệu';
+    updateBookmarkButton(document.getElementById('studyDocumentPreviewBookmark'), item.isBookmarked);
+    document.getElementById('studyDocumentPreviewPosition').textContent = '';
+    status.textContent = isPdf
+      ? 'Đang tải tài liệu...'
+      : 'Định dạng Word chưa hỗ trợ xem trước trực tuyến. Bấm “Mở tài liệu” để tải tệp và mở bằng ứng dụng phù hợp.';
+    status.classList.remove('d-none');
+    canvas.classList.add('d-none');
+    document.getElementById('studyDocumentPreviewPrevious').disabled = true;
+    document.getElementById('studyDocumentPreviewNext').disabled = true;
+    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+    if (!isPdf) return;
+
+    try {
+      const pdfDocument = await getPdfDocument(documentId);
+      if (requestId !== previewRequestSequence) return;
+      activePreviewDocument = pdfDocument;
+      activePreviewPage = 1;
+      document.getElementById('studyDocumentPreviewPageCount').textContent =
+        `${pdfDocument.numPages} trang`;
+      await renderPreviewPage();
+    } catch (error) {
+      if (requestId !== previewRequestSequence) return;
+      status.textContent = error.message || 'Không thể xem trước tệp PDF. Bạn vẫn có thể tải tệp xuống.';
+      document.getElementById('studyDocumentPreviewPageCount').textContent = '';
+    }
+  }
+
+  async function renderPreviewPage() {
+    if (!activePreviewDocument) return;
+    const status = document.getElementById('studyDocumentPreviewStatus');
+    const canvas = document.getElementById('studyDocumentPreviewCanvas');
+    const stage = canvas.parentElement;
+    const maxWidth = Math.max(280, stage.clientWidth - 32);
+    const maxHeight = Math.max(360, window.innerHeight * 0.68);
+    const requestId = previewRequestSequence;
+    status.textContent = 'Đang hiển thị trang...';
+    status.classList.remove('d-none');
+    document.getElementById('studyDocumentPreviewPrevious').disabled = true;
+    document.getElementById('studyDocumentPreviewNext').disabled = true;
+
+    try {
+      await renderPdfPage(activePreviewDocument, activePreviewPage, canvas, maxWidth, maxHeight);
+      if (requestId !== previewRequestSequence) return;
+      status.classList.add('d-none');
+      canvas.classList.remove('d-none');
+      document.getElementById('studyDocumentPreviewPosition').textContent =
+        `Trang ${activePreviewPage} / ${activePreviewDocument.numPages}`;
+      document.getElementById('studyDocumentPreviewPrevious').disabled = activePreviewPage <= 1;
+      document.getElementById('studyDocumentPreviewNext').disabled =
+        activePreviewPage >= activePreviewDocument.numPages;
+    } catch (error) {
+      if (requestId !== previewRequestSequence) return;
+      status.textContent = error.message || 'Không thể hiển thị trang PDF này.';
+      canvas.classList.add('d-none');
+      document.getElementById('studyDocumentPreviewPrevious').disabled = activePreviewPage <= 1;
+      document.getElementById('studyDocumentPreviewNext').disabled =
+        activePreviewPage >= activePreviewDocument.numPages;
+    }
+  }
+
+  function closeDocumentPreview() {
+    previewRequestSequence += 1;
+    if (activePreviewId) releasePdfDocument(activePreviewId);
+    activePreviewId = '';
+    activePreviewItem = null;
+    activePreviewDocument = null;
+    activePreviewPage = 1;
   }
 
   function formatFileSize(size) {
@@ -291,17 +593,83 @@
   }
 
   async function handleDocumentAction(event) {
-    const button = event.target.closest('[data-document-id]');
-    if (!button) return;
+    const button = event.target.closest('button[data-document-action][data-document-id]');
+    if (button) {
+      const item = documentItemsById.get(button.dataset.documentId);
+      if (!item) return;
+      if (button.dataset.documentAction === 'preview') {
+        await openDocumentPreview(item);
+        return;
+      }
+      if (button.dataset.documentAction === 'bookmark') {
+        await toggleBookmark(item, button);
+        return;
+      }
+      if (button.dataset.documentAction === 'download') {
+        await downloadDocumentFile(button, item.id, item.fileName);
+        return;
+      }
+    }
 
+    const card = event.target.closest('[data-document-card-id]');
+    if (!card || event.target.closest('button, a, input, select, textarea')) return;
+    const item = documentItemsById.get(card.dataset.documentCardId);
+    if (item) await openDocumentPreview(item);
+  }
+
+  function handleDocumentCardKeydown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const card = event.target.closest('[data-document-card-id]');
+    if (!card || event.target !== card) return;
+    event.preventDefault();
+    const item = documentItemsById.get(card.dataset.documentCardId);
+    if (item) openDocumentPreview(item);
+  }
+
+  async function toggleBookmark(item, button) {
+    const isBookmarked = !item.isBookmarked;
     button.disabled = true;
     try {
-      const blob = await ApiService.downloadStudyDocument(button.dataset.documentId, { silent: true });
+      const result = await ApiService.setStudyDocumentBookmark(item.id, isBookmarked, { silent: true });
+      item.isBookmarked = Boolean(result.isBookmarked);
+      updateBookmarkButton(button, item.isBookmarked);
+      showToast(
+        item.isBookmarked ? 'Đã lưu tài liệu' : 'Đã gỡ tài liệu',
+        item.isBookmarked
+          ? 'Tài liệu đã được thêm vào Thư viện của tôi.'
+          : 'Tài liệu đã được gỡ khỏi Thư viện của tôi.',
+        'success'
+      );
+      if (savedOnly && !item.isBookmarked) {
+        page = 1;
+        await loadDocuments();
+      }
+    } catch (error) {
+      showToast('Không lưu được tài liệu', error.message || 'Vui lòng thử lại.', 'error');
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  }
+
+  function updateBookmarkButton(button, isBookmarked) {
+    if (!button) return;
+    button.classList.toggle('btn-primary', isBookmarked);
+    button.classList.toggle('btn-outline-primary', !isBookmarked);
+    button.setAttribute('aria-pressed', String(isBookmarked));
+    button.innerHTML = isBookmarked
+      ? '<i class="bi bi-bookmark-check-fill me-1"></i>Đã lưu'
+      : '<i class="bi bi-bookmark me-1"></i>Lưu vào Thư viện của tôi';
+  }
+
+  async function downloadDocumentFile(button, documentId, fileName) {
+    if (button) button.disabled = true;
+    try {
+      const blob = await ApiService.downloadStudyDocument(documentId, { silent: true });
       if (!blob) return;
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
-      anchor.download = button.dataset.documentName || 'tai-lieu';
+      anchor.download = fileName || 'tai-lieu';
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -309,7 +677,7 @@
     } catch (error) {
       showToast('Không tải được tài liệu', error.message || 'Vui lòng thử lại.', 'error');
     } finally {
-      button.disabled = false;
+      if (button && button.isConnected) button.disabled = false;
     }
   }
 })();
