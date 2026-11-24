@@ -396,20 +396,36 @@
 
         <div class="card-custom p-3 mb-3">
           <div class="row g-2 align-items-center">
-            <div class="col-12 col-lg-6">
+            <div class="col-12 col-xl-4">
               <label class="visually-hidden" for="studyDocumentSearch">Tìm tài liệu</label>
               <div class="input-group">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                <input class="form-control" id="studyDocumentSearch" type="search" maxlength="200" placeholder="Tìm tên tài liệu, môn học hoặc trường Đại học/Cao đẳng...">
+                <input class="form-control" id="studyDocumentSearch" type="search" maxlength="200" placeholder="Tên tài liệu, môn học...">
               </div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-3">
+            <div class="col-12 col-sm-6 col-xl-3">
+              <label class="visually-hidden" for="studyDocumentUniversityFilter">Lọc theo trường</label>
+              <select class="form-select" id="studyDocumentUniversityFilter">
+                <option value="">Tất cả trường</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-2">
               <label class="visually-hidden" for="studyDocumentSubjectFilter">Lọc theo môn học</label>
               <select class="form-select" id="studyDocumentSubjectFilter">
                 <option value="">Tất cả môn học</option>
               </select>
             </div>
-            <div class="col-12 col-sm-6 col-lg-3">
+            <div class="col-12 col-sm-6 col-xl-1">
+              <label class="visually-hidden" for="studyDocumentStudentYearFilter">Lọc theo năm học sinh viên</label>
+              <select class="form-select" id="studyDocumentStudentYearFilter">
+                <option value="">Năm</option>
+                <option value="1">Năm 1</option>
+                <option value="2">Năm 2</option>
+                <option value="3">Năm 3</option>
+                <option value="4">Năm 4</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-2">
               <label class="visually-hidden" for="studyDocumentCategoryFilter">Lọc theo loại tài liệu</label>
               <select class="form-select" id="studyDocumentCategoryFilter">
                 <option value="">Tất cả loại tài liệu</option>

@@ -53,6 +53,9 @@ function mapDocument(row) {
     fileSize: Number(row.file_size),
     uploaderName: row.uploader_name || 'Sinh viên',
     uploaderUniversity: row.uploader_university || '',
+    uploaderStudentYear: row.uploader_student_year === null || row.uploader_student_year === undefined
+      ? null
+      : Number(row.uploader_student_year),
     createdAt: toIsoUtcString(row.created_at),
     downloadUrl: `/api/documents/${toPublicId('document', row.id)}/file`
   };
@@ -75,6 +78,14 @@ function createDocumentService({
         total,
         totalPages: Math.ceil(total / limit) || 1
       }
+    };
+  }
+
+  async function getDocumentFilters() {
+    const filters = await repo.findDocumentFilters();
+    return {
+      ...filters,
+      studentYears: [1, 2, 3, 4]
     };
   }
 
@@ -147,7 +158,7 @@ function createDocumentService({
     };
   }
 
-  return { listDocuments, createDocument, getDocumentFile };
+  return { listDocuments, getDocumentFilters, createDocument, getDocumentFile };
 }
 
 module.exports = {

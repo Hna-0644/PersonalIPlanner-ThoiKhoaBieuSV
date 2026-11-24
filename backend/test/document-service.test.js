@@ -18,6 +18,12 @@ function createRepository(overrides = {}) {
         limit: query.limit
       };
     },
+    async findDocumentFilters() {
+      return {
+        universities: ['Trường Đại học Nguyễn Tất Thành'],
+        subjects: [{ code: 'IT3020', name: 'Lập trình Web' }]
+      };
+    },
     async create(userId, input, file) {
       const row = {
         id: nextId++,
@@ -33,7 +39,8 @@ function createRepository(overrides = {}) {
         file_size: file.size,
         created_at: new Date('2026-11-24T05:00:00.000Z'),
         uploader_name: 'Nguyen Van A',
-        uploader_university: 'Trường Đại học Nguyễn Tất Thành'
+        uploader_university: 'Trường Đại học Nguyễn Tất Thành',
+        uploader_student_year: 2
       };
       rows.push(row);
       return row;
@@ -74,6 +81,7 @@ test('Document service stores a validated file and returns list/download metadat
   assert.equal(created.subjectCode, 'IT3020');
   assert.equal(created.fileName, 'de-cuong.pdf');
   assert.equal(created.uploaderUniversity, 'Trường Đại học Nguyễn Tất Thành');
+  assert.equal(created.uploaderStudentYear, 2);
   assert.match(created.downloadUrl, /\/api\/documents\/doc_1\/file$/);
 
   const file = await service.getDocumentFile(created.id);
@@ -83,6 +91,11 @@ test('Document service stores a validated file and returns list/download metadat
   const list = await service.listDocuments({ page: 1, limit: 12 });
   assert.equal(list.documents.length, 1);
   assert.equal(list.pagination.total, 1);
+  assert.deepEqual(await service.getDocumentFilters(), {
+    universities: ['Trường Đại học Nguyễn Tất Thành'],
+    subjects: [{ code: 'IT3020', name: 'Lập trình Web' }],
+    studentYears: [1, 2, 3, 4]
+  });
 });
 
 test('Document service rejects a file whose content does not match its extension', async t => {

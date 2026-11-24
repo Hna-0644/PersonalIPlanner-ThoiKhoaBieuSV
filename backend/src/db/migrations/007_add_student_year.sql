@@ -1,0 +1,2 @@
+ALTER TABLE users
+  ADD COLUMN student_year TINYINT UNSIGNED NULL AFTER student_id;

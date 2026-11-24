@@ -31,6 +31,7 @@ CREATE TABLE `users` (
   `email` VARCHAR(255) NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
   `student_id` VARCHAR(50) DEFAULT NULL,
+  `student_year` TINYINT UNSIGNED DEFAULT NULL,
   `major` VARCHAR(500) DEFAULT NULL,
   `university` VARCHAR(500) DEFAULT NULL,
   `avatar` VARCHAR(2048) DEFAULT NULL,

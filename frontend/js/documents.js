@@ -14,19 +14,22 @@
   let totalPages = 1;
   let searchTimer;
   let requestSequence = 0;
+  let documentSubjects = [];
 
   document.addEventListener('DOMContentLoaded', initializeStudyDocuments);
 
-  function initializeStudyDocuments() {
+  async function initializeStudyDocuments() {
     const form = document.getElementById('studyDocumentForm');
     if (!form) return;
 
-    const initialQuery = new URLSearchParams(window.location.search).get('documentQuery');
+    const queryParams = new URLSearchParams(window.location.search);
+    const initialQuery = queryParams.get('documentQuery');
     if (initialQuery) {
       document.getElementById('studyDocumentSearch').value = initialQuery.slice(0, 200);
     }
 
-    populateSubjectOptions();
+    populateSubjectOptions(queryParams.get('subjectCode') || '');
+    populateStudentYearOptions(queryParams.get('studentYear') || '');
     window.addEventListener('pp:store-synced', populateSubjectOptions);
     document.getElementById('openStudyDocumentModal').addEventListener('click', openUploadModal);
     document.getElementById('studyDocumentSearch').addEventListener('input', () => {
@@ -36,20 +39,46 @@
         loadDocuments();
       }, 250);
     });
+    document.getElementById('studyDocumentUniversityFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentSubjectFilter').addEventListener('change', resetAndLoad);
+    document.getElementById('studyDocumentStudentYearFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentCategoryFilter').addEventListener('change', resetAndLoad);
     document.getElementById('studyDocumentsPrevious').addEventListener('click', () => changePage(-1));
     document.getElementById('studyDocumentsNext').addEventListener('click', () => changePage(1));
     document.getElementById('studyDocumentsGrid').addEventListener('click', handleDocumentAction);
     form.addEventListener('submit', submitDocument);
+
+    try {
+      const filters = await ApiService.getStudyDocumentFilters({ silent: true });
+      documentSubjects = filters.subjects || [];
+      populateUniversityOptions(
+        filters.universities || [],
+        queryParams.get('university') || ''
+      );
+      populateSubjectOptions(queryParams.get('subjectCode') || '');
+    } catch (error) {
+      const status = document.getElementById('studyDocumentsStatus');
+      status.className = 'small text-danger mb-3';
+      status.textContent = error.message || 'Không thể tải bộ lọc tài liệu.';
+    }
+
     loadDocuments();
   }
 
-  function populateSubjectOptions() {
+  function populateSubjectOptions(selectedFilter = '') {
     const subjects = getAvailableSubjects();
+    const knownCodes = new Set(subjects.map(subject => subject.code));
+    documentSubjects.forEach(subject => {
+      if (!knownCodes.has(subject.code)) {
+        knownCodes.add(subject.code);
+        subjects.push(subject);
+      }
+    });
     const filter = document.getElementById('studyDocumentSubjectFilter');
     const formSelect = document.getElementById('studyDocumentSubject');
-    const selectedFilter = filter.value;
+    const currentFilter = typeof selectedFilter === 'string' && selectedFilter
+      ? selectedFilter
+      : filter.value;
     const selectedSubject = formSelect.value;
 
     filter.replaceChildren(new Option('Tất cả môn học', ''));
@@ -60,8 +89,29 @@
       filter.add(filterOption);
       formSelect.add(formOption);
     });
-    if (subjects.some(subject => subject.code === selectedFilter)) filter.value = selectedFilter;
+    if (currentFilter && !subjects.some(subject => subject.code === currentFilter)) {
+      filter.add(new Option(currentFilter, currentFilter));
+    }
+    if (subjects.some(subject => subject.code === currentFilter)) filter.value = currentFilter;
     if (subjects.some(subject => subject.code === selectedSubject)) formSelect.value = selectedSubject;
+  }
+
+  function populateUniversityOptions(universities, selectedUniversity = '') {
+    const filter = document.getElementById('studyDocumentUniversityFilter');
+    filter.replaceChildren(new Option('Tất cả trường', ''));
+    universities.forEach(university => filter.add(new Option(university, university)));
+    if (selectedUniversity && !universities.includes(selectedUniversity)) {
+      filter.add(new Option(selectedUniversity, selectedUniversity));
+    }
+    filter.value = selectedUniversity;
+  }
+
+  function populateStudentYearOptions(selectedYear = '') {
+    const filter = document.getElementById('studyDocumentStudentYearFilter');
+    const selected = selectedYear || filter.value;
+    filter.replaceChildren(new Option('Tất cả năm', ''));
+    [1, 2, 3, 4].forEach(year => filter.add(new Option(`Năm ${year}`, String(year))));
+    filter.value = selected;
   }
 
   function getAvailableSubjects() {
@@ -110,7 +160,9 @@
     try {
       const result = await ApiService.getStudyDocuments({
         q: document.getElementById('studyDocumentSearch').value.trim(),
+        university: document.getElementById('studyDocumentUniversityFilter').value,
         subjectCode: document.getElementById('studyDocumentSubjectFilter').value,
+        studentYear: document.getElementById('studyDocumentStudentYearFilter').value,
         category: document.getElementById('studyDocumentCategoryFilter').value,
         page,
         limit: PAGE_SIZE
@@ -168,6 +220,7 @@
             </div>
             <div class="mt-1">${escapeHtml(item.uploaderName)} · ${escapeHtml(createdAt)}</div>
             ${item.uploaderUniversity ? `<div class="mt-1"><i class="bi bi-mortarboard me-1"></i>${escapeHtml(item.uploaderUniversity)}</div>` : ''}
+            ${item.uploaderStudentYear ? `<div class="mt-1">Năm học ${escapeHtml(item.uploaderStudentYear)}</div>` : ''}
           </div>
           <button class="btn btn-outline-primary btn-sm align-self-start" type="button"
             data-document-id="${escapeHtml(item.id)}" data-document-name="${escapeHtml(item.fileName)}">

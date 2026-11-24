@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   registerSchema,
+  profileSchema,
   classSchema,
   taskSchema,
   taskUpdateSchema,
@@ -9,6 +10,7 @@ const {
   workScheduleSchema,
   workScheduleUpdateSchema
 } = require('../src/schemas');
+const { documentListQuerySchema } = require('../src/schemas/document-schemas');
 
 test('registration normalizes email and requires a strong minimum password length', () => {
   const result = registerSchema.parse({
@@ -22,6 +24,19 @@ test('registration normalizes email and requires a strong minimum password lengt
     email: 'student@example.com',
     password: 'short'
   }));
+});
+
+test('profile validation accepts student years one through four only', () => {
+  assert.equal(profileSchema.safeParse({ studentYear: 4 }).success, true);
+  assert.equal(profileSchema.safeParse({ studentYear: null }).success, true);
+  assert.equal(profileSchema.safeParse({ studentYear: 5 }).success, false);
+  assert.equal(profileSchema.safeParse({ studentYear: '2' }).success, false);
+});
+
+test('document query accepts an empty year filter and rejects years outside one through four', () => {
+  assert.equal(documentListQuerySchema.parse({ studentYear: '' }).studentYear, undefined);
+  assert.equal(documentListQuerySchema.parse({ studentYear: '2' }).studentYear, 2);
+  assert.equal(documentListQuerySchema.safeParse({ studentYear: '5' }).success, false);
 });
 
 test('class validation rejects invalid weekday and overlapping interval shape', () => {

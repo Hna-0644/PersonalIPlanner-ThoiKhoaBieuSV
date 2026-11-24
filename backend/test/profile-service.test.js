@@ -4,12 +4,14 @@ const { createProfileService } = require('../src/services/profile-service');
 
 test('profile updates accept unchanged values and return the canonical user', async () => {
   let committed = false;
+  const executedStatements = [];
   const connection = {
     async beginTransaction() {},
     async commit() { committed = true; },
     async rollback() {},
     release() {},
-    async execute() {
+    async execute(sql, params) {
+      executedStatements.push({ sql, params });
       return [{ affectedRows: 0 }, []];
     }
   };
@@ -21,6 +23,7 @@ test('profile updates accept unchanged values and return the canonical user', as
         full_name: 'Student',
         email: 'student@example.com',
         student_id: null,
+        student_year: 2,
         major: null,
         university: null,
         avatar: null,
@@ -38,9 +41,14 @@ test('profile updates accept unchanged values and return the canonical user', as
   };
   const service = createProfileService({ pool });
 
-  const user = await service.updateProfile('7', { breakMinutes: 15 });
+  const user = await service.updateProfile('7', { breakMinutes: 15, studentYear: 2 });
 
   assert.equal(committed, true);
   assert.equal(user.id, 'usr_7');
   assert.equal(user.breakMinutes, 15);
+  assert.equal(user.studentYear, 2);
+  assert.deepEqual(executedStatements[0], {
+    sql: 'UPDATE users SET student_year = ? WHERE id = ?',
+    params: [2, '7']
+  });
 });

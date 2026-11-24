@@ -2,6 +2,7 @@ const USER_COLUMNS = {
   fullName: 'full_name',
   email: 'email',
   studentId: 'student_id',
+  studentYear: 'student_year',
   major: 'major',
   university: 'university',
   avatar: 'avatar'
@@ -55,7 +56,7 @@ function createAuthRepository({ pool }) {
 
   async function findUserProfileById(userId) {
     const [rows] = await pool.execute(
-      `SELECT u.id, u.full_name, u.email, u.student_id, u.major, u.university, u.avatar,
+      `SELECT u.id, u.full_name, u.email, u.student_id, u.student_year, u.major, u.university, u.avatar,
               p.preferred_hours, p.break_minutes, p.timezone, p.email_reminder, p.browser_reminder
        FROM users u
        JOIN study_preferences p ON p.user_id = u.id

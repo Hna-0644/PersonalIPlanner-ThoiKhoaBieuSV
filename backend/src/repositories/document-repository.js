@@ -12,7 +12,8 @@ const DOCUMENT_SELECT_COLUMNS = `
   d.file_size,
   d.created_at,
   u.full_name AS uploader_name,
-  u.university AS uploader_university
+  u.university AS uploader_university,
+  u.student_year AS uploader_student_year
 `;
 
 function createDocumentRepository({ pool }) {
@@ -23,6 +24,16 @@ function createDocumentRepository({ pool }) {
     if (filters.subjectCode) {
       conditions.push('d.subject_code = ?');
       values.push(filters.subjectCode);
+    }
+
+    if (filters.university) {
+      conditions.push('TRIM(u.university) = ?');
+      values.push(filters.university);
+    }
+
+    if (filters.studentYear) {
+      conditions.push('u.student_year = ?');
+      values.push(filters.studentYear);
     }
 
     if (filters.category) {
@@ -37,12 +48,7 @@ function createDocumentRepository({ pool }) {
         d.subject_code LIKE ? OR
         d.subject_name LIKE ? OR
         d.original_name LIKE ? OR
-        EXISTS (
-          SELECT 1
-          FROM users search_user
-          WHERE search_user.id = d.user_id
-            AND search_user.university LIKE ?
-        )
+        u.university LIKE ?
       )`);
       const keyword = `%${filters.q}%`;
       values.push(keyword, keyword, keyword, keyword, keyword, keyword);
@@ -54,7 +60,10 @@ function createDocumentRepository({ pool }) {
     const offset = (page - 1) * limit;
 
     const [countRows] = await pool.execute(
-      `SELECT COUNT(*) AS total FROM study_documents d ${whereClause}`,
+      `SELECT COUNT(*) AS total
+       FROM study_documents d
+       JOIN users u ON u.id = d.user_id
+       ${whereClause}`,
       values
     );
     const [rows] = await pool.execute(
@@ -72,6 +81,27 @@ function createDocumentRepository({ pool }) {
       total: Number(countRows[0]?.total || 0),
       page,
       limit
+    };
+  }
+
+  async function findDocumentFilters() {
+    const [universityRows] = await pool.execute(
+      `SELECT DISTINCT TRIM(u.university) AS university
+       FROM study_documents d
+       JOIN users u ON u.id = d.user_id
+       WHERE u.university IS NOT NULL AND TRIM(u.university) <> ''
+       ORDER BY university`
+    );
+    const [subjectRows] = await pool.execute(
+      `SELECT subject_code AS code, MAX(subject_name) AS name
+       FROM study_documents
+       GROUP BY subject_code
+       ORDER BY name, code`
+    );
+
+    return {
+      universities: universityRows.map(row => row.university),
+      subjects: subjectRows
     };
   }
 
@@ -113,7 +143,7 @@ function createDocumentRepository({ pool }) {
     return rows[0] || null;
   }
 
-  return { findDocuments, create, findById };
+  return { findDocuments, findDocumentFilters, create, findById };
 }
 
 async function withTransaction(pool, operation) {

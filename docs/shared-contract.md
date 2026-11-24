@@ -58,6 +58,7 @@ Toàn bộ Backend được phân chia thành **6 module độc lập về mặt
 | `fullName` | `string` | Có | Tên hiển thị. |
 | `email` | `string` | Có | Chuẩn hóa và duy nhất khi có backend. |
 | `studentId` | `string \| null` | Không | Mã sinh viên; lưu dạng chuỗi để giữ số 0 đầu. |
+| `studentYear` | `integer \| null` | Không | Năm học sinh viên, từ 1 đến 4; dùng để lọc tài liệu theo năm của người đăng. |
 | `major` | `string \| null` | Không | Ngành học. |
 | `university` | `string \| null` | Không | Trường học. |
 | `avatar` | `string \| null` | Không | URL tuyệt đối hợp lệ hoặc `null`; không chứa nội dung nhạy cảm. |
@@ -269,7 +270,8 @@ Prefix API: `/api`. Tên endpoint dưới đây khớp với các operation đã
 | `GET` | `/notifications` | Có | Trả tối đa 100 thông báo gần nhất của user. |
 | `PATCH` | `/notifications/{id}` | Có | Request `{ read: true }`; đánh dấu đã đọc, thao tác lặp lại thành công. `PUT /notifications/{id}/read` là alias cũ. |
 | `PATCH` | `/notifications` | Có | Request `{ readAll: true }`; đánh dấu toàn bộ đã đọc, trả số bản ghi thực sự thay đổi. `PUT /notifications/read-all` là alias cũ. |
-| `GET` | `/documents` | Có | Query `q?`, `subjectCode?`, `category?`, `page?`, `limit?`; trả `{ data: { documents, pagination } }`, sắp xếp mới nhất trước. |
+| `GET` | `/documents` | Có | Query `q?`, `subjectCode?`, `university?`, `studentYear?` (1–4), `category?`, `page?`, `limit?`; trả `{ data: { documents, pagination } }`, sắp xếp mới nhất trước. |
+| `GET` | `/documents/filters` | Có | Trả các trường và môn học hiện có trong thư viện cùng năm sinh viên 1–4. |
 | `POST` | `/documents` | Có | `multipart/form-data`: `file` (PDF/DOC/DOCX, tối đa 15 MiB), `subjectCode`, `subjectName`, `title`, `category`, `description?`; trả `{ data: StudyDocument }`. Giới hạn 5 lần đăng/phút/user. |
 | `GET` | `/documents/{id}/file` | Có | Tải file dưới dạng binary attachment; ID dạng `doc_123`. |
 | `GET` | `/courses/{subjectId}/reviews` | Có | Query `page`, `limit`; trả `{ data: { summary, reviews, pagination } }` và `X-Cache: HIT|MISS`. Summary: `avgRating`, `totalReviews`, `attendanceRate`. |

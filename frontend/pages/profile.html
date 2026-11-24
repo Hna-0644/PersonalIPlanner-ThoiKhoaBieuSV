@@ -156,6 +156,7 @@
 
             <div class="text-start small d-flex flex-column gap-2 text-muted">
               <div><i class="bi bi-credit-card-2-front me-2 text-primary"></i><strong>MSSV:</strong> <span id="displayStudentId" class="font-monospace">---</span></div>
+              <div><i class="bi bi-calendar3 me-2 text-primary"></i><strong>Năm học:</strong> <span id="displayStudentYear">---</span></div>
               <div><i class="bi bi-mortarboard me-2 text-primary"></i><strong>Ngành:</strong> <span id="displayMajor">---</span></div>
               <div><i class="bi bi-building me-2 text-primary"></i><strong>Trường:</strong> <span id="displayUniversity">---</span></div>
             </div>
@@ -187,15 +188,25 @@
               </div>
 
               <div class="row g-3 mb-3">
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                   <label class="form-label fw-semibold small">Mã số sinh viên (MSSV)</label>
                   <input type="text" class="form-control font-monospace" id="inputStudentId">
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
+                  <label class="form-label fw-semibold small" for="inputStudentYear">Năm học</label>
+                  <select class="form-select" id="inputStudentYear">
+                    <option value="">Chưa cập nhật</option>
+                    <option value="1">Năm 1</option>
+                    <option value="2">Năm 2</option>
+                    <option value="3">Năm 3</option>
+                    <option value="4">Năm 4</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-3">
                   <label class="form-label fw-semibold small">Ngành / Khoa</label>
                   <input type="text" class="form-control" id="inputMajor">
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                   <label class="form-label fw-semibold small" for="inputUniversity">Trường đại học, cao đẳng</label>
                   <input type="text" class="form-control" id="inputUniversity" list="universityPresetList" placeholder="Chọn hoặc nhập tên trường...">
                   <datalist id="universityPresetList">
@@ -520,6 +531,7 @@
 
     // Fill left card
     document.getElementById('displayStudentId').textContent = user.studentId || 'Chưa cập nhật';
+    document.getElementById('displayStudentYear').textContent = user.studentYear ? `Năm ${user.studentYear}` : 'Chưa cập nhật';
     document.getElementById('displayMajor').textContent = user.major || 'Chưa cập nhật';
     document.getElementById('displayUniversity').textContent = user.university || 'Chưa cập nhật';
 
@@ -527,6 +539,7 @@
     document.getElementById('inputFullName').value = user.fullName || '';
     document.getElementById('inputEmail').value = user.email || '';
     document.getElementById('inputStudentId').value = user.studentId || '';
+    document.getElementById('inputStudentYear').value = user.studentYear || '';
     document.getElementById('inputMajor').value = user.major || '';
     document.getElementById('inputUniversity').value = user.university || '';
 
@@ -568,6 +581,9 @@
       fullName: document.getElementById('inputFullName').value.trim(),
       email: document.getElementById('inputEmail').value.trim(),
       studentId: document.getElementById('inputStudentId').value.trim(),
+      studentYear: document.getElementById('inputStudentYear').value
+        ? Number(document.getElementById('inputStudentYear').value)
+        : null,
       major: document.getElementById('inputMajor').value.trim(),
       university: document.getElementById('inputUniversity').value.trim(),
       avatar: finalAvatar

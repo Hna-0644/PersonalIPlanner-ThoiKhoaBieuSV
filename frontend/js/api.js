@@ -103,12 +103,19 @@ const ApiService = {
     const params = new URLSearchParams();
     if (query.q) params.set('q', query.q);
     if (query.subjectCode) params.set('subjectCode', query.subjectCode);
+    if (query.university) params.set('university', query.university);
+    if (query.studentYear) params.set('studentYear', String(query.studentYear));
     if (query.category) params.set('category', query.category);
     if (query.page) params.set('page', String(query.page));
     if (query.limit) params.set('limit', String(query.limit));
     const qs = params.toString();
     const res = await this.request(`/documents${qs ? `?${qs}` : ''}`, { silent: options.silent });
     if (!res) throw new Error('Đăng nhập bằng tài khoản máy chủ để sử dụng kho tài liệu.');
+    return res && res.data ? res.data : res;
+  },
+  async getStudyDocumentFilters(options = {}) {
+    const res = await this.request('/documents/filters', { silent: options.silent });
+    if (!res) throw new Error('Đăng nhập bằng tài khoản máy chủ để sử dụng bộ lọc tài liệu.');
     return res && res.data ? res.data : res;
   },
   async uploadStudyDocument(formData, options = {}) {

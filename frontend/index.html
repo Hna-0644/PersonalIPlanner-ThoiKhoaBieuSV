@@ -204,9 +204,9 @@
         <section class="document-discovery mb-4" aria-labelledby="documentDiscoveryHeading">
           <div class="mb-3">
             <h2 class="h5 fw-bold mb-1" id="documentDiscoveryHeading">Tìm tài liệu học tập</h2>
-            <p class="text-muted small mb-0">Tra cứu theo tên tài liệu, môn học hoặc trường Đại học/Cao đẳng.</p>
+            <p class="text-muted small mb-0">Tìm tài liệu theo từ khóa, rồi lọc theo trường, môn học hoặc năm học của người đăng.</p>
           </div>
-          <form class="document-discovery-form" action="pages/community.html#studyDocuments" method="get">
+          <form class="document-discovery-form" id="documentDiscoveryForm" action="pages/community.html#studyDocuments" method="get">
             <div class="document-discovery-input">
               <i class="bi bi-search" aria-hidden="true"></i>
               <label class="visually-hidden" for="documentDiscoveryQuery">Tìm tài liệu học tập</label>
@@ -217,6 +217,33 @@
               <i class="bi bi-search me-1" aria-hidden="true"></i>Tìm tài liệu
             </button>
           </form>
+          <div class="document-discovery-filters mt-3">
+            <div class="document-discovery-field">
+              <label for="documentDiscoveryUniversity">Trường Đại học / Cao đẳng</label>
+              <select class="form-select" id="documentDiscoveryUniversity" name="university" form="documentDiscoveryForm">
+                <option value="">Tất cả trường</option>
+              </select>
+            </div>
+            <div class="document-discovery-field">
+              <label for="documentDiscoverySubject">Môn học</label>
+              <select class="form-select" id="documentDiscoverySubject" name="subjectCode" form="documentDiscoveryForm">
+                <option value="">Tất cả môn học</option>
+              </select>
+            </div>
+            <div class="document-discovery-field">
+              <label for="documentDiscoveryStudentYear">Năm học</label>
+              <select class="form-select" id="documentDiscoveryStudentYear" name="studentYear" form="documentDiscoveryForm">
+                <option value="">Tất cả năm</option>
+                <option value="1">Năm 1</option>
+                <option value="2">Năm 2</option>
+                <option value="3">Năm 3</option>
+                <option value="4">Năm 4</option>
+              </select>
+            </div>
+          </div>
+          <div class="small text-muted mt-2" id="documentDiscoveryStatus" role="status" aria-live="polite">
+            Năm học dựa trên hồ sơ của người đăng tài liệu.
+          </div>
         </section>
 
         <!-- Daily Overview Strip (UI/UX Pro Max Summary Bar) -->
@@ -466,6 +493,7 @@
       const isoLocal = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
       document.getElementById('taskDeadlineInput').value = isoLocal;
 
+      initializeDocumentDiscoveryFilters();
       renderDashboardData();
       initWeeklyChart();
 
@@ -481,6 +509,25 @@
         });
       }
     });
+
+    function initializeDocumentDiscoveryFilters() {
+      const status = document.getElementById('documentDiscoveryStatus');
+      ApiService.getStudyDocumentFilters({ silent: true })
+        .then(filters => {
+          const universitySelect = document.getElementById('documentDiscoveryUniversity');
+          const subjectSelect = document.getElementById('documentDiscoverySubject');
+          (filters.universities || []).forEach(university => {
+            universitySelect.add(new Option(university, university));
+          });
+          (filters.subjects || []).forEach(subject => {
+            subjectSelect.add(new Option(`${subject.code} — ${subject.name}`, subject.code));
+          });
+        })
+        .catch(error => {
+          status.className = 'small text-danger mt-2';
+          status.textContent = error.message || 'Không thể tải danh sách trường và môn học.';
+        });
+    }
 
     function renderDashboardData(filterQuery = '') {
       const allTasks = AppStore.getTasks();

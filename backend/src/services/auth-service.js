@@ -77,6 +77,9 @@ function mapUser(row) {
     fullName: row.full_name,
     email: row.email,
     studentId: row.student_id,
+    studentYear: row.student_year === null || row.student_year === undefined
+      ? null
+      : Number(row.student_year),
     major: row.major,
     university: row.university,
     avatar: row.avatar,

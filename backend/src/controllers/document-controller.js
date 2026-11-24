@@ -7,6 +7,11 @@ function createDocumentController(documentService) {
     res.json({ data });
   });
 
+  const listDocumentFilters = asyncHandler(async (_req, res) => {
+    const data = await documentService.getDocumentFilters();
+    res.json({ data });
+  });
+
   const createDocument = asyncHandler(async (req, res) => {
     const data = await documentService.createDocument(req.user.id, req.body, req.file);
     res.status(201).json({ data });
@@ -23,7 +28,7 @@ function createDocumentController(documentService) {
     });
   });
 
-  return { listDocuments, createDocument, downloadDocument };
+  return { listDocuments, listDocumentFilters, createDocument, downloadDocument };
 }
 
 module.exports = { createDocumentController };

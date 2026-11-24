@@ -816,6 +816,7 @@ const AppStore = {
       fullName: userObj.fullName || 'Người dùng',
       email: userObj.email || '',
       studentId: userObj.studentId || '',
+      studentYear: userObj.studentYear ?? null,
       major: userObj.major || '',
       university: userObj.university || '',
       avatar: userObj.avatar || DEFAULT_AVATAR,
@@ -1003,6 +1004,7 @@ const AppStore = {
       fullName: 'Người dùng',
       email: '',
       studentId: '',
+      studentYear: null,
       major: '',
       university: '',
       avatar: DEFAULT_AVATAR,
@@ -1026,6 +1028,7 @@ const AppStore = {
       if (userData.fullName !== undefined) apiPayload.fullName = userData.fullName;
       if (userData.email !== undefined && userData.email) apiPayload.email = userData.email;
       if (userData.studentId !== undefined) apiPayload.studentId = userData.studentId || null;
+      if (userData.studentYear !== undefined) apiPayload.studentYear = userData.studentYear || null;
       if (userData.major !== undefined) apiPayload.major = userData.major || null;
       if (userData.university !== undefined) apiPayload.university = userData.university || null;
       if (userData.avatar !== undefined) apiPayload.avatar = userData.avatar || null;

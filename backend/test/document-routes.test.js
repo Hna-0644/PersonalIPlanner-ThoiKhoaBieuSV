@@ -38,6 +38,9 @@ function createService(overrides = {}) {
         pagination: { page: query.page, limit: query.limit, total: 0, totalPages: 1 }
       };
     },
+    async getDocumentFilters() {
+      return { universities: [], subjects: [], studentYears: [1, 2, 3, 4] };
+    },
     async createDocument(_userId, _input, file) {
       if (file === undefined) {
         throw new AppError(400, 'FILE_REQUIRED', 'Vui lòng chọn một tệp PDF, DOC hoặc DOCX.');
@@ -61,18 +64,46 @@ test('document listing requires authentication and forwards filters', async () =
   }));
 
   assert.equal((await request(app).get('/api/documents')).status, 401);
+  assert.equal((await request(app).get('/api/documents/filters')).status, 401);
   const response = await request(app)
-    .get('/api/documents?q=exam&subjectCode=it3020&category=exam&page=2')
+    .get('/api/documents?q=exam&subjectCode=it3020&university=UIT&studentYear=2&category=exam&page=2')
     .set('Authorization', authHeader());
 
   assert.equal(response.status, 200);
   assert.deepEqual(received, {
     q: 'exam',
     subjectCode: 'IT3020',
+    university: 'UIT',
+    studentYear: 2,
     category: 'exam',
     page: 2,
     limit: 12
   });
+
+  const allYearsResponse = await request(app)
+    .get('/api/documents?studentYear=')
+    .set('Authorization', authHeader());
+  assert.equal(allYearsResponse.status, 200);
+  assert.equal(received.studentYear, undefined);
+});
+
+test('document filters require authentication and return available filter values', async () => {
+  const app = createApp(createService({
+    async getDocumentFilters() {
+      return {
+        universities: ['Trường Đại học FPT'],
+        subjects: [{ code: 'IT3040', name: 'Cơ sở dữ liệu' }],
+        studentYears: [1, 2, 3, 4]
+      };
+    }
+  }));
+  const response = await request(app)
+    .get('/api/documents/filters')
+    .set('Authorization', authHeader());
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.data.universities, ['Trường Đại học FPT']);
+  assert.deepEqual(response.body.data.studentYears, [1, 2, 3, 4]);
 });
 
 test('document upload passes authenticated user, metadata, and the uploaded file', async () => {

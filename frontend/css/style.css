@@ -612,6 +612,25 @@ h1, h2, h3, h4, h5, h6,
   min-height: 3.25rem;
 }
 
+.document-discovery-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+
+.document-discovery-field label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--p-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.document-discovery-field .form-select {
+  min-height: 42px;
+  border-color: var(--hairline);
+}
+
 @media (max-width: 575.98px) {
   .document-discovery-form {
     flex-direction: column;
@@ -619,6 +638,10 @@ h1, h2, h3, h4, h5, h6,
 
   .document-discovery-button {
     width: 100%;
+  }
+
+  .document-discovery-filters {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -49,22 +49,26 @@ test('document API serializes filters and uploads multipart data without setting
   await api.getStudyDocuments({
     q: 'database notes',
     subjectCode: 'IT3040',
+    university: 'Trường Đại học FPT',
+    studentYear: 2,
     category: 'notes',
     page: 2,
     limit: 12
   });
+  await api.getStudyDocumentFilters();
   const formData = new FormData();
   formData.set('title', 'Tài liệu');
   await api.uploadStudyDocument(formData, { silent: true });
 
   assert.equal(
     calls[0].url,
-    'http://localhost:5000/api/documents?q=database+notes&subjectCode=IT3040&category=notes&page=2&limit=12'
+    'http://localhost:5000/api/documents?q=database+notes&subjectCode=IT3040&university=Tr%C6%B0%E1%BB%9Dng+%C4%90%E1%BA%A1i+h%E1%BB%8Dc+FPT&studentYear=2&category=notes&page=2&limit=12'
   );
-  assert.equal(calls[1].url, 'http://localhost:5000/api/documents');
-  assert.equal(calls[1].options.body, formData);
-  assert.equal(calls[1].options.headers['Content-Type'], undefined);
-  assert.equal(calls[1].options.headers.Authorization, `Bearer ${'header.payload.local_sig'}`);
+  assert.equal(calls[1].url, 'http://localhost:5000/api/documents/filters');
+  assert.equal(calls[2].url, 'http://localhost:5000/api/documents');
+  assert.equal(calls[2].options.body, formData);
+  assert.equal(calls[2].options.headers['Content-Type'], undefined);
+  assert.equal(calls[2].options.headers.Authorization, `Bearer ${'header.payload.local_sig'}`);
 });
 
 test('document API does not treat an offline local-account 401 as success', async () => {
@@ -79,6 +83,10 @@ test('document API does not treat an offline local-account 401 as success', asyn
 
   await assert.rejects(
     api.getStudyDocuments(),
+    /Đăng nhập bằng tài khoản máy chủ/
+  );
+  await assert.rejects(
+    api.getStudyDocumentFilters(),
     /Đăng nhập bằng tài khoản máy chủ/
   );
   await assert.rejects(

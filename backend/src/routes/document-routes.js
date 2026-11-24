@@ -56,6 +56,7 @@ function createDocumentRouter(documentService, authenticate, options = {}) {
     });
   };
 
+  router.get('/filters', authenticate, controller.listDocumentFilters);
   router.get('/', authenticate, validate(documentListQuerySchema, 'query'), controller.listDocuments);
   router.post(
     '/',
