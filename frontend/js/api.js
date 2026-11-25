@@ -6,7 +6,10 @@
 const API_CONFIG = {
   USE_MOCK: false,
   BASE_URL:
-    window.location.port === '5000'
+    window.location.port === '5000' ||
+    (window.location.hostname &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1')
       ? `${window.location.origin}/api`
       : 'http://localhost:5000/api',
   TIMEOUT: 8000

@@ -538,8 +538,9 @@ test('busy calendar includes recurring work shifts and date-specific work shifts
 });
 
 test('schedule generation avoids work shifts and respects break time', async () => {
-  const tomorrow = DateTime.now().setZone('Asia/Ho_Chi_Minh').plus({ days: 1 });
-  const tomorrowDate = tomorrow.toISODate();
+  const today = DateTime.now().setZone('Asia/Ho_Chi_Minh').startOf('day');
+  const tomorrow = today.plus({ days: 1 });
+  const todayWeekday = today.weekday % 7;
   const tomorrowWeekday = tomorrow.weekday % 7;
 
   const pool = {
@@ -569,19 +570,34 @@ test('schedule generation avoids work shifts and respects break time', async () 
       if (sql.includes('SELECT DISTINCT task_id')) return [[], []];
       if (sql.includes('FROM classes')) return [[], []];
       if (sql.includes('FROM work_schedules')) {
-        return [[{
-          id: 1,
-          title: 'Morning shift',
-          workplace: 'Library',
-          day_of_week: tomorrowWeekday,
-          work_date: null,
-          start_time: '08:00',
-          end_time: '10:00',
-          start_date: null,
-          end_date: null,
-          color: '#0d7480',
-          notes: null
-        }], []];
+        return [[
+          {
+            id: 1,
+            title: 'Today morning shift',
+            workplace: 'Library',
+            day_of_week: todayWeekday,
+            work_date: null,
+            start_time: '08:00',
+            end_time: '10:00',
+            start_date: null,
+            end_date: null,
+            color: '#0d7480',
+            notes: null
+          },
+          {
+            id: 2,
+            title: 'Tomorrow morning shift',
+            workplace: 'Library',
+            day_of_week: tomorrowWeekday,
+            work_date: null,
+            start_time: '08:00',
+            end_time: '10:00',
+            start_date: null,
+            end_date: null,
+            color: '#0d7480',
+            notes: null
+          }
+        ], []];
       }
       if (sql.includes('FROM scheduled_events')) return [[], []];
       throw new Error(`Unexpected SQL in test: ${sql}`);

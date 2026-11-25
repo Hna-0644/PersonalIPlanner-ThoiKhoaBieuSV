@@ -1,3 +1,4 @@
+const os = require('node:os');
 const path = require('node:path');
 const express = require('express');
 const cors = require('cors');
@@ -47,9 +48,12 @@ function createApp({ pool, config, redisClient }) {
   const notificationService = createNotificationService({ pool, redisClient });
   const aiVisionService = createAiVisionService({ pool, config });
   const marketplaceService = createMarketplaceService({ pool, redisClient });
+  const defaultStorageDirectory = process.env.VERCEL
+    ? path.join(os.tmpdir(), 'personalplanner-uploads/documents')
+    : path.join(__dirname, '../uploads/documents');
   const documentService = createDocumentService({
     pool,
-    storageDirectory: path.join(__dirname, '../uploads/documents')
+    storageDirectory: defaultStorageDirectory
   });
   const communityService = createCommunityService({ pool, redisClient });
 
@@ -101,4 +105,39 @@ function createApp({ pool, config, redisClient }) {
   return app;
 }
 
-module.exports = { createApp };
+function createVercelApp() {
+  const { createDatabase } = require('./config/database');
+  const { createInMemoryPool } = require('./config/in-memory-pool');
+
+  const config = {
+    NODE_ENV: process.env.NODE_ENV || 'production',
+    PORT: Number(process.env.PORT) || 5000,
+    CORS_ORIGIN: process.env.CORS_ORIGIN || '',
+    JWT_SECRET:
+      process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 32
+        ? process.env.JWT_SECRET
+        : 'personalplanner-vercel-production-jwt-secret-key-2026',
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+    DB_HOST: process.env.DB_HOST || '',
+    DB_PORT: Number(process.env.DB_PORT) || 3306,
+    DB_NAME: process.env.DB_NAME || 'personal_planner',
+    DB_USER: process.env.DB_USER || 'root',
+    DB_PASSWORD: process.env.DB_PASSWORD || '',
+    DB_CONNECTION_LIMIT: Number(process.env.DB_CONNECTION_LIMIT) || 5,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
+  };
+
+  const hasRemoteMysql = Boolean(
+    config.DB_HOST &&
+    !['127.0.0.1', 'localhost'].includes(String(config.DB_HOST).trim().toLowerCase())
+  );
+
+  const pool = hasRemoteMysql ? createDatabase(config) : createInMemoryPool();
+  const app = createApp({ pool, config, redisClient: null });
+  app.createApp = createApp;
+  return app;
+}
+
+const defaultApp = createVercelApp();
+defaultApp.createApp = createApp;
+module.exports = defaultApp;
